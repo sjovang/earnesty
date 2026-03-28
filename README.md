@@ -15,7 +15,15 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    cd frontend && npm install
    ```
 
-2. **Configure environment variables**
+2. **Trust the HTTPS dev certificate** *(first time only)*
+
+   ```sh
+   dotnet dev-certs https --trust
+   ```
+
+   This adds the ASP.NET Core dev certificate to your system keychain so the Aspire dashboard opens without browser security warnings. You will be prompted for your password on macOS.
+
+3. **Configure environment variables**
 
    ```sh
    cp frontend/.env.example frontend/.env
