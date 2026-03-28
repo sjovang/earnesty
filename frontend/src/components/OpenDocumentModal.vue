@@ -12,10 +12,17 @@ const emit = defineEmits<{
 const { documents, loading, error } = useBlogDocuments()
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
-type SortKey = 'date' | 'title'
+type SortKey = 'newest' | 'oldest' | 'title-asc' | 'title-desc'
 const search = ref('')
-const sortBy = ref<SortKey>('date')
+const sortBy = ref<SortKey>('newest')
 const hoveredId = ref<string | null>(null)
+
+const sortOptions: { value: SortKey; label: string }[] = [
+  { value: 'newest',     label: 'Newest' },
+  { value: 'oldest',     label: 'Oldest' },
+  { value: 'title-asc',  label: 'Title A–Z' },
+  { value: 'title-desc', label: 'Title Z–A' },
+]
 
 const filtered = computed(() => {
   let list = [...documents.value]
@@ -25,10 +32,18 @@ const filtered = computed(() => {
     list = list.filter((d) => d.title?.toLowerCase().includes(q))
   }
 
-  if (sortBy.value === 'title') {
-    list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
-  } else {
-    list.sort((a, b) => (b._updatedAt > a._updatedAt ? 1 : -1))
+  switch (sortBy.value) {
+    case 'oldest':
+      list.sort((a, b) => (a._updatedAt > b._updatedAt ? 1 : -1))
+      break
+    case 'title-asc':
+      list.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''))
+      break
+    case 'title-desc':
+      list.sort((a, b) => (b.title ?? '').localeCompare(a.title ?? ''))
+      break
+    default: // newest
+      list.sort((a, b) => (b._updatedAt > a._updatedAt ? 1 : -1))
   }
 
   return list
@@ -60,10 +75,11 @@ function select(doc: BlogDocument) {
         autofocus
         spellcheck="false"
       />
-      <div class="sort-toggle">
-        <button :class="{ active: sortBy === 'date' }" @click="sortBy = 'date'">Recent</button>
-        <button :class="{ active: sortBy === 'title' }" @click="sortBy = 'title'">Title</button>
-      </div>
+      <select v-model="sortBy" class="sort-select">
+        <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+          {{ opt.label }}
+        </option>
+      </select>
     </div>
 
     <!-- Loading -->
@@ -125,30 +141,20 @@ function select(doc: BlogDocument) {
 .search::placeholder { color: var(--ctp-subtext0); }
 .search:focus { border-color: var(--ctp-mauve); }
 
-.sort-toggle {
-  display: flex;
+.sort-select {
   background: var(--ctp-surface0);
+  border: 1px solid var(--ctp-surface1);
   border-radius: 6px;
-  padding: 2px;
-  gap: 2px;
-  flex-shrink: 0;
-}
-
-.sort-toggle button {
-  border: none;
-  background: transparent;
-  color: var(--ctp-subtext1);
-  font-size: 0.78rem;
-  padding: 0.3rem 0.6rem;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.sort-toggle button.active {
-  background: var(--ctp-surface2);
   color: var(--ctp-text);
+  font-size: 0.8rem;
+  padding: 0.45rem 0.6rem;
+  outline: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
 }
+
+.sort-select:focus { border-color: var(--ctp-mauve); }
 
 /* ── Status messages ───────────────────────────────────────────────────────── */
 .status {
