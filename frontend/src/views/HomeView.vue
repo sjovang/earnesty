@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import { useSettingsStore } from '../stores/settings'
-import { useEditorStore } from '../stores/editor'
+import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import AppLogo from '../components/AppLogo.vue'
 
 const { settings } = useSettingsStore()
@@ -14,7 +14,8 @@ const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
 <p>No distractions. No formatting toolbars. Just you and the blank page.</p>
 <p>Select any part of this text and start typing to replace it — or click anywhere to place your cursor and begin.</p>`
 
-const isIntro = ref(true)
+const savedContent = localStorage.getItem(CONTENT_KEY)
+const isIntro = ref(!savedContent)
 
 // ── Typewriter scroll ─────────────────────────────────────────────────────────
 const CURSOR_RATIO = 2 / 3
@@ -61,11 +62,12 @@ const tiptap = useEditor({
       HTMLAttributes: { rel: 'noopener noreferrer' },
     }),
   ],
-  content: INTRO_HTML,
+  content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
   onUpdate({ editor }) {
     if (isIntro.value) isIntro.value = false
     editorStore.setContent(editor.getText())
+    localStorage.setItem(CONTENT_KEY, editor.getHTML())
     requestAnimationFrame(scrollToCaret)
   },
   onSelectionUpdate() {
@@ -84,6 +86,7 @@ watch(
   (html) => {
     if (html === null || !tiptap.value) return
     tiptap.value.commands.setContent(html, false)
+    localStorage.setItem(CONTENT_KEY, html)
     editorStore.consumePendingHtml()
     isIntro.value = false
     window.scrollTo({ top: 0 })
