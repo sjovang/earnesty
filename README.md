@@ -52,6 +52,18 @@ The Aspire dashboard will show all running resources and their URLs. The Vue fro
 cd frontend && npm run dev
 ```
 
+## Live reload
+
+Live reload works automatically — no extra configuration needed.
+
+**Frontend (Vue/Vite):** Vite's built-in HMR (Hot Module Replacement) is always active during `npm run dev`. Saving any `.vue`, `.ts`, or `.css` file pushes the change to the browser instantly without a full page reload.
+
+**AppHost (.NET):** The AppHost itself rarely needs restarting since it only orchestrates the frontend. If you do need to pick up changes to `.cs` files, use `dotnet watch` instead of `dotnet run`:
+
+```sh
+dotnet watch --project Ernesty.AppHost
+```
+
 ## Building for production
 
 ```sh
