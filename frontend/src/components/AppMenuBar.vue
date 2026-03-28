@@ -141,5 +141,11 @@ kbd {
   background: var(--ctp-surface0);
   color: var(--ctp-subtext0);
   line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.menubar__item:hover kbd {
+  opacity: 1;
 }
 </style>
