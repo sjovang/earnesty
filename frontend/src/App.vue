@@ -36,7 +36,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     @new="newDocument"
     @open="showOpen = true"
     @info="showInfo = true"
-    @publish="/* TODO: publish modal */"
+    @publish="() => {}"
     @help="showHelp = true"
   />
   <RouterView />
