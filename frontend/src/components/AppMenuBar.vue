@@ -34,9 +34,9 @@ defineEmits<{
 <style scoped>
 .menubar {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -52,8 +52,10 @@ defineEmits<{
   gap: 1rem;
   padding: 0.5rem 1.25rem;
   background: var(--ctp-mantle);
-  border-bottom: 1px solid var(--ctp-surface0);
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 8px;
   backdrop-filter: blur(8px);
+  white-space: nowrap;
 }
 
 .menubar__brand {
