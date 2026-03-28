@@ -8,6 +8,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { createLowlight, common } from 'lowlight'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
+import { tiptapJsonToPortableText, saveDocument, hasWriteAccess, type TiptapNode } from '../services/sanity'
 import AppLogo from '../components/AppLogo.vue'
 
 const lowlight = createLowlight(common)
@@ -21,6 +22,30 @@ const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
+
+// ── Autosave ──────────────────────────────────────────────────────────────────
+const AUTOSAVE_DELAY = 1500
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+async function doAutosave(json: TiptapNode) {
+  const doc = editorStore.activeDocument
+  if (!doc || !hasWriteAccess()) return
+  editorStore.setSaveStatus('saving')
+  try {
+    await saveDocument(doc._id, tiptapJsonToPortableText(json))
+    editorStore.setSaveStatus('saved')
+  } catch (err) {
+    console.error('[autosave] failed:', err)
+    editorStore.setSaveStatus('error')
+  }
+}
+
+function scheduleAutosave(json: TiptapNode) {
+  if (!editorStore.activeDocument || !hasWriteAccess()) return
+  if (saveTimer) clearTimeout(saveTimer)
+  editorStore.setSaveStatus('saving') // immediate feedback
+  saveTimer = setTimeout(() => doAutosave(json), AUTOSAVE_DELAY)
+}
 
 // ── Typewriter scroll ─────────────────────────────────────────────────────────
 const CURSOR_RATIO = 2 / 3
@@ -75,6 +100,7 @@ const tiptap = useEditor({
     if (isIntro.value) isIntro.value = false
     editorStore.setContent(editor.getText())
     localStorage.setItem(CONTENT_KEY, editor.getHTML())
+    scheduleAutosave(editor.getJSON() as TiptapNode)
     requestAnimationFrame(scrollToCaret)
   },
   onSelectionUpdate() {
@@ -85,7 +111,10 @@ const tiptap = useEditor({
   },
 })
 
-onBeforeUnmount(() => tiptap.value?.destroy())
+onBeforeUnmount(() => {
+  tiptap.value?.destroy()
+  if (saveTimer) clearTimeout(saveTimer)
+})
 
 // ── Load document from store ──────────────────────────────────────────────────
 watch(

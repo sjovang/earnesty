@@ -38,6 +38,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 <template>
   <AppMenuBar
     :document-title="editorStore.activeDocument?.title"
+    :save-status="editorStore.saveStatus"
     @new="showNew = true"
     @open="showOpen = true"
     @info="showInfo = true"

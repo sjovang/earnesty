@@ -211,6 +211,127 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
+// ── Tiptap JSON → PortableText ────────────────────────────────────────────────
+
+export interface TiptapNode {
+  type: string
+  text?: string
+  attrs?: Record<string, unknown>
+  content?: TiptapNode[]
+  marks?: { type: string; attrs?: Record<string, unknown> }[]
+}
+
+/** Converts a Tiptap editor JSON document to Sanity PortableText blocks. */
+export function tiptapJsonToPortableText(doc: TiptapNode): SanityBodyBlock[] {
+  const blocks: SanityBodyBlock[] = []
+  for (const node of doc.content ?? []) {
+    convertTiptapNode(node, blocks)
+  }
+  return blocks
+}
+
+function convertTiptapNode(
+  node: TiptapNode,
+  blocks: SanityBodyBlock[],
+  listItem?: 'bullet' | 'number',
+) {
+  switch (node.type) {
+    case 'paragraph': {
+      const { spans, markDefs } = convertInlineNodes(node.content ?? [])
+      blocks.push({ _key: key(), _type: 'block', style: 'normal', listItem, children: spans, markDefs })
+      break
+    }
+    case 'heading': {
+      const lvl = (node.attrs?.level as number) ?? 1
+      const style = (['h1', 'h2', 'h3', 'h4'][Math.min(lvl, 4) - 1] ?? 'h4') as SanityBlock['style']
+      const { spans, markDefs } = convertInlineNodes(node.content ?? [])
+      blocks.push({ _key: key(), _type: 'block', style, children: spans, markDefs })
+      break
+    }
+    case 'blockquote': {
+      // Tiptap wraps blockquote content in a paragraph; unwrap it
+      for (const inner of node.content ?? []) {
+        const { spans, markDefs } = convertInlineNodes(inner.content ?? [])
+        blocks.push({ _key: key(), _type: 'block', style: 'blockquote', children: spans, markDefs })
+      }
+      break
+    }
+    case 'bulletList':
+      for (const item of node.content ?? [])
+        for (const child of item.content ?? [])
+          convertTiptapNode(child, blocks, 'bullet')
+      break
+    case 'orderedList':
+      for (const item of node.content ?? [])
+        for (const child of item.content ?? [])
+          convertTiptapNode(child, blocks, 'number')
+      break
+    case 'codeBlock': {
+      const code = node.content?.map((n) => n.text ?? '').join('') ?? ''
+      const language = (node.attrs?.language as string | null) ?? undefined
+      blocks.push({ _key: key(), _type: 'code', code, language } as SanityCodeBlock)
+      break
+    }
+    case 'image': {
+      const src = (node.attrs?.src as string) ?? ''
+      // Only round-trip images that came from our Sanity CDN
+      const cdnMatch = src.match(/cdn\.sanity\.io\/images\/[^/]+\/[^/]+\/(.+)$/)
+      if (cdnMatch) {
+        const ref = 'image-' + cdnMatch[1].replace(/\.([^.]+)$/, '-$1')
+        blocks.push({
+          _key: key(),
+          _type: 'image',
+          asset: { _ref: ref, _type: 'reference' },
+          alt: (node.attrs?.alt as string) ?? '',
+        } as SanityImageBlock)
+      }
+      break
+    }
+  }
+}
+
+function convertInlineNodes(
+  nodes: TiptapNode[],
+): { spans: SanitySpan[]; markDefs: SanityMarkDef[] } {
+  const spans: SanitySpan[] = []
+  const markDefs: SanityMarkDef[] = []
+
+  for (const node of nodes) {
+    if (node.type === 'hardBreak') {
+      spans.push({ _key: key(), _type: 'span', text: '\n', marks: [] })
+      continue
+    }
+    if (node.type !== 'text') continue
+
+    const marks: string[] = []
+    for (const mark of node.marks ?? []) {
+      if (mark.type === 'bold') marks.push('strong')
+      else if (mark.type === 'italic') marks.push('em')
+      else if (mark.type === 'code') marks.push('code')
+      else if (mark.type === 'link') {
+        const k = key().slice(0, 8)
+        markDefs.push({ _key: k, _type: 'link', href: (mark.attrs?.href as string) ?? '' })
+        marks.push(k)
+      }
+    }
+    spans.push({ _key: key(), _type: 'span', text: node.text ?? '', marks })
+  }
+
+  if (spans.length === 0) spans.push({ _key: key(), _type: 'span', text: '', marks: [] })
+  return { spans, markDefs }
+}
+
+function key() {
+  return crypto.randomUUID()
+}
+
+// ── Mutations ─────────────────────────────────────────────────────────────────
+
+/** Saves PortableText blocks back to a Sanity document. */
+export async function saveDocument(id: string, blocks: SanityBodyBlock[]): Promise<void> {
+  await sanityWriteClient.patch(id).set({ body: blocks }).commit()
+}
+
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /** Fetch list of blog documents (title + enough body blocks for 50-word preview). */

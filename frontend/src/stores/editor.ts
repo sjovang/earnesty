@@ -39,12 +39,15 @@ function slugify(text: string): string {
     .replace(/-+/g, '-')
 }
 
+export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 export const useEditorStore = defineStore('editor', () => {
   const saved = loadSession()
 
   const activeDocument = ref<BlogDocument | null>(saved?.activeDocument ?? null)
   const currentContent = ref<string>('')
   const pendingHtml = ref<string | null>(null)
+  const saveStatus = ref<SaveStatus>('idle')
   const meta = ref<DocumentMeta>(
     saved?.meta ?? { title: '', slug: '', publishedAt: '', tags: [] },
   )
@@ -82,6 +85,13 @@ export const useEditorStore = defineStore('editor', () => {
     saveSession(activeDocument.value, meta.value)
   }
 
+  function setSaveStatus(status: SaveStatus) {
+    saveStatus.value = status
+    if (status === 'saved') {
+      setTimeout(() => { if (saveStatus.value === 'saved') saveStatus.value = 'idle' }, 2500)
+    }
+  }
+
   function consumePendingHtml(): string | null {
     const html = pendingHtml.value
     pendingHtml.value = null
@@ -92,11 +102,13 @@ export const useEditorStore = defineStore('editor', () => {
     activeDocument,
     currentContent,
     pendingHtml,
+    saveStatus,
     meta,
     openDocument,
     clearDocument,
     setContent,
     updateMeta,
+    setSaveStatus,
     slugify,
     consumePendingHtml,
   }
