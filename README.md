@@ -1,4 +1,4 @@
-# Ernesty
+# Earnesty
 
 A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and a [Sanity.io](https://sanity.io) backend, orchestrated by [.NET Aspire](https://aspire.dev).
 

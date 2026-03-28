@@ -20,7 +20,7 @@ const shortcuts = [
 <template>
   <BaseModal title="Help" @close="$emit('close')">
     <p class="intro">
-      Ernesty is a distraction-free writing environment. Click anywhere on the page and start
+      Earnesty is a distraction-free writing environment. Click anywhere on the page and start
       typing. Your words are the only thing that matters.
     </p>
 

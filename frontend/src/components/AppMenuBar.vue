@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AppLogo from './AppLogo.vue'
+
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
@@ -16,7 +18,10 @@ defineEmits<{
 <template>
   <nav class="menubar" aria-label="Application menu">
     <div class="menubar__inner">
-      <span class="menubar__brand">Ernesty</span>
+      <span class="menubar__brand">
+        <AppLogo :size="16" />
+        Earnesty
+      </span>
       <span v-if="documentTitle" class="menubar__doc-title">{{ documentTitle }}</span>
       <div class="menubar__items" role="menubar">
         <button role="menuitem" class="menubar__item" @click="$emit('new')">
@@ -72,6 +77,9 @@ defineEmits<{
 }
 
 .menubar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.08em;

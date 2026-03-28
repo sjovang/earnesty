@@ -2,11 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore } from '../stores/editor'
+import AppLogo from '../components/AppLogo.vue'
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
 
-const INTRO = `Ernesty is your space for focused writing.
+const INTRO = `Earnesty is your space for focused writing.
 
 No distractions. No formatting toolbars. Just you and the blank page.
 
@@ -88,6 +89,12 @@ onMounted(() => {
     class="editor"
     :style="{ fontSize: settings.fontSize + 'px', lineHeight: settings.lineSpacing }"
   >
+    <!-- Logo lockup shown only while intro is displayed -->
+    <div v-if="isIntro" class="intro-lockup" aria-hidden="true">
+      <AppLogo :size="48" class="intro-lockup__logo" />
+      <span class="intro-lockup__name">Earnesty</span>
+    </div>
+
     <div
       ref="editor"
       class="editor__content"
@@ -108,6 +115,28 @@ onMounted(() => {
   /* Top padding pushes initial content down; bottom lets the last line scroll up. */
   padding: 40vh 1.5rem 50vh;
   min-height: 100vh;
+}
+
+.intro-lockup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+  color: var(--ctp-subtext0);
+  opacity: 0.5;
+}
+
+.intro-lockup__logo {
+  display: block;
+}
+
+.intro-lockup__name {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .editor__content {

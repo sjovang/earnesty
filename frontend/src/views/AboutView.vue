@@ -2,7 +2,7 @@
 
 <template>
   <main class="about">
-    <h1>Ernesty</h1>
+    <h1>Earnesty</h1>
     <p>A minimal, focused writing environment.</p>
   </main>
 </template>
