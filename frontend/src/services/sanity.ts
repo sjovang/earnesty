@@ -7,6 +7,19 @@ export const sanityClient = createClient({
   useCdn: true,
 })
 
+/** Write client — requires VITE_SANITY_TOKEN with editor role. */
+export const sanityWriteClient = createClient({
+  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
+  dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
+  apiVersion: '2024-01-01',
+  useCdn: false,
+  token: import.meta.env.VITE_SANITY_TOKEN,
+})
+
+export function hasWriteAccess(): boolean {
+  return !!import.meta.env.VITE_SANITY_TOKEN
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SanitySpan {
@@ -163,4 +176,22 @@ export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
     `*[_type == "blog" && _id == $id][0]{ _id, title, _updatedAt, body }`,
     { id },
   )
+}
+
+/**
+ * Creates a new blog draft in Sanity.
+ * Draft documents have an _id prefixed with "drafts." so they are not
+ * published until explicitly promoted to a live document.
+ */
+export async function createDraftBlogDocument(
+  title: string,
+  slug: string,
+): Promise<BlogDocument> {
+  const id = `drafts.${crypto.randomUUID()}`
+  return sanityWriteClient.create({
+    _id: id,
+    _type: 'blog',
+    title,
+    slug: { _type: 'slug', current: slug },
+  }) as Promise<BlogDocument>
 }
