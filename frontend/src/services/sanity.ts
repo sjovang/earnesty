@@ -52,23 +52,46 @@ export interface SanityBlock {
   markDefs: SanityMarkDef[]
 }
 
+export interface SanityImageBlock {
+  _key: string
+  _type: 'image'
+  asset: { _ref: string; _type: 'reference' }
+  alt?: string
+}
+
+export interface SanityCodeBlock {
+  _key: string
+  _type: 'code'
+  code: string
+  language?: string
+  filename?: string
+}
+
+export type SanityBodyBlock = SanityBlock | SanityImageBlock | SanityCodeBlock
+
 export interface BlogDocument {
   _id: string
   _updatedAt: string
   title: string
-  body?: SanityBlock[]
+  body?: SanityBodyBlock[]
 }
 
-// ── Preview extraction ────────────────────────────────────────────────────────
+/** Converts a Sanity image asset ref to a CDN URL. */
+export function buildSanityImageUrl(ref: string): string {
+  const projectId = import.meta.env.VITE_SANITY_PROJECT_ID
+  const dataset = import.meta.env.VITE_SANITY_DATASET ?? 'production'
+  // ref format: "image-{id}-{WxH}-{ext}"  →  "{id}-{WxH}.{ext}"
+  const filename = ref.replace(/^image-/, '').replace(/-([a-z0-9]+)$/i, '.$1')
+  return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename}`
+}
 
 /** Returns the first paragraph — or first 50 words if that paragraph is longer. */
-export function extractPreview(blocks: SanityBlock[] | undefined): string {
+export function extractPreview(blocks: SanityBodyBlock[] | undefined): string {
   if (!blocks?.length) return ''
 
-  // Find the first non-empty text block
   const first = blocks.find(
-    (b) => b._type === 'block' && b.children.some((c) => c.text?.trim()),
-  )
+    (b) => b._type === 'block' && (b as SanityBlock).children.some((c) => c.text?.trim()),
+  ) as SanityBlock | undefined
   if (!first) return ''
 
   const text = first.children
@@ -85,7 +108,7 @@ export function extractPreview(blocks: SanityBlock[] | undefined): string {
 // ── PortableText → HTML ───────────────────────────────────────────────────────
 
 /** Converts a Sanity PortableText body to HTML Tiptap can load. */
-export function portableTextToHtml(blocks: SanityBlock[] | undefined): string {
+export function portableTextToHtml(blocks: SanityBodyBlock[] | undefined): string {
   if (!blocks?.length) return '<p></p>'
 
   const parts: string[] = []
@@ -94,35 +117,60 @@ export function portableTextToHtml(blocks: SanityBlock[] | undefined): string {
   while (i < blocks.length) {
     const block = blocks[i]
 
-    // List items — collect consecutive items of the same list type & level
-    if (block.listItem) {
-      const tag = block.listItem === 'bullet' ? 'ul' : 'ol'
+    // Image block
+    if (block._type === 'image') {
+      const img = block as SanityImageBlock
+      const src = buildSanityImageUrl(img.asset._ref)
+      const alt = escapeHtml(img.alt ?? '')
+      parts.push(`<img src="${src}" alt="${alt}" />`)
+      i++
+      continue
+    }
+
+    // Code block (from @sanity/code-input)
+    if (block._type === 'code') {
+      const cb = block as SanityCodeBlock
+      const lang = cb.language ? ` class="language-${escapeHtml(cb.language)}"` : ''
+      parts.push(`<pre><code${lang}>${escapeHtml(cb.code)}</code></pre>`)
+      i++
+      continue
+    }
+
+    const textBlock = block as SanityBlock
+
+    // List items — collect consecutive items of the same list type
+    if (textBlock.listItem) {
+      const tag = textBlock.listItem === 'bullet' ? 'ul' : 'ol'
       const items: string[] = []
-      while (i < blocks.length && blocks[i].listItem === block.listItem) {
-        items.push(`<li>${renderInline(blocks[i])}</li>`)
+      while (
+        i < blocks.length &&
+        blocks[i]._type === 'block' &&
+        (blocks[i] as SanityBlock).listItem === textBlock.listItem
+      ) {
+        items.push(`<li>${renderInline(blocks[i] as SanityBlock)}</li>`)
         i++
       }
       parts.push(`<${tag}>${items.join('')}</${tag}>`)
       continue
     }
 
-    // Regular blocks
-    switch (block.style) {
+    // Regular text blocks
+    switch (textBlock.style) {
       case 'h1':
-        parts.push(`<h1>${renderInline(block)}</h1>`)
+        parts.push(`<h1>${renderInline(textBlock)}</h1>`)
         break
       case 'h2':
-        parts.push(`<h2>${renderInline(block)}</h2>`)
+        parts.push(`<h2>${renderInline(textBlock)}</h2>`)
         break
       case 'h3':
       case 'h4':
-        parts.push(`<h3>${renderInline(block)}</h3>`)
+        parts.push(`<h3>${renderInline(textBlock)}</h3>`)
         break
       case 'blockquote':
-        parts.push(`<blockquote><p>${renderInline(block)}</p></blockquote>`)
+        parts.push(`<blockquote><p>${renderInline(textBlock)}</p></blockquote>`)
         break
       default:
-        parts.push(`<p>${renderInline(block)}</p>`)
+        parts.push(`<p>${renderInline(textBlock)}</p>`)
     }
     i++
   }

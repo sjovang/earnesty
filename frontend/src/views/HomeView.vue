@@ -3,9 +3,14 @@ import { ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { createLowlight, common } from 'lowlight'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import AppLogo from '../components/AppLogo.vue'
+
+const lowlight = createLowlight(common)
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
@@ -55,12 +60,14 @@ function scrollToCaret() {
 // ── Tiptap editor ─────────────────────────────────────────────────────────────
 const tiptap = useEditor({
   extensions: [
-    StarterKit,
+    StarterKit.configure({ codeBlock: false }), // replaced by CodeBlockLowlight
     Link.configure({
       openOnClick: false,
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer' },
     }),
+    Image.configure({ inline: false, allowBase64: false }),
+    CodeBlockLowlight.configure({ lowlight }),
   ],
   content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
@@ -253,7 +260,16 @@ watch(
   border-radius: 4px;
 }
 
-/* ── Code block ───────────────────────────────────────────────────────────── */
+/* ── Images ───────────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 1.5em 0;
+  display: block;
+}
+
+/* ── Code block (lowlight) ────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror pre) {
   background: var(--ctp-surface0);
   color: var(--ctp-text);
@@ -271,6 +287,45 @@ watch(
   color: inherit;
   font-size: 1em;
 }
+
+/* Catppuccin Mocha-style highlight tokens */
+.editor__content :deep(.hljs-keyword),
+.editor__content :deep(.hljs-operator),
+.editor__content :deep(.hljs-punctuation) { color: var(--ctp-mauve); }
+
+.editor__content :deep(.hljs-string),
+.editor__content :deep(.hljs-template-string),
+.editor__content :deep(.hljs-template-tag) { color: var(--ctp-green); }
+
+.editor__content :deep(.hljs-number),
+.editor__content :deep(.hljs-literal),
+.editor__content :deep(.hljs-built_in) { color: var(--ctp-peach); }
+
+.editor__content :deep(.hljs-comment),
+.editor__content :deep(.hljs-meta) { color: var(--ctp-overlay1); font-style: italic; }
+
+.editor__content :deep(.hljs-function),
+.editor__content :deep(.hljs-title),
+.editor__content :deep(.hljs-title.function_) { color: var(--ctp-blue); }
+
+.editor__content :deep(.hljs-type),
+.editor__content :deep(.hljs-class) { color: var(--ctp-yellow); }
+
+.editor__content :deep(.hljs-variable),
+.editor__content :deep(.hljs-params) { color: var(--ctp-text); }
+
+.editor__content :deep(.hljs-attr),
+.editor__content :deep(.hljs-attribute) { color: var(--ctp-sapphire); }
+
+.editor__content :deep(.hljs-tag) { color: var(--ctp-red); }
+
+.editor__content :deep(.hljs-regexp),
+.editor__content :deep(.hljs-link) { color: var(--ctp-sky); }
+
+.editor__content :deep(.hljs-section) { color: var(--ctp-sky); font-weight: bold; }
+
+.editor__content :deep(.hljs-selector-class),
+.editor__content :deep(.hljs-selector-id) { color: var(--ctp-flamingo); }
 
 /* ── Horizontal rule ──────────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror hr) {
