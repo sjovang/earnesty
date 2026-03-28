@@ -4,12 +4,14 @@ import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
 import HelpModal from './components/HelpModal.vue'
+import { useEditorStore } from './stores/editor'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
+const editorStore = useEditorStore()
 
 function newDocument() {
-  // TODO: prompt to save current content, then clear editor
+  editorStore.clearDocument()
   window.location.reload()
 }
 
@@ -26,6 +28,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 <template>
   <AppMenuBar
+    :document-title="editorStore.activeDocument?.title"
     @new="newDocument"
     @open="showOpen = true"
     @help="showHelp = true"

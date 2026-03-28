@@ -2,6 +2,8 @@
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
+defineProps<{ documentTitle?: string }>()
+
 defineEmits<{
   new: []
   open: []
@@ -13,6 +15,7 @@ defineEmits<{
   <nav class="menubar" aria-label="Application menu">
     <div class="menubar__inner">
       <span class="menubar__brand">Ernesty</span>
+      <span v-if="documentTitle" class="menubar__doc-title">{{ documentTitle }}</span>
       <div class="menubar__items" role="menubar">
         <button role="menuitem" class="menubar__item" @click="$emit('new')">
           New
@@ -65,6 +68,17 @@ defineEmits<{
   text-transform: uppercase;
   color: var(--ctp-subtext1);
   margin-right: 0.5rem;
+}
+
+.menubar__doc-title {
+  font-size: 0.82rem;
+  color: var(--ctp-subtext0);
+  padding: 0 0.5rem;
+  border-left: 1px solid var(--ctp-surface1);
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .menubar__items {
