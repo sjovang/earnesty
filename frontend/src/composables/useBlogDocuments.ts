@@ -9,8 +9,10 @@ export function useBlogDocuments() {
   onMounted(async () => {
     try {
       documents.value = await fetchBlogDocuments()
-    } catch {
-      error.value = 'Could not load documents. Check your Sanity configuration.'
+    } catch (e) {
+      console.error('[useBlogDocuments] fetch failed:', e)
+      const msg = e instanceof Error ? e.message : String(e)
+      error.value = `Could not load documents: ${msg}`
     } finally {
       loading.value = false
     }

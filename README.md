@@ -41,7 +41,7 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
 Start the full stack through the Aspire AppHost — this launches the Vue dev server and opens the Aspire dashboard:
 
 ```sh
-dotnet run --project Ernesty.AppHost
+dotnet run --project Earnesty.AppHost
 ```
 
 The Aspire dashboard will show all running resources and their URLs. The Vue frontend is available at the URL shown for the `frontend` resource (typically <http://localhost:5173>).
@@ -61,7 +61,7 @@ Live reload works automatically — no extra configuration needed.
 **AppHost (.NET):** The AppHost itself rarely needs restarting since it only orchestrates the frontend. If you do need to pick up changes to `.cs` files, use `dotnet watch` instead of `dotnet run`:
 
 ```sh
-dotnet watch --project Ernesty.AppHost
+dotnet watch --project Earnesty.AppHost
 ```
 
 ## Building for production

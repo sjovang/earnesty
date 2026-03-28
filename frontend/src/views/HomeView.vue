@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { createLowlight, common } from 'lowlight'
 import { useSettingsStore } from '../stores/settings'
-import { useEditorStore } from '../stores/editor'
+import { useEditorStore, CONTENT_KEY } from '../stores/editor'
+import { tiptapJsonToPortableText, saveDocument, hasWriteAccess, type TiptapNode } from '../services/sanity'
 import AppLogo from '../components/AppLogo.vue'
+
+const lowlight = createLowlight(common)
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
@@ -14,7 +20,32 @@ const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
 <p>No distractions. No formatting toolbars. Just you and the blank page.</p>
 <p>Select any part of this text and start typing to replace it — or click anywhere to place your cursor and begin.</p>`
 
-const isIntro = ref(true)
+const savedContent = localStorage.getItem(CONTENT_KEY)
+const isIntro = ref(!savedContent)
+
+// ── Autosave ──────────────────────────────────────────────────────────────────
+const AUTOSAVE_DELAY = 1500
+let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+async function doAutosave(json: TiptapNode) {
+  const doc = editorStore.activeDocument
+  if (!doc || !hasWriteAccess()) return
+  editorStore.setSaveStatus('saving')
+  try {
+    await saveDocument(doc._id, tiptapJsonToPortableText(json))
+    editorStore.setSaveStatus('saved')
+  } catch (err) {
+    console.error('[autosave] failed:', err)
+    editorStore.setSaveStatus('error')
+  }
+}
+
+function scheduleAutosave(json: TiptapNode) {
+  if (!editorStore.activeDocument || !hasWriteAccess()) return
+  if (saveTimer) clearTimeout(saveTimer)
+  editorStore.setSaveStatus('saving') // immediate feedback
+  saveTimer = setTimeout(() => doAutosave(json), AUTOSAVE_DELAY)
+}
 
 // ── Typewriter scroll ─────────────────────────────────────────────────────────
 const CURSOR_RATIO = 2 / 3
@@ -54,18 +85,22 @@ function scrollToCaret() {
 // ── Tiptap editor ─────────────────────────────────────────────────────────────
 const tiptap = useEditor({
   extensions: [
-    StarterKit,
+    StarterKit.configure({ codeBlock: false }), // replaced by CodeBlockLowlight
     Link.configure({
       openOnClick: false,
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer' },
     }),
+    Image.configure({ inline: false, allowBase64: false }),
+    CodeBlockLowlight.configure({ lowlight }),
   ],
-  content: INTRO_HTML,
+  content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
   onUpdate({ editor }) {
     if (isIntro.value) isIntro.value = false
     editorStore.setContent(editor.getText())
+    localStorage.setItem(CONTENT_KEY, editor.getHTML())
+    scheduleAutosave(editor.getJSON() as TiptapNode)
     requestAnimationFrame(scrollToCaret)
   },
   onSelectionUpdate() {
@@ -76,7 +111,24 @@ const tiptap = useEditor({
   },
 })
 
-onBeforeUnmount(() => tiptap.value?.destroy())
+onBeforeUnmount(() => {
+  tiptap.value?.destroy()
+  if (saveTimer) clearTimeout(saveTimer)
+})
+
+// ── Load document from store ──────────────────────────────────────────────────
+watch(
+  () => editorStore.pendingHtml,
+  (html) => {
+    if (html === null || !tiptap.value) return
+    tiptap.value.commands.setContent(html, false)
+    localStorage.setItem(CONTENT_KEY, html)
+    editorStore.consumePendingHtml()
+    isIntro.value = false
+    window.scrollTo({ top: 0 })
+    requestAnimationFrame(scrollToCaret)
+  },
+)
 </script>
 
 <template>
@@ -237,7 +289,16 @@ onBeforeUnmount(() => tiptap.value?.destroy())
   border-radius: 4px;
 }
 
-/* ── Code block ───────────────────────────────────────────────────────────── */
+/* ── Images ───────────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin: 1.5em 0;
+  display: block;
+}
+
+/* ── Code block (lowlight) ────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror pre) {
   background: var(--ctp-surface0);
   color: var(--ctp-text);
@@ -255,6 +316,45 @@ onBeforeUnmount(() => tiptap.value?.destroy())
   color: inherit;
   font-size: 1em;
 }
+
+/* Catppuccin Mocha-style highlight tokens */
+.editor__content :deep(.hljs-keyword),
+.editor__content :deep(.hljs-operator),
+.editor__content :deep(.hljs-punctuation) { color: var(--ctp-mauve); }
+
+.editor__content :deep(.hljs-string),
+.editor__content :deep(.hljs-template-string),
+.editor__content :deep(.hljs-template-tag) { color: var(--ctp-green); }
+
+.editor__content :deep(.hljs-number),
+.editor__content :deep(.hljs-literal),
+.editor__content :deep(.hljs-built_in) { color: var(--ctp-peach); }
+
+.editor__content :deep(.hljs-comment),
+.editor__content :deep(.hljs-meta) { color: var(--ctp-overlay1); font-style: italic; }
+
+.editor__content :deep(.hljs-function),
+.editor__content :deep(.hljs-title),
+.editor__content :deep(.hljs-title.function_) { color: var(--ctp-blue); }
+
+.editor__content :deep(.hljs-type),
+.editor__content :deep(.hljs-class) { color: var(--ctp-yellow); }
+
+.editor__content :deep(.hljs-variable),
+.editor__content :deep(.hljs-params) { color: var(--ctp-text); }
+
+.editor__content :deep(.hljs-attr),
+.editor__content :deep(.hljs-attribute) { color: var(--ctp-sapphire); }
+
+.editor__content :deep(.hljs-tag) { color: var(--ctp-red); }
+
+.editor__content :deep(.hljs-regexp),
+.editor__content :deep(.hljs-link) { color: var(--ctp-sky); }
+
+.editor__content :deep(.hljs-section) { color: var(--ctp-sky); font-weight: bold; }
+
+.editor__content :deep(.hljs-selector-class),
+.editor__content :deep(.hljs-selector-id) { color: var(--ctp-flamingo); }
 
 /* ── Horizontal rule ──────────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror hr) {
