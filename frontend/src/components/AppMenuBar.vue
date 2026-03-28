@@ -132,11 +132,11 @@ function onLeave() {
 .menubar__inner {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 0.4rem 1rem;
+  gap: 1.25rem;
+  padding: 0.6rem 1.25rem;
   background: var(--ctp-mantle);
   border: 1px solid var(--ctp-surface0);
-  border-radius: 8px;
+  border-radius: 10px;
   backdrop-filter: blur(8px);
   white-space: nowrap;
 }
@@ -150,13 +150,13 @@ function onLeave() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ctp-subtext1);
-  margin-right: 0.25rem;
+  margin-right: 0.5rem;
 }
 
 .menubar__doc-title {
   font-size: 0.82rem;
   color: var(--ctp-subtext0);
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   border-left: 1px solid var(--ctp-surface1);
   max-width: 260px;
   overflow: hidden;
@@ -171,15 +171,16 @@ function onLeave() {
 
 .menubar__sep {
   width: 1px;
-  height: 1rem;
+  height: 1.1rem;
   background: var(--ctp-surface1);
   flex-shrink: 0;
+  margin: 0 0.15rem;
 }
 
 .menubar__item {
-  padding: 0.25rem 0.65rem;
+  padding: 0.35rem 0.8rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   background: transparent;
   color: var(--ctp-subtext1);
   font-size: 0.85rem;
@@ -207,7 +208,7 @@ function onLeave() {
   align-items: center;
   gap: 0.3rem;
   font-size: 0.72rem;
-  padding: 0 0.25rem;
+  padding: 0 0.5rem;
   border-left: 1px solid var(--ctp-surface1);
 }
 
