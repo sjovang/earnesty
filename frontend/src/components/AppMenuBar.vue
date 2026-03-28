@@ -7,6 +7,8 @@ defineProps<{ documentTitle?: string }>()
 defineEmits<{
   new: []
   open: []
+  info: []
+  publish: []
   help: []
 }>()
 </script>
@@ -24,6 +26,14 @@ defineEmits<{
         <button role="menuitem" class="menubar__item" @click="$emit('open')">
           Open
           <kbd>{{ mod }}O</kbd>
+        </button>
+        <button role="menuitem" class="menubar__item" @click="$emit('info')">
+          Info
+          <kbd>{{ mod }}I</kbd>
+        </button>
+        <button role="menuitem" class="menubar__item menubar__item--publish" @click="$emit('publish')">
+          Publish
+          <kbd>{{ mod }}⇧P</kbd>
         </button>
         <button role="menuitem" class="menubar__item" @click="$emit('help')">
           Help
@@ -103,6 +113,15 @@ defineEmits<{
 .menubar__item:hover {
   background: var(--ctp-surface0);
   color: var(--ctp-text);
+}
+
+.menubar__item--publish {
+  color: var(--ctp-green);
+}
+
+.menubar__item--publish:hover {
+  background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
+  color: var(--ctp-green);
 }
 
 kbd {

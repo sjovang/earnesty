@@ -9,6 +9,8 @@ defineEmits<{ close: [] }>()
 const shortcuts = [
   { keys: `${mod}N`, description: 'New document' },
   { keys: `${mod}O`, description: 'Open document' },
+  { keys: `${mod}I`, description: 'Document info' },
+  { keys: `${mod}⇧P`, description: 'Publish' },
   { keys: 'F1', description: 'Show this help' },
   { keys: 'Tab', description: 'Insert tab character' },
   { keys: 'Esc', description: 'Close modal' },

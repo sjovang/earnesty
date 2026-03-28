@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useSettingsStore } from '../stores/settings'
+import { useEditorStore } from '../stores/editor'
 
 const { settings } = useSettingsStore()
+const editorStore = useEditorStore()
 
 const INTRO = `Ernesty is your space for focused writing.
 
@@ -53,6 +55,7 @@ function scrollToCaret() {
 // ── Event handlers ────────────────────────────────────────────────────────────
 function onInput() {
   if (isIntro.value) isIntro.value = false
+  editorStore.setContent(editor.value?.innerText ?? '')
   scrollToCaret()
 }
 
