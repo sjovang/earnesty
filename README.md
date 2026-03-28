@@ -2,6 +2,9 @@
 
 A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and a [Sanity.io](https://sanity.io) backend, orchestrated by [.NET Aspire](https://aspire.dev).
 
+> [!IMPORTANT]
+> I treat this "app" as a vibe coding experiment to try out all kinds of weird stuff. There is zero effort on quality assurance =)
+
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download)
