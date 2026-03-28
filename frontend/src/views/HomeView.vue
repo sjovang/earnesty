@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onBeforeUnmount } from 'vue'
+import { useEditor, EditorContent } from '@tiptap/vue-3'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore } from '../stores/editor'
 import AppLogo from '../components/AppLogo.vue'
@@ -7,17 +10,13 @@ import AppLogo from '../components/AppLogo.vue'
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
 
-const INTRO = `Earnesty is your space for focused writing.
+const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
+<p>No distractions. No formatting toolbars. Just you and the blank page.</p>
+<p>Select any part of this text and start typing to replace it — or click anywhere to place your cursor and begin.</p>`
 
-No distractions. No formatting toolbars. Just you and the blank page.
-
-Select any part of this text and start typing to replace it — or click anywhere to place your cursor and begin.`
-
-const editor = ref<HTMLElement | null>(null)
 const isIntro = ref(true)
 
 // ── Typewriter scroll ─────────────────────────────────────────────────────────
-// Target: cursor sits at 2/3 from the top (= 1/3 from the bottom).
 const CURSOR_RATIO = 2 / 3
 
 function getCaretTop(): number | null {
@@ -35,7 +34,6 @@ function getCaretTop(): number | null {
     clone.insertNode(span)
     rect = span.getBoundingClientRect()
     span.parentNode?.removeChild(span)
-    // Reselect original range
     sel.removeAllRanges()
     sel.addRange(range)
   }
@@ -53,32 +51,32 @@ function scrollToCaret() {
   }
 }
 
-// ── Event handlers ────────────────────────────────────────────────────────────
-function onInput() {
-  if (isIntro.value) isIntro.value = false
-  editorStore.setContent(editor.value?.innerText ?? '')
-  scrollToCaret()
-}
-
-function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Tab') {
-    e.preventDefault()
-    document.execCommand('insertText', false, '\t')
-  }
-}
-
-function onPointerUp() {
-  // Re-anchor after a click repositions the cursor.
-  requestAnimationFrame(scrollToCaret)
-}
-
-// Scroll to caret on initial load so the intro text starts at the right position.
-onMounted(() => {
-  requestAnimationFrame(() => {
-    editor.value?.focus()
-    scrollToCaret()
-  })
+// ── Tiptap editor ─────────────────────────────────────────────────────────────
+const tiptap = useEditor({
+  extensions: [
+    StarterKit,
+    Link.configure({
+      openOnClick: false,
+      autolink: true,
+      HTMLAttributes: { rel: 'noopener noreferrer' },
+    }),
+  ],
+  content: INTRO_HTML,
+  autofocus: 'end',
+  onUpdate({ editor }) {
+    if (isIntro.value) isIntro.value = false
+    editorStore.setContent(editor.getText())
+    requestAnimationFrame(scrollToCaret)
+  },
+  onSelectionUpdate() {
+    requestAnimationFrame(scrollToCaret)
+  },
+  onCreate() {
+    requestAnimationFrame(scrollToCaret)
+  },
 })
+
+onBeforeUnmount(() => tiptap.value?.destroy())
 </script>
 
 <template>
@@ -97,16 +95,9 @@ onMounted(() => {
       </div>
     </Transition>
 
-    <div
-      ref="editor"
-      class="editor__content"
-      :class="{ 'editor__content--intro': isIntro }"
-      contenteditable="true"
-      spellcheck="true"
-      @input="onInput"
-      @keydown="onKeydown"
-      @pointerup="onPointerUp"
-    >{{ INTRO }}</div>
+    <div :class="['editor__content', { 'editor__content--intro': isIntro }]">
+      <EditorContent :editor="tiptap" />
+    </div>
   </main>
 </template>
 
@@ -114,11 +105,11 @@ onMounted(() => {
 .editor {
   max-width: 680px;
   margin: 0 auto;
-  /* Top padding pushes initial content down; bottom lets the last line scroll up. */
   padding: 40vh 1.5rem 50vh;
   min-height: 100vh;
 }
 
+/* ── Intro lockup ─────────────────────────────────────────────────────────── */
 .intro-lockup {
   display: flex;
   flex-direction: column;
@@ -150,31 +141,130 @@ onMounted(() => {
   transform: translateY(-6px);
 }
 
-.editor__content {
+/* ── Editor base ──────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror) {
   outline: none;
-  white-space: pre-wrap;
-  word-break: break-word;
   caret-color: var(--ctp-mauve);
   color: var(--ctp-text);
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  word-break: break-word;
 }
 
-.editor__content--intro {
+.editor__content--intro :deep(.ProseMirror) {
   color: var(--ctp-subtext0);
 }
 
-.editor__content ::selection {
+.editor__content :deep(.ProseMirror ::selection) {
   background-color: var(--ctp-mauve);
   color: var(--ctp-base);
 }
 
+/* ── Paragraphs ───────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror p) {
+  margin: 0 0 1em;
+}
+
+.editor__content :deep(.ProseMirror p:last-child) {
+  margin-bottom: 0;
+}
+
+/* ── Headings ─────────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror h1),
+.editor__content :deep(.ProseMirror h2),
+.editor__content :deep(.ProseMirror h3) {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.6em 0 0.4em;
+  color: var(--ctp-text);
+}
+
+.editor__content :deep(.ProseMirror h1) { font-size: 1.65em; }
+.editor__content :deep(.ProseMirror h2) { font-size: 1.35em; }
+.editor__content :deep(.ProseMirror h3) { font-size: 1.15em; }
+
+/* ── Blockquote ───────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror blockquote) {
+  border-left: 3px solid var(--ctp-mauve);
+  margin: 1.2em 0;
+  padding: 0.15em 1em;
+  color: var(--ctp-subtext1);
+  font-style: italic;
+}
+
+.editor__content :deep(.ProseMirror blockquote p) {
+  margin: 0;
+}
+
+/* ── Lists ────────────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror ul),
+.editor__content :deep(.ProseMirror ol) {
+  padding-left: 1.5em;
+  margin: 0.4em 0 1em;
+}
+
+.editor__content :deep(.ProseMirror li) {
+  margin: 0.25em 0;
+}
+
+.editor__content :deep(.ProseMirror li p) {
+  margin: 0;
+}
+
+/* ── Inline styles ────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror strong) {
+  font-weight: 700;
+}
+
+.editor__content :deep(.ProseMirror em) {
+  font-style: italic;
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror a) {
+  color: var(--ctp-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: text;
+}
+
+/* ── Inline code ──────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror code) {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.82em;
+  background: var(--ctp-surface0);
+  color: var(--ctp-pink);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+/* ── Code block ───────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror pre) {
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+  font-size: 0.82em;
+  padding: 0.8em 1em;
+  border-radius: 6px;
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+.editor__content :deep(.ProseMirror pre code) {
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 1em;
+}
+
+/* ── Horizontal rule ──────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror hr) {
+  border: none;
+  border-top: 1px solid var(--ctp-surface2);
+  margin: 2em 0;
+}
+
 /* ── Focus fade overlay ───────────────────────────────────────────────────── */
-/*
- * Sits above the text (pointer-events: none so it never blocks clicks/selection).
- * Gradient from the page background colour → transparent, ending just above
- * the cursor zone (≈ 55 % of viewport).  Text near and below the cursor is
- * fully visible; text further away blends into the background.
- */
 .focus-fade {
   position: fixed;
   inset: 0;
