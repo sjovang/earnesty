@@ -90,10 +90,12 @@ onMounted(() => {
     :style="{ fontSize: settings.fontSize + 'px', lineHeight: settings.lineSpacing }"
   >
     <!-- Logo lockup shown only while intro is displayed -->
-    <div v-if="isIntro" class="intro-lockup" aria-hidden="true">
-      <AppLogo :size="48" class="intro-lockup__logo" />
-      <span class="intro-lockup__name">Earnesty</span>
-    </div>
+    <Transition name="logo-fade">
+      <div v-if="isIntro" class="intro-lockup" aria-hidden="true">
+        <AppLogo :size="48" class="intro-lockup__logo" />
+        <span class="intro-lockup__name">Earnesty</span>
+      </div>
+    </Transition>
 
     <div
       ref="editor"
@@ -120,7 +122,7 @@ onMounted(() => {
 .intro-lockup {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.5rem;
   margin-bottom: 2.5rem;
   color: var(--ctp-subtext0);
@@ -137,6 +139,15 @@ onMounted(() => {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.logo-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.logo-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 
 .editor__content {
