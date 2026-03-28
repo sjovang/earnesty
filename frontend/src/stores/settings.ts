@@ -18,8 +18,7 @@ function loadSettings(): Settings {
   } catch {
     // ignore
   }
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-  return { theme: prefersDark ? 'dark' : 'light', fontSize: 16, lineSpacing: 1.7 }
+  return { theme: 'dark' as Theme, fontSize: 16, lineSpacing: 1.7 }
 }
 
 export const useSettingsStore = defineStore('settings', () => {
