@@ -46,10 +46,24 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     @help="showHelp = true"
   />
   <RouterView />
-  <NewDocumentModal    v-if="showNew"  @close="showNew = false"  @created="showNew = false" />
-  <OpenDocumentModal   v-if="showOpen" @close="showOpen = false" @select="onDocumentSelected" />
-  <DocumentInfoModal   v-if="showInfo" @close="showInfo = false" />
-  <HelpModal           v-if="showHelp" @close="showHelp = false" />
+  <NewDocumentModal
+    v-if="showNew"
+    @close="showNew = false"
+    @created="showNew = false"
+  />
+  <OpenDocumentModal
+    v-if="showOpen"
+    @close="showOpen = false"
+    @select="onDocumentSelected"
+  />
+  <DocumentInfoModal
+    v-if="showInfo"
+    @close="showInfo = false"
+  />
+  <HelpModal
+    v-if="showHelp"
+    @close="showHelp = false"
+  />
 </template>
 
 <style scoped></style>

@@ -63,21 +63,63 @@ function onBubbleHide() {
   >
     <!-- View mode: show URL + actions -->
     <template v-if="!editing">
-      <span class="link-bubble__url" :title="currentUrl">{{ truncate(currentUrl) }}</span>
+      <span
+        class="link-bubble__url"
+        :title="currentUrl"
+      >{{ truncate(currentUrl) }}</span>
       <div class="link-bubble__sep" />
-      <button class="link-bubble__btn" title="Edit link" @click="startEdit">
-        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z"/>
+      <button
+        class="link-bubble__btn"
+        title="Edit link"
+        @click="startEdit"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z" />
         </svg>
       </button>
-      <button class="link-bubble__btn" title="Remove link" @click="unlink">
-        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4.5 7.5l3-3M2 10l1.5-1.5M8.5 3.5L10 2M5 4.5l-1.5 1A2.12 2.12 0 006.5 8.5l1-1.5M7 7.5l1.5-1A2.12 2.12 0 005.5 3.5L4.5 5"/>
+      <button
+        class="link-bubble__btn"
+        title="Remove link"
+        @click="unlink"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M4.5 7.5l3-3M2 10l1.5-1.5M8.5 3.5L10 2M5 4.5l-1.5 1A2.12 2.12 0 006.5 8.5l1-1.5M7 7.5l1.5-1A2.12 2.12 0 005.5 3.5L4.5 5" />
         </svg>
       </button>
-      <button class="link-bubble__btn" title="Open in new tab" @click="openInTab">
-        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 2H2v8h8V7M7 2h3v3M10 2L6 6"/>
+      <button
+        class="link-bubble__btn"
+        title="Open in new tab"
+        @click="openInTab"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M5 2H2v8h8V7M7 2h3v3M10 2L6 6" />
         </svg>
       </button>
     </template>
@@ -93,15 +135,41 @@ function onBubbleHide() {
         spellcheck="false"
         @keydown.enter.prevent="applyUrl"
         @keydown.escape.prevent="cancelEdit"
-      />
-      <button class="link-bubble__btn link-bubble__btn--confirm" title="Apply" @click="applyUrl">
-        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 6l3 3 5-5"/>
+      >
+      <button
+        class="link-bubble__btn link-bubble__btn--confirm"
+        title="Apply"
+        @click="applyUrl"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M2 6l3 3 5-5" />
         </svg>
       </button>
-      <button class="link-bubble__btn" title="Cancel" @click="cancelEdit">
-        <svg viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 2l8 8M10 2L2 10"/>
+      <button
+        class="link-bubble__btn"
+        title="Cancel"
+        @click="cancelEdit"
+      >
+        <svg
+          viewBox="0 0 12 12"
+          width="12"
+          height="12"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M2 2l8 8M10 2L2 10" />
         </svg>
       </button>
     </template>

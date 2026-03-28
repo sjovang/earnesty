@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { createDraftBlogDocument, hasWriteAccess } from '../services/sanity'
 import { useEditorStore } from '../stores/editor'
@@ -50,7 +50,10 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <BaseModal title="New document" @close="$emit('close')">
+  <BaseModal
+    title="New document"
+    @close="$emit('close')"
+  >
     <div class="new-doc">
       <label class="field">
         <span class="field__label">Title</span>
@@ -63,7 +66,7 @@ function onKeydown(e: KeyboardEvent) {
           spellcheck="false"
           :disabled="creating"
           @keydown="onKeydown"
-        />
+        >
       </label>
 
       <label class="field">
@@ -71,10 +74,19 @@ function onKeydown(e: KeyboardEvent) {
         <div class="field__slug">{{ slug || '—' }}</div>
       </label>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <p
+        v-if="error"
+        class="error"
+      >
+        {{ error }}
+      </p>
 
       <div class="actions">
-        <button class="btn btn--secondary" :disabled="creating" @click="$emit('close')">
+        <button
+          class="btn btn--secondary"
+          :disabled="creating"
+          @click="$emit('close')"
+        >
           Cancel
         </button>
         <button

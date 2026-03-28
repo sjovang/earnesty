@@ -32,71 +32,146 @@ function onLeave() {
 </script>
 
 <template>
-  <nav class="menubar" aria-label="Application menu">
+  <nav
+    class="menubar"
+    aria-label="Application menu"
+  >
     <div class="menubar__inner">
       <span class="menubar__brand">
         <AppLogo :size="16" />
         Earnesty
       </span>
-      <span v-if="documentTitle" class="menubar__doc-title">{{ documentTitle }}</span>
+      <span
+        v-if="documentTitle"
+        class="menubar__doc-title"
+      >{{ documentTitle }}</span>
       <Transition name="save-fade">
-        <span v-if="saveStatus && saveStatus !== 'idle'" :class="['menubar__save', `menubar__save--${saveStatus}`]">
+        <span
+          v-if="saveStatus && saveStatus !== 'idle'"
+          :class="['menubar__save', `menubar__save--${saveStatus}`]"
+        >
           <template v-if="saveStatus === 'saving'">
-            <svg class="menubar__save-spinner" viewBox="0 0 12 12" width="10" height="10" fill="none">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 8" stroke-linecap="round"/>
+            <svg
+              class="menubar__save-spinner"
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+            >
+              <circle
+                cx="6"
+                cy="6"
+                r="4.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-dasharray="14 8"
+                stroke-linecap="round"
+              />
             </svg>
             Saving
           </template>
           <template v-else-if="saveStatus === 'saved'">
-            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 6l3 3 5-5"/>
+            <svg
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M2 6l3 3 5-5" />
             </svg>
             Saved
           </template>
           <template v-else-if="saveStatus === 'error'">
-            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-              <path d="M6 2v5M6 9v.5"/>
+            <svg
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            >
+              <path d="M6 2v5M6 9v.5" />
             </svg>
             Save failed
           </template>
         </span>
       </Transition>
 
-      <div class="menubar__items" role="menubar">
-        <button role="menuitem" class="menubar__item"
+      <div
+        class="menubar__items"
+        role="menubar"
+      >
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('new')"
           @mouseenter="onEnter('new', $event)"
           @mousemove="onMove('new', $event)"
           @mouseleave="onLeave"
-        >New</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
+        >
+          New
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('open')"
           @mouseenter="onEnter('open', $event)"
           @mousemove="onMove('open', $event)"
           @mouseleave="onLeave"
-        >Open</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
+        >
+          Open
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('info')"
           @mouseenter="onEnter('info', $event)"
           @mousemove="onMove('info', $event)"
           @mouseleave="onLeave"
-        >Info</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item menubar__item--publish"
+        >
+          Info
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item menubar__item--publish"
           @click="$emit('publish')"
           @mouseenter="onEnter('publish', $event)"
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
-        >Publish</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
+        >
+          Publish
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('help')"
           @mouseenter="onEnter('help', $event)"
           @mousemove="onMove('help', $event)"
           @mouseleave="onLeave"
-        >Help</button>
+        >
+          Help
+        </button>
       </div>
     </div>
   </nav>
@@ -109,7 +184,9 @@ function onLeave() {
         class="shortcut-tip"
         :style="{ left: tooltip.x + 'px', top: (tooltip.y + 18) + 'px' }"
         aria-hidden="true"
-      >{{ tooltip.label }}</div>
+      >
+        {{ tooltip.label }}
+      </div>
     </Transition>
   </Teleport>
 </template>

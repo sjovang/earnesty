@@ -133,7 +133,10 @@ watch(
 
 <template>
   <!-- Fixed gradient overlay — fades out text above the cursor zone -->
-  <div class="focus-fade" aria-hidden="true" />
+  <div
+    class="focus-fade"
+    aria-hidden="true"
+  />
 
   <main
     class="editor"
@@ -141,8 +144,15 @@ watch(
   >
     <!-- Logo lockup shown only while intro is displayed -->
     <Transition name="logo-fade">
-      <div v-if="isIntro" class="intro-lockup" aria-hidden="true">
-        <AppLogo :size="120" class="intro-lockup__logo" />
+      <div
+        v-if="isIntro"
+        class="intro-lockup"
+        aria-hidden="true"
+      >
+        <AppLogo
+          :size="120"
+          class="intro-lockup__logo"
+        />
         <span class="intro-lockup__name">Earnesty</span>
       </div>
     </Transition>

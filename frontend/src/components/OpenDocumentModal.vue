@@ -91,7 +91,10 @@ function select(doc: BlogDocument) {
 </script>
 
 <template>
-  <BaseModal title="Open document" @close="$emit('close')">
+  <BaseModal
+    title="Open document"
+    @close="$emit('close')"
+  >
     <!-- Controls -->
     <div class="controls">
       <input
@@ -101,30 +104,48 @@ function select(doc: BlogDocument) {
         placeholder="Search by title…"
         autofocus
         spellcheck="false"
-      />
+      >
       <div class="sort-tabs">
         <button
           v-for="opt in sortOptions"
           :key="opt.value"
           :class="['sort-tab', { 'sort-tab--active': sortBy === opt.value }]"
           @click="sortBy = opt.value"
-        >{{ opt.label }}</button>
+        >
+          {{ opt.label }}
+        </button>
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="status">Loading documents…</div>
+    <div
+      v-if="loading"
+      class="status"
+    >
+      Loading documents…
+    </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="status status--error">{{ error }}</div>
+    <div
+      v-else-if="error"
+      class="status status--error"
+    >
+      {{ error }}
+    </div>
 
     <!-- Empty search result -->
-    <div v-else-if="!filtered.length" class="status">
+    <div
+      v-else-if="!filtered.length"
+      class="status"
+    >
       {{ documents.length ? 'No documents match your search.' : 'No documents found in this dataset.' }}
     </div>
 
     <!-- Document list -->
-    <ul v-else class="doc-list">
+    <ul
+      v-else
+      class="doc-list"
+    >
       <li
         v-for="{ doc, status } in filtered"
         :key="doc._id"
@@ -142,18 +163,61 @@ function select(doc: BlogDocument) {
             :aria-label="statusMeta[status].label"
           >
             <!-- Draft: pencil -->
-            <svg v-if="status === 'draft'" viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z"/>
+            <svg
+              v-if="status === 'draft'"
+              viewBox="0 0 12 12"
+              width="11"
+              height="11"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z" />
             </svg>
             <!-- Published: circle + check -->
-            <svg v-else-if="status === 'published'" viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="6" cy="6" r="4.5"/>
-              <path d="M3.8 6l1.5 1.5 2.9-3"/>
+            <svg
+              v-else-if="status === 'published'"
+              viewBox="0 0 12 12"
+              width="11"
+              height="11"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle
+                cx="6"
+                cy="6"
+                r="4.5"
+              />
+              <path d="M3.8 6l1.5 1.5 2.9-3" />
             </svg>
             <!-- Unpublished changes: circle + inner dot -->
-            <svg v-else viewBox="0 0 12 12" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
-              <circle cx="6" cy="6" r="4.5"/>
-              <circle cx="6" cy="6" r="1.8" fill="currentColor" stroke="none"/>
+            <svg
+              v-else
+              viewBox="0 0 12 12"
+              width="11"
+              height="11"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+            >
+              <circle
+                cx="6"
+                cy="6"
+                r="4.5"
+              />
+              <circle
+                cx="6"
+                cy="6"
+                r="1.8"
+                fill="currentColor"
+                stroke="none"
+              />
             </svg>
           </span>
 
@@ -161,7 +225,10 @@ function select(doc: BlogDocument) {
           <span class="doc-list__date">{{ formatDate(doc._updatedAt) }}</span>
         </div>
         <Transition name="preview-fade">
-          <p v-if="hoveredId === doc._id" class="doc-list__preview">
+          <p
+            v-if="hoveredId === doc._id"
+            class="doc-list__preview"
+          >
             {{ extractPreview(doc.body) || 'No preview available.' }}
           </p>
         </Transition>
