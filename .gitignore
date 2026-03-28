@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.suo
+.idea/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.*.local
+
+# Aspire dashboard / secrets
+.secrets/
+**/appsettings.Development.json
+
+# OS
+.DS_Store
+Thumbs.db
