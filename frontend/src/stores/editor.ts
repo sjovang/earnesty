@@ -21,6 +21,7 @@ function slugify(text: string): string {
 export const useEditorStore = defineStore('editor', () => {
   const activeDocument = ref<BlogDocument | null>(null)
   const currentContent = ref<string>('')
+  const pendingHtml = ref<string | null>(null)
   const meta = ref<DocumentMeta>({
     title: '',
     slug: '',
@@ -28,7 +29,7 @@ export const useEditorStore = defineStore('editor', () => {
     tags: [],
   })
 
-  function openDocument(doc: BlogDocument) {
+  function openDocument(doc: BlogDocument, html?: string) {
     activeDocument.value = doc
     meta.value = {
       title: doc.title ?? '',
@@ -36,11 +37,13 @@ export const useEditorStore = defineStore('editor', () => {
       publishedAt: doc._updatedAt ?? '',
       tags: [],
     }
+    if (html !== undefined) pendingHtml.value = html
   }
 
   function clearDocument() {
     activeDocument.value = null
     currentContent.value = ''
+    pendingHtml.value = null
     meta.value = { title: '', slug: '', publishedAt: '', tags: [] }
   }
 
@@ -55,5 +58,22 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
-  return { activeDocument, currentContent, meta, openDocument, clearDocument, setContent, updateMeta, slugify }
+  function consumePendingHtml(): string | null {
+    const html = pendingHtml.value
+    pendingHtml.value = null
+    return html
+  }
+
+  return {
+    activeDocument,
+    currentContent,
+    pendingHtml,
+    meta,
+    openDocument,
+    clearDocument,
+    setContent,
+    updateMeta,
+    slugify,
+    consumePendingHtml,
+  }
 })

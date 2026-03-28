@@ -6,11 +6,19 @@ import OpenDocumentModal from './components/OpenDocumentModal.vue'
 import DocumentInfoModal from './components/DocumentInfoModal.vue'
 import HelpModal from './components/HelpModal.vue'
 import { useEditorStore } from './stores/editor'
+import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
 
 const showOpen = ref(false)
 const showInfo = ref(false)
 const showHelp = ref(false)
 const editorStore = useEditorStore()
+
+async function onDocumentSelected(doc: BlogDocument) {
+  const full = await fetchBlogDocument(doc._id)
+  const html = portableTextToHtml(full.body)
+  editorStore.openDocument(full, html)
+  showOpen.value = false
+}
 
 function newDocument() {
   editorStore.clearDocument()
@@ -40,7 +48,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     @help="showHelp = true"
   />
   <RouterView />
-  <OpenDocumentModal   v-if="showOpen" @close="showOpen = false" />
+  <OpenDocumentModal   v-if="showOpen" @close="showOpen = false" @select="onDocumentSelected" />
   <DocumentInfoModal   v-if="showInfo" @close="showInfo = false" />
   <HelpModal           v-if="showHelp" @close="showHelp = false" />
 </template>

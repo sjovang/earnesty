@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onBeforeUnmount } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -77,6 +77,19 @@ const tiptap = useEditor({
 })
 
 onBeforeUnmount(() => tiptap.value?.destroy())
+
+// ── Load document from store ──────────────────────────────────────────────────
+watch(
+  () => editorStore.pendingHtml,
+  (html) => {
+    if (html === null || !tiptap.value) return
+    tiptap.value.commands.setContent(html, false)
+    editorStore.consumePendingHtml()
+    isIntro.value = false
+    window.scrollTo({ top: 0 })
+    requestAnimationFrame(scrollToCaret)
+  },
+)
 </script>
 
 <template>
