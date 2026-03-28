@@ -90,7 +90,7 @@ onBeforeUnmount(() => tiptap.value?.destroy())
     <!-- Logo lockup shown only while intro is displayed -->
     <Transition name="logo-fade">
       <div v-if="isIntro" class="intro-lockup" aria-hidden="true">
-        <AppLogo :size="48" class="intro-lockup__logo" />
+        <AppLogo :size="120" class="intro-lockup__logo" />
         <span class="intro-lockup__name">Earnesty</span>
       </div>
     </Transition>
@@ -114,10 +114,9 @@ onBeforeUnmount(() => tiptap.value?.destroy())
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 2.5rem;
-  color: var(--ctp-subtext0);
-  opacity: 0.5;
+  gap: 0.75rem;
+  margin-bottom: 3rem;
+  color: var(--ctp-mauve);
 }
 
 .intro-lockup__logo {
