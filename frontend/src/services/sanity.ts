@@ -1,10 +1,17 @@
 import { createClient } from '@sanity/client'
 
+// In development the Vite server proxies /v2024-01-01/… to the real Sanity
+// API, avoiding the CORS restriction on localhost. In production the client
+// talks directly to Sanity's CDN/API.
+const devProxyConfig = import.meta.env.DEV
+  ? { apiHost: window.location.origin, useProjectHostname: false, useCdn: false }
+  : { useCdn: true }
+
 export const sanityClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
   dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
   apiVersion: '2024-01-01',
-  useCdn: true,
+  ...devProxyConfig,
 })
 
 /** Write client — requires VITE_SANITY_TOKEN with editor role. */
@@ -12,8 +19,8 @@ export const sanityWriteClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
   dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
   apiVersion: '2024-01-01',
-  useCdn: false,
   token: import.meta.env.VITE_SANITY_TOKEN,
+  ...devProxyConfig,
 })
 
 export function hasWriteAccess(): boolean {

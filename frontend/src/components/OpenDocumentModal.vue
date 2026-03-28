@@ -75,11 +75,14 @@ function select(doc: BlogDocument) {
         autofocus
         spellcheck="false"
       />
-      <select v-model="sortBy" class="sort-select">
-        <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
-          {{ opt.label }}
-        </option>
-      </select>
+      <div class="sort-tabs">
+        <button
+          v-for="opt in sortOptions"
+          :key="opt.value"
+          :class="['sort-tab', { 'sort-tab--active': sortBy === opt.value }]"
+          @click="sortBy = opt.value"
+        >{{ opt.label }}</button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -121,13 +124,12 @@ function select(doc: BlogDocument) {
 /* ── Controls ──────────────────────────────────────────────────────────────── */
 .controls {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  align-items: center;
   margin-bottom: 0.75rem;
 }
 
 .search {
-  flex: 1;
   background: var(--ctp-surface0);
   border: 1px solid var(--ctp-surface1);
   border-radius: 6px;
@@ -136,25 +138,44 @@ function select(doc: BlogDocument) {
   padding: 0.45rem 0.7rem;
   outline: none;
   transition: border-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .search::placeholder { color: var(--ctp-subtext0); }
 .search:focus { border-color: var(--ctp-mauve); }
 
-.sort-select {
+.sort-tabs {
+  display: flex;
+  gap: 2px;
   background: var(--ctp-surface0);
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 6px;
-  color: var(--ctp-text);
-  font-size: 0.8rem;
-  padding: 0.45rem 0.6rem;
-  outline: none;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color 0.15s ease;
+  border-radius: 7px;
+  padding: 3px;
 }
 
-.sort-select:focus { border-color: var(--ctp-mauve); }
+.sort-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ctp-subtext1);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.4rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.sort-tab:hover:not(.sort-tab--active) {
+  color: var(--ctp-text);
+  background: color-mix(in srgb, var(--ctp-surface1) 60%, transparent);
+}
+
+.sort-tab--active {
+  background: var(--ctp-surface2);
+  color: var(--ctp-text);
+}
 
 /* ── Status messages ───────────────────────────────────────────────────────── */
 .status {
