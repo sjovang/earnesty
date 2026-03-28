@@ -116,6 +116,7 @@ onMounted(() => {
   word-break: break-word;
   caret-color: var(--ctp-mauve);
   color: var(--ctp-text);
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
 }
 
 .editor__content--intro {

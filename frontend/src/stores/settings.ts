@@ -18,7 +18,7 @@ function loadSettings(): Settings {
   } catch {
     // ignore
   }
-  return { theme: 'dark' as Theme, fontSize: 16, lineSpacing: 1.7 }
+  return { theme: 'dark' as Theme, fontSize: 21, lineSpacing: 1.7 }
 }
 
 export const useSettingsStore = defineStore('settings', () => {
