@@ -2,18 +2,20 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
-import NewDocumentModal from './components/NewDocumentModal.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
 import DocumentInfoModal from './components/DocumentInfoModal.vue'
 import HelpModal from './components/HelpModal.vue'
+import SignInModal from './components/SignInModal.vue'
 import { useEditorStore } from './stores/editor'
+import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
 
-const showNew  = ref(false)
-const showOpen = ref(false)
-const showInfo = ref(false)
-const showHelp = ref(false)
+const showOpen   = ref(false)
+const showInfo   = ref(false)
+const showHelp   = ref(false)
+const showSignIn = ref(false)
 const editorStore = useEditorStore()
+const auth = useAuthStore()
 
 async function onDocumentSelected(doc: BlogDocument) {
   const full = await fetchBlogDocument(doc._id)
@@ -24,14 +26,17 @@ async function onDocumentSelected(doc: BlogDocument) {
 
 function onKeydown(e: KeyboardEvent) {
   const mod = e.metaKey || e.ctrlKey
-  if (mod && e.key === 'n') { e.preventDefault(); showNew.value = true }
-  if (mod && e.key === 'o') { e.preventDefault(); showOpen.value = true }
-  if (mod && e.key === 'i') { e.preventDefault(); showInfo.value = true }
+  if (mod && e.key === 'n') { e.preventDefault(); editorStore.resetToPlaceholder() }
+  if (mod && e.key === 'o' && auth.isAuthenticated) { e.preventDefault(); showOpen.value = true }
+  if (mod && e.key === 'i' && auth.isAuthenticated) { e.preventDefault(); showInfo.value = true }
   if (mod && e.shiftKey && e.key === 'P') { e.preventDefault(); /* TODO: publish */ }
-  if (e.key === 'F1')       { e.preventDefault(); showHelp.value = true }
+  if (e.key === 'F1') { e.preventDefault(); showHelp.value = true }
 }
 
-onMounted(()  => document.addEventListener('keydown', onKeydown))
+onMounted(async () => {
+  await auth.initialize()
+  document.addEventListener('keydown', onKeydown)
+})
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
@@ -39,17 +44,35 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <AppMenuBar
     :document-title="editorStore.activeDocument?.title"
     :save-status="editorStore.saveStatus"
-    @new="showNew = true"
+    :user="auth.user ?? undefined"
+    :is-authenticated="auth.isAuthenticated"
+    :has-document="!!editorStore.activeDocument"
+    @new="editorStore.resetToPlaceholder()"
     @open="showOpen = true"
     @info="showInfo = true"
     @publish="() => {}"
     @help="showHelp = true"
+    @signin="showSignIn = true"
+    @logout="auth.logout()"
   />
   <RouterView />
-  <NewDocumentModal    v-if="showNew"  @close="showNew = false"  @created="showNew = false" />
-  <OpenDocumentModal   v-if="showOpen" @close="showOpen = false" @select="onDocumentSelected" />
-  <DocumentInfoModal   v-if="showInfo" @close="showInfo = false" />
-  <HelpModal           v-if="showHelp" @close="showHelp = false" />
+  <OpenDocumentModal
+    v-if="showOpen"
+    @close="showOpen = false"
+    @select="onDocumentSelected"
+  />
+  <DocumentInfoModal
+    v-if="showInfo"
+    @close="showInfo = false"
+  />
+  <HelpModal
+    v-if="showHelp"
+    @close="showHelp = false"
+  />
+  <SignInModal
+    v-if="showSignIn"
+    @close="showSignIn = false"
+  />
 </template>
 
 <style scoped></style>

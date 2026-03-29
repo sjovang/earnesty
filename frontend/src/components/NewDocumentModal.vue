@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
-import { createDraftBlogDocument, hasWriteAccess } from '../services/sanity'
+import { createDraftBlogDocument } from '../services/sanity'
 import { useEditorStore } from '../stores/editor'
+import { useAuthStore } from '../stores/auth'
 
 const emit = defineEmits<{
   close: []
@@ -10,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const editorStore = useEditorStore()
+const auth = useAuthStore()
 
 const title = ref('')
 const creating = ref(false)
@@ -20,17 +22,12 @@ const slug = computed(() => editorStore.slugify(title.value))
 
 // ── Create ────────────────────────────────────────────────────────────────────
 async function create() {
-  if (!title.value.trim()) return
-
-  if (!hasWriteAccess()) {
-    error.value = 'No write token configured. Add VITE_SANITY_TOKEN to your .env file.'
-    return
-  }
+  if (!title.value.trim() || !auth.token) return
 
   creating.value = true
   error.value = null
   try {
-    const doc = await createDraftBlogDocument(title.value.trim(), slug.value)
+    const doc = await createDraftBlogDocument(title.value.trim(), slug.value, auth.token)
     editorStore.openDocument(doc, '<p></p>')
     emit('created')
     emit('close')
@@ -50,7 +47,10 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <BaseModal title="New document" @close="$emit('close')">
+  <BaseModal
+    title="New document"
+    @close="$emit('close')"
+  >
     <div class="new-doc">
       <label class="field">
         <span class="field__label">Title</span>
@@ -63,7 +63,7 @@ function onKeydown(e: KeyboardEvent) {
           spellcheck="false"
           :disabled="creating"
           @keydown="onKeydown"
-        />
+        >
       </label>
 
       <label class="field">
@@ -71,10 +71,19 @@ function onKeydown(e: KeyboardEvent) {
         <div class="field__slug">{{ slug || '—' }}</div>
       </label>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <p
+        v-if="error"
+        class="error"
+      >
+        {{ error }}
+      </p>
 
       <div class="actions">
-        <button class="btn btn--secondary" :disabled="creating" @click="$emit('close')">
+        <button
+          class="btn btn--secondary"
+          :disabled="creating"
+          @click="$emit('close')"
+        >
           Cancel
         </button>
         <button

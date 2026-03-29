@@ -18,16 +18,24 @@ const shortcuts = [
 </script>
 
 <template>
-  <BaseModal title="Help" @close="$emit('close')">
+  <BaseModal
+    title="Help"
+    @close="$emit('close')"
+  >
     <p class="intro">
       Earnesty is a distraction-free writing environment. Click anywhere on the page and start
       typing. Your words are the only thing that matters.
     </p>
 
-    <h3 class="section-title">Keyboard shortcuts</h3>
+    <h3 class="section-title">
+      Keyboard shortcuts
+    </h3>
     <table class="shortcuts">
       <tbody>
-        <tr v-for="s in shortcuts" :key="s.keys">
+        <tr
+          v-for="s in shortcuts"
+          :key="s.keys"
+        >
           <td><kbd>{{ s.keys }}</kbd></td>
           <td>{{ s.description }}</td>
         </tr>

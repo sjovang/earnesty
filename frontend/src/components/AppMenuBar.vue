@@ -2,12 +2,19 @@
 import { ref } from 'vue'
 import AppLogo from './AppLogo.vue'
 import type { SaveStatus } from '../stores/editor'
+import type { SanityUser } from '../stores/auth'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
-defineProps<{ documentTitle?: string; saveStatus?: SaveStatus }>()
-defineEmits<{ new: []; open: []; info: []; publish: []; help: [] }>()
+defineProps<{
+  documentTitle?: string
+  saveStatus?: SaveStatus
+  user?: SanityUser
+  isAuthenticated?: boolean
+  hasDocument?: boolean
+}>()
+defineEmits<{ new: []; open: []; info: []; publish: []; help: []; signin: []; logout: [] }>()
 
 // ── Cursor-following shortcut tooltip ─────────────────────────────────────────
 const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
@@ -21,10 +28,14 @@ const shortcuts: Record<string, string> = {
 }
 
 function onEnter(key: string, e: MouseEvent) {
-  tooltip.value = { label: shortcuts[key], x: e.clientX, y: e.clientY }
+  const label = shortcuts[key] ?? key
+  tooltip.value = { label, x: e.clientX, y: e.clientY }
 }
 function onMove(key: string, e: MouseEvent) {
-  if (tooltip.value) tooltip.value = { label: shortcuts[key], x: e.clientX, y: e.clientY }
+  if (tooltip.value) {
+    const label = shortcuts[key] ?? key
+    tooltip.value = { label, x: e.clientX, y: e.clientY }
+  }
 }
 function onLeave() {
   tooltip.value = null
@@ -32,71 +43,187 @@ function onLeave() {
 </script>
 
 <template>
-  <nav class="menubar" aria-label="Application menu">
+  <nav
+    class="menubar"
+    aria-label="Application menu"
+  >
     <div class="menubar__inner">
       <span class="menubar__brand">
         <AppLogo :size="16" />
         Earnesty
       </span>
-      <span v-if="documentTitle" class="menubar__doc-title">{{ documentTitle }}</span>
+      <span
+        v-if="documentTitle"
+        class="menubar__doc-title"
+      >{{ documentTitle }}</span>
       <Transition name="save-fade">
-        <span v-if="saveStatus && saveStatus !== 'idle'" :class="['menubar__save', `menubar__save--${saveStatus}`]">
+        <span
+          v-if="saveStatus && saveStatus !== 'idle'"
+          :class="['menubar__save', `menubar__save--${saveStatus}`]"
+        >
           <template v-if="saveStatus === 'saving'">
-            <svg class="menubar__save-spinner" viewBox="0 0 12 12" width="10" height="10" fill="none">
-              <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5" stroke-dasharray="14 8" stroke-linecap="round"/>
+            <svg
+              class="menubar__save-spinner"
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+            >
+              <circle
+                cx="6"
+                cy="6"
+                r="4.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-dasharray="14 8"
+                stroke-linecap="round"
+              />
             </svg>
             Saving
           </template>
           <template v-else-if="saveStatus === 'saved'">
-            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M2 6l3 3 5-5"/>
+            <svg
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M2 6l3 3 5-5" />
             </svg>
             Saved
           </template>
           <template v-else-if="saveStatus === 'error'">
-            <svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
-              <path d="M6 2v5M6 9v.5"/>
+            <svg
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+            >
+              <path d="M6 2v5M6 9v.5" />
             </svg>
             Save failed
           </template>
         </span>
       </Transition>
 
-      <div class="menubar__items" role="menubar">
-        <button role="menuitem" class="menubar__item"
+      <div
+        class="menubar__items"
+        role="menubar"
+      >
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('new')"
           @mouseenter="onEnter('new', $event)"
           @mousemove="onMove('new', $event)"
           @mouseleave="onLeave"
-        >New</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
-          @click="$emit('open')"
+        >
+          New
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
+          :class="{ 'menubar__item--disabled': !isAuthenticated }"
+          :disabled="!isAuthenticated"
+          @click="isAuthenticated && $emit('open')"
           @mouseenter="onEnter('open', $event)"
           @mousemove="onMove('open', $event)"
           @mouseleave="onLeave"
-        >Open</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
-          @click="$emit('info')"
+        >
+          Open
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && $emit('info')"
           @mouseenter="onEnter('info', $event)"
           @mousemove="onMove('info', $event)"
           @mouseleave="onLeave"
-        >Info</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item menubar__item--publish"
-          @click="$emit('publish')"
+        >
+          Info
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item menubar__item--publish"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && $emit('publish')"
           @mouseenter="onEnter('publish', $event)"
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
-        >Publish</button>
-        <span class="menubar__sep" aria-hidden="true" />
-        <button role="menuitem" class="menubar__item"
+        >
+          Publish
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
           @click="$emit('help')"
           @mouseenter="onEnter('help', $event)"
           @mousemove="onMove('help', $event)"
           @mouseleave="onLeave"
-        >Help</button>
+        >
+          Help
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <!-- User avatar / sign-in -->
+        <button
+          v-if="isAuthenticated"
+          role="menuitem"
+          class="menubar__item menubar__item--user"
+          title="Sign out"
+          @click="$emit('logout')"
+          @mouseleave="onLeave"
+        >
+          <img
+            v-if="user?.profileImage"
+            :src="user.profileImage"
+            :alt="user.name"
+            class="menubar__avatar"
+          >
+          <span
+            v-else
+            class="menubar__avatar menubar__avatar--initials"
+          >{{ user?.name?.charAt(0) ?? '?' }}</span>
+        </button>
+        <button
+          v-else
+          role="menuitem"
+          class="menubar__item menubar__item--signin"
+          @click="$emit('signin')"
+          @mouseenter="onEnter('signin', $event)"
+          @mousemove="onMove('signin', $event)"
+          @mouseleave="onLeave"
+        >
+          Sign in
+        </button>
       </div>
     </div>
   </nav>
@@ -109,7 +236,9 @@ function onLeave() {
         class="shortcut-tip"
         :style="{ left: tooltip.x + 'px', top: (tooltip.y + 18) + 'px' }"
         aria-hidden="true"
-      >{{ tooltip.label }}</div>
+      >
+        {{ tooltip.label }}
+      </div>
     </Transition>
   </Teleport>
 </template>
@@ -200,6 +329,43 @@ function onLeave() {
 .menubar__item--publish:hover {
   background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
   color: var(--ctp-green);
+}
+
+.menubar__item--disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.menubar__item--disabled:hover {
+  background: transparent;
+  color: var(--ctp-subtext1);
+}
+
+.menubar__item--signin {
+  color: var(--ctp-blue);
+}
+
+.menubar__item--signin:hover {
+  background: color-mix(in srgb, var(--ctp-blue) 12%, transparent);
+  color: var(--ctp-blue);
+}
+
+.menubar__avatar {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.menubar__avatar--initials {
+  background: var(--ctp-surface1);
+  color: var(--ctp-subtext1);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Save status ──────────────────────────────────────────────────────────── */

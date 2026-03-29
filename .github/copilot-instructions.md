@@ -7,3 +7,16 @@ We are creating a single-page application (SPA) using Aspire.dev, which allows f
 We use catppuccin for colors. The app have a light theme using catppuccin's latte palette, and a dark theme using catppuccin's macchiato palette. The user can switch between themes in the settings.
 
 User settings are stored in the browser's local storage, allowing for a personalized experience without the need for user accounts. Users can customize their writing environment, including font size, line spacing, and theme preferences.
+
+## Commits
+
+All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This is required for release-please to automatically determine version bumps and generate changelogs.
+
+Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+
+- `feat:` triggers a **minor** version bump
+- `fix:` triggers a **patch** version bump
+- `feat!:` or any type with `BREAKING CHANGE:` in the footer triggers a **major** version bump
+- All other types (`chore:`, `ci:`, `docs:`, etc.) do not trigger a release
+
+Always include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer in every commit.

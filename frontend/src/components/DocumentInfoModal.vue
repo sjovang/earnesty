@@ -67,9 +67,14 @@ function save() {
 </script>
 
 <template>
-  <BaseModal title="Document info" @close="emit('close')">
-    <form class="form" @submit.prevent="save">
-
+  <BaseModal
+    title="Document info"
+    @close="emit('close')"
+  >
+    <form
+      class="form"
+      @submit.prevent="save"
+    >
       <label class="field">
         <span class="field__label">Title</span>
         <input
@@ -78,7 +83,7 @@ function save() {
           type="text"
           placeholder="Untitled"
           autofocus
-        />
+        >
       </label>
 
       <label class="field">
@@ -89,7 +94,7 @@ function save() {
           type="text"
           placeholder="auto-generated-from-title"
           @input="onSlugInput"
-        />
+        >
       </label>
 
       <label class="field">
@@ -98,7 +103,7 @@ function save() {
           v-model="form.publishedAt"
           class="field__input"
           type="datetime-local"
-        />
+        >
       </label>
 
       <div class="field">
@@ -110,7 +115,11 @@ function save() {
             class="tag"
           >
             {{ tag }}
-            <button type="button" class="tag__remove" @click="removeTag(tag)">✕</button>
+            <button
+              type="button"
+              class="tag__remove"
+              @click="removeTag(tag)"
+            >✕</button>
           </span>
           <input
             v-model="tagInput"
@@ -119,14 +128,25 @@ function save() {
             placeholder="Add tag…"
             @keydown="onTagKeydown"
             @blur="addTag"
-          />
+          >
         </div>
         <span class="field__hint">Press Enter or comma to add a tag</span>
       </div>
 
       <div class="form__actions">
-        <button type="button" class="btn btn--ghost" @click="emit('close')">Cancel</button>
-        <button type="submit" class="btn btn--primary">Save</button>
+        <button
+          type="button"
+          class="btn btn--ghost"
+          @click="emit('close')"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="btn btn--primary"
+        >
+          Save
+        </button>
       </div>
     </form>
   </BaseModal>

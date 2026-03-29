@@ -14,17 +14,15 @@ export const sanityClient = createClient({
   ...devProxyConfig,
 })
 
-/** Write client — requires VITE_SANITY_TOKEN with editor role. */
-export const sanityWriteClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
-  dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
-  apiVersion: '2024-01-01',
-  token: import.meta.env.VITE_SANITY_TOKEN,
-  ...devProxyConfig,
-})
-
-export function hasWriteAccess(): boolean {
-  return !!import.meta.env.VITE_SANITY_TOKEN
+/** Creates an authenticated write client using the current user's session token. */
+export function createWriteClient(token: string) {
+  return createClient({
+    projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
+    dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
+    apiVersion: '2024-01-01',
+    token,
+    ...devProxyConfig,
+  })
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -116,6 +114,7 @@ export function portableTextToHtml(blocks: SanityBodyBlock[] | undefined): strin
 
   while (i < blocks.length) {
     const block = blocks[i]
+    if (!block) { i++; continue }
 
     // Image block
     if (block._type === 'image') {
@@ -144,7 +143,7 @@ export function portableTextToHtml(blocks: SanityBodyBlock[] | undefined): strin
       const items: string[] = []
       while (
         i < blocks.length &&
-        blocks[i]._type === 'block' &&
+        blocks[i]?._type === 'block' &&
         (blocks[i] as SanityBlock).listItem === textBlock.listItem
       ) {
         items.push(`<li>${renderInline(blocks[i] as SanityBlock)}</li>`)
@@ -277,7 +276,7 @@ function convertTiptapNode(
       // Only round-trip images that came from our Sanity CDN
       const cdnMatch = src.match(/cdn\.sanity\.io\/images\/[^/]+\/[^/]+\/(.+)$/)
       if (cdnMatch) {
-        const ref = 'image-' + cdnMatch[1].replace(/\.([^.]+)$/, '-$1')
+        const ref = 'image-' + (cdnMatch[1] ?? '').replace(/\.([^.]+)$/, '-$1')
         blocks.push({
           _key: key(),
           _type: 'image',
@@ -328,8 +327,8 @@ function key() {
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 /** Saves PortableText blocks back to a Sanity document. */
-export async function saveDocument(id: string, blocks: SanityBodyBlock[]): Promise<void> {
-  await sanityWriteClient.patch(id).set({ body: blocks }).commit()
+export async function saveDocument(id: string, blocks: SanityBodyBlock[], token: string): Promise<void> {
+  await createWriteClient(token).patch(id).set({ body: blocks }).commit()
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -362,9 +361,10 @@ export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
 export async function createDraftBlogDocument(
   title: string,
   slug: string,
+  token: string,
 ): Promise<BlogDocument> {
   const id = `drafts.${crypto.randomUUID()}`
-  return sanityWriteClient.create({
+  return createWriteClient(token).create({
     _id: id,
     _type: 'blog',
     title,

@@ -14,11 +14,24 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 
 <template>
   <Teleport to="body">
-    <div class="overlay" role="dialog" :aria-label="props.title" @click.self="emit('close')">
+    <div
+      class="overlay"
+      role="dialog"
+      :aria-label="props.title"
+      @click.self="emit('close')"
+    >
       <div class="modal">
         <header class="modal__header">
-          <h2 class="modal__title">{{ props.title }}</h2>
-          <button class="modal__close" aria-label="Close" @click="emit('close')">✕</button>
+          <h2 class="modal__title">
+            {{ props.title }}
+          </h2>
+          <button
+            class="modal__close"
+            aria-label="Close"
+            @click="emit('close')"
+          >
+            ✕
+          </button>
         </header>
         <div class="modal__body">
           <slot />
