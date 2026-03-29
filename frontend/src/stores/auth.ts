@@ -30,16 +30,46 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
   const isAuthenticated = computed(() => !!token.value)
 
-  /** Redirect the browser to a provider login page. */
+  /** Open a provider login popup. Posts a token message back when complete. */
   function loginWith(providerUrl: string) {
-    const origin = window.location.origin + window.location.pathname
-    // Use URL API to safely append ?origin= regardless of existing params
+    const origin = window.location.origin
     const url = new URL(providerUrl)
     url.searchParams.set('origin', origin)
     const target = url.toString()
     log(`Origin sent to Sanity: ${origin}`)
-    log(`Redirecting to provider: ${target}`)
-    window.location.href = target
+    log(`Opening OAuth popup: ${target}`)
+
+    const popup = window.open(target, 'sanity-auth', 'width=620,height=720,menubar=no,toolbar=no,scrollbars=yes')
+
+    if (!popup || popup.closed) {
+      // Popup blocked — fall back to full-page redirect (initialize() will pick up token on reload)
+      log('Popup blocked, falling back to full-page redirect')
+      window.location.href = target
+      return
+    }
+
+    popup.focus()
+
+    const messageHandler = async (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      if (event.data?.type !== 'sanity-auth-token' || !event.data.token) return
+      window.removeEventListener('message', messageHandler)
+      clearInterval(pollInterval)
+      log('Token received via postMessage')
+      setToken(event.data.token as string)
+      await fetchUser()
+    }
+
+    window.addEventListener('message', messageHandler)
+
+    // Clean up listener if the user closes the popup without completing auth
+    const pollInterval = setInterval(() => {
+      if (popup.closed) {
+        clearInterval(pollInterval)
+        window.removeEventListener('message', messageHandler)
+        log('OAuth popup closed without token')
+      }
+    }, 500)
   }
 
   /** Fetch the list of configured auth providers for this Sanity project. */
