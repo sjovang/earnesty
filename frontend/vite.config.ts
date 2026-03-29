@@ -16,11 +16,8 @@ export default defineConfig({
     },
   },
   server: {
-    // Aspire injects VITE_PORT with the port it expects the dev server on.
-    port: process.env['VITE_PORT'] ? parseInt(process.env['VITE_PORT']) : 5173,
-    strictPort: true,
-    // Bind to all interfaces so the Aspire host can reach the dev server.
-    host: true,
+    port: 5173,
+    strictPort: false,
     proxy: {
       // Proxy Sanity API requests through the dev server to avoid CORS issues.
       // The Sanity client is configured (in dev) to send requests to /v20xx-xx-xx/…
