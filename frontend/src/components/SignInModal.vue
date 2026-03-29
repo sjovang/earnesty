@@ -44,44 +44,27 @@ onMounted(() => auth.fetchProviders())
         </button>
       </div>
 
-      <!-- Pending state while OAuth popup is open -->
       <div
-        v-if="auth.pendingAuth"
-        class="signin__pending"
+        v-if="auth.providers.length"
+        class="signin__providers"
       >
-        <span class="signin__pending-spinner" aria-hidden="true" />
-        <span>Waiting for sign-in to complete…</span>
         <button
-          class="signin__pending-cancel"
-          @click="auth.cancelAuth()"
+          v-for="p in auth.providers"
+          :key="p.name"
+          class="signin__provider"
+          @click="auth.loginWith(p.url)"
         >
-          Cancel
+          <span class="signin__provider-icon">{{ providerIcons[p.name] ?? '→' }}</span>
+          {{ p.title }}
         </button>
       </div>
 
-      <template v-else>
-        <div
-          v-if="auth.providers.length"
-          class="signin__providers"
-        >
-          <button
-            v-for="p in auth.providers"
-            :key="p.name"
-            class="signin__provider"
-            @click="auth.loginWith(p.url)"
-          >
-            <span class="signin__provider-icon">{{ providerIcons[p.name] ?? '→' }}</span>
-            {{ p.title }}
-          </button>
-        </div>
-
-        <p
-          v-else-if="!auth.error"
-          class="signin__loading"
-        >
-          Loading…
-        </p>
-      </template>
+      <p
+        v-else-if="!auth.error"
+        class="signin__loading"
+      >
+        Loading…
+      </p>
 
       <div
         v-if="isDev"
@@ -176,50 +159,6 @@ onMounted(() => auth.fetchProviders())
   font-size: 0.8rem;
   color: var(--ctp-subtext1);
 }
-
-.signin__pending {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1rem;
-  background: color-mix(in srgb, var(--ctp-blue) 8%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ctp-blue) 25%, transparent);
-  border-radius: 7px;
-  font-size: 0.85rem;
-  color: var(--ctp-subtext1);
-}
-
-.signin__pending-spinner {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border: 2px solid color-mix(in srgb, var(--ctp-blue) 30%, transparent);
-  border-top-color: var(--ctp-blue);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-.signin__pending-cancel {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: var(--ctp-subtext0);
-  font-size: 0.8rem;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.signin__pending-cancel:hover {
-  color: var(--ctp-text);
-}
-
 
 .signin__loading {
   font-size: 0.85rem;

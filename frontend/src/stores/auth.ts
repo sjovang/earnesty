@@ -17,7 +17,6 @@ export interface SanityAuthProvider {
 
 const TOKEN_KEY = 'earnesty-auth-token'
 const PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID as string
-const BROADCAST_CHANNEL = 'earnesty-auth'
 const DEV = import.meta.env.DEV
 
 function log(...args: unknown[]) {
@@ -29,76 +28,15 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<SanityUser | null>(null)
   const providers = ref<SanityAuthProvider[]>([])
   const error = ref<string | null>(null)
-  const pendingAuth = ref(false)
   const isAuthenticated = computed(() => !!token.value)
 
-  let _popup: Window | null = null
-  let _popupPoll: ReturnType<typeof setInterval> | null = null
-  let _channel: BroadcastChannel | null = null
-
-  function _openChannel() {
-    if (_channel) return
-    _channel = new BroadcastChannel(BROADCAST_CHANNEL)
-    _channel.onmessage = async (event: MessageEvent) => {
-      const { type, token: t, message } = event.data as { type: string; token?: string; message?: string }
-      if (type === 'auth-success' && t) {
-        log('Token received via BroadcastChannel')
-        _cleanupPopup()
-        setToken(t)
-        await fetchUser()
-      } else if (type === 'auth-error') {
-        log('Auth error via BroadcastChannel:', message)
-        _cleanupPopup()
-        error.value = message ?? 'Sign-in failed. Please try again.'
-      }
-    }
-  }
-
-  function _cleanupPopup() {
-    pendingAuth.value = false
-    if (_popupPoll) { clearInterval(_popupPoll); _popupPoll = null }
-    if (_popup && !_popup.closed) _popup.close()
-    _popup = null
-  }
-
-  /**
-   * Open a provider login popup. Sanity will redirect back to /callback
-   * which broadcasts the token via BroadcastChannel.
-   */
+  /** Redirect the browser to a provider login page. Sanity will redirect back to /callback. */
   function loginWith(providerUrl: string) {
-    error.value = null
-    const callbackOrigin = window.location.origin + '/callback'
+    const callbackUrl = window.location.origin + '/callback'
     const url = new URL(providerUrl)
-    url.searchParams.set('origin', callbackOrigin)
-    const target = url.toString()
-    log(`Opening OAuth popup (origin: ${callbackOrigin})`)
-
-    _openChannel()
-
-    const popup = window.open(target, 'sanity-auth', 'width=480,height=640,menubar=no,toolbar=no,scrollbars=yes')
-
-    if (!popup || popup.closed) {
-      log('Popup blocked — falling back to full-page redirect')
-      window.location.href = target
-      return
-    }
-
-    _popup = popup
-    popup.focus()
-    pendingAuth.value = true
-
-    // Detect if the user closes the popup without completing auth
-    _popupPoll = setInterval(() => {
-      if (popup.closed) {
-        log('OAuth popup closed without completing auth')
-        _cleanupPopup()
-      }
-    }, 500)
-  }
-
-  function cancelAuth() {
-    log('Auth cancelled by user')
-    _cleanupPopup()
+    url.searchParams.set('origin', callbackUrl)
+    log(`Redirecting to provider (callback: ${callbackUrl})`)
+    window.location.href = url.toString()
   }
 
   /** Fetch the list of configured auth providers for this Sanity project. */
@@ -133,7 +71,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   function logout() {
     log('Logging out')
-    _cleanupPopup()
     token.value = null
     user.value = null
     error.value = null
@@ -176,8 +113,22 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function initialize() {
     log('Initializing — URL:', window.location.href)
-    // Open the broadcast channel so we're ready to receive tokens from the callback popup.
-    _openChannel()
+
+    // Check for an auth error relayed from /callback (e.g. origin not allowed by Sanity)
+    const params = new URLSearchParams(window.location.search)
+    const authError = params.get('auth_error')
+    if (authError) {
+      error.value = decodeURIComponent(authError)
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('auth_error')
+      window.history.replaceState({}, '', clean.toString())
+    }
+
+    // Token is always read from localStorage (written by CallbackView after redirect)
+    const stored = localStorage.getItem(TOKEN_KEY)
+    if (stored && stored !== token.value) {
+      setToken(stored)
+    }
 
     if (token.value) {
       log('Resuming session from localStorage')
@@ -187,9 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return {
-    token, user, providers, error, pendingAuth, isAuthenticated,
-    loginWith, cancelAuth, fetchProviders, logout, clearError, initialize,
-  }
+  return { token, user, providers, error, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
 })
+
 
