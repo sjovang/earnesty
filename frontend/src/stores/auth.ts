@@ -17,22 +17,31 @@ export interface SanityAuthProvider {
 
 const TOKEN_KEY = 'earnesty-auth-token'
 const PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID as string
+const DEV = import.meta.env.DEV
+
+function log(...args: unknown[]) {
+  if (DEV) console.log('[auth]', ...args)
+}
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
   const user = ref<SanityUser | null>(null)
   const providers = ref<SanityAuthProvider[]>([])
+  const error = ref<string | null>(null)
   const isAuthenticated = computed(() => !!token.value)
 
   /** Redirect the browser to a provider login page. */
   function loginWith(providerUrl: string) {
     const origin = window.location.origin + window.location.pathname
-    window.location.href = `${providerUrl}?origin=${encodeURIComponent(origin)}`
+    const target = `${providerUrl}?origin=${encodeURIComponent(origin)}`
+    log(`Redirecting to provider: ${target}`)
+    window.location.href = target
   }
 
   /** Fetch the list of configured auth providers for this Sanity project. */
   async function fetchProviders() {
     if (providers.value.length) return
+    log(`Fetching providers for project ${PROJECT_ID}`)
     try {
       const res = await fetch(
         `https://api.sanity.io/v2021-06-07/auth/providers?projectId=${PROJECT_ID}`,
@@ -40,43 +49,70 @@ export const useAuthStore = defineStore('auth', () => {
       if (res.ok) {
         const data = (await res.json()) as { providers: SanityAuthProvider[] }
         providers.value = data.providers
+        log('Providers loaded:', data.providers.map(p => p.name))
+      } else {
+        const msg = `Failed to load sign-in providers (${res.status})`
+        log(msg, await res.text())
+        error.value = msg
       }
     } catch (err) {
-      console.error('[auth] Failed to fetch providers:', err)
+      const msg = 'Could not reach Sanity to load sign-in providers'
+      console.error('[auth]', msg, err)
+      error.value = msg
     }
   }
 
   function setToken(t: string) {
     token.value = t
     localStorage.setItem(TOKEN_KEY, t)
+    log('Token saved')
   }
 
   function logout() {
+    log('Logging out')
     token.value = null
     user.value = null
+    error.value = null
     localStorage.removeItem(TOKEN_KEY)
+  }
+
+  function clearError() {
+    error.value = null
   }
 
   async function fetchUser() {
     if (!token.value) return
+    log('Fetching user info from /v2021-06-07/users/me')
     try {
       const res = await fetch('/v2021-06-07/users/me', {
         headers: { Authorization: `Bearer ${token.value}` },
       })
-      // On 401 only clear the token if it came from localStorage (persisted session),
-      // not if it was just set from the OAuth redirect — avoid clearing a fresh token
-      // due to a transient error or misconfigured proxy.
+      log(`/users/me response: ${res.status}`)
       if (res.status === 401) {
-        console.warn('[auth] /users/me returned 401 — token may be expired')
+        console.warn('[auth] /users/me returned 401 — token may be expired or invalid')
+        error.value = 'Your session has expired. Please sign in again.'
+        logout()
         return
       }
-      if (res.ok) user.value = (await res.json()) as SanityUser
+      if (!res.ok) {
+        const body = await res.text()
+        const msg = `Failed to load your account (${res.status})`
+        console.warn('[auth]', msg, body)
+        error.value = msg
+        return
+      }
+      user.value = (await res.json()) as SanityUser
+      log('User loaded:', user.value.name, user.value.email)
     } catch (err) {
-      console.error('[auth] Failed to fetch user info:', err)
+      const msg = 'Could not reach Sanity to verify your session'
+      console.error('[auth]', msg, err)
+      error.value = msg
     }
   }
 
   async function initialize() {
+    log('Initializing — URL:', window.location.href)
+
     // Handle token from query string (?token=) — standard Sanity OAuth redirect
     const params = new URLSearchParams(window.location.search)
     let urlToken = params.get('token')
@@ -85,17 +121,25 @@ export const useAuthStore = defineStore('auth', () => {
     if (!urlToken && window.location.hash) {
       const hashParams = new URLSearchParams(window.location.hash.slice(1))
       urlToken = hashParams.get('token')
+      if (urlToken) log('Token found in hash fragment')
     }
 
     if (urlToken) {
+      log('Token found in URL, saving...')
       setToken(urlToken)
       const clean = new URL(window.location.href)
       clean.searchParams.delete('token')
       clean.hash = ''
       window.history.replaceState({}, '', clean.toString())
+    } else if (token.value) {
+      log('Resuming session from localStorage')
+    } else {
+      log('No token — unauthenticated')
     }
+
     if (token.value) await fetchUser()
   }
 
-  return { token, user, providers, isAuthenticated, loginWith, fetchProviders, logout, initialize }
+  return { token, user, providers, error, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
 })
+
