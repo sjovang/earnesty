@@ -27,6 +27,22 @@ onMounted(() => auth.fetchProviders())
       </p>
 
       <div
+        v-if="auth.error"
+        class="signin__error"
+        role="alert"
+      >
+        <span class="signin__error-icon">⚠</span>
+        {{ auth.error }}
+        <button
+          class="signin__error-dismiss"
+          aria-label="Dismiss"
+          @click="auth.clearError()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div
         v-if="auth.providers.length"
         class="signin__providers"
       >
@@ -42,7 +58,7 @@ onMounted(() => auth.fetchProviders())
       </div>
 
       <p
-        v-else
+        v-else-if="!auth.error"
         class="signin__loading"
       >
         Loading…
@@ -64,6 +80,40 @@ onMounted(() => auth.fetchProviders())
   color: var(--ctp-subtext0);
   margin: 0;
   line-height: 1.6;
+}
+
+.signin__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  background: color-mix(in srgb, var(--ctp-red) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-red) 35%, transparent);
+  border-radius: 7px;
+  font-size: 0.83rem;
+  color: var(--ctp-red);
+  line-height: 1.5;
+}
+
+.signin__error-icon {
+  flex-shrink: 0;
+  margin-top: 0.05em;
+}
+
+.signin__error-dismiss {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--ctp-red);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+  opacity: 0.7;
+}
+
+.signin__error-dismiss:hover {
+  opacity: 1;
 }
 
 .signin__providers {
@@ -106,3 +156,4 @@ onMounted(() => auth.fetchProviders())
   margin: 0;
 }
 </style>
+

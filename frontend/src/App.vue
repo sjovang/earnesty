@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
@@ -32,6 +32,12 @@ function onKeydown(e: KeyboardEvent) {
   if (mod && e.shiftKey && e.key === 'P') { e.preventDefault(); /* TODO: publish */ }
   if (e.key === 'F1') { e.preventDefault(); showHelp.value = true }
 }
+
+// Show sign-in modal automatically when an auth error arrives outside the modal
+// (e.g. expired session detected on page load)
+watch(() => auth.error, (err) => {
+  if (err && !showSignIn.value) showSignIn.value = true
+})
 
 onMounted(async () => {
   await auth.initialize()
