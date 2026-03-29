@@ -113,6 +113,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function initialize() {
     log('Initializing — URL:', window.location.href)
+    log('Query string:', window.location.search)
+    log('Hash:', window.location.hash)
 
     // Check for an auth error relayed from /callback (e.g. origin not allowed by Sanity)
     const params = new URLSearchParams(window.location.search)
