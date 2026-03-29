@@ -8,6 +8,10 @@ We use catppuccin for colors. The app have a light theme using catppuccin's latt
 
 User settings are stored in the browser's local storage, allowing for a personalized experience without the need for user accounts. Users can customize their writing environment, including font size, line spacing, and theme preferences.
 
+## Branching
+
+All work is done in feature branches and merged into `main` through a pull request. Branch names should follow the pattern `feature/<short-description>`. Direct commits to `main` are not allowed.
+
 ## Commits
 
 All commits must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This is required for release-please to automatically determine version bumps and generate changelogs.
