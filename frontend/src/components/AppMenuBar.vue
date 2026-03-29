@@ -7,8 +7,14 @@ import type { SanityUser } from '../stores/auth'
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
-defineProps<{ documentTitle?: string; saveStatus?: SaveStatus; user?: SanityUser }>()
-defineEmits<{ new: []; open: []; info: []; publish: []; help: []; logout: [] }>()
+defineProps<{
+  documentTitle?: string
+  saveStatus?: SaveStatus
+  user?: SanityUser
+  isAuthenticated?: boolean
+  hasDocument?: boolean
+}>()
+defineEmits<{ new: []; open: []; info: []; publish: []; help: []; signin: []; logout: [] }>()
 
 // ── Cursor-following shortcut tooltip ─────────────────────────────────────────
 const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
@@ -128,7 +134,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item"
-          @click="$emit('open')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated }"
+          :disabled="!isAuthenticated"
+          @click="isAuthenticated && $emit('open')"
           @mouseenter="onEnter('open', $event)"
           @mousemove="onMove('open', $event)"
           @mouseleave="onLeave"
@@ -142,7 +150,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item"
-          @click="$emit('info')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && $emit('info')"
           @mouseenter="onEnter('info', $event)"
           @mousemove="onMove('info', $event)"
           @mouseleave="onLeave"
@@ -156,7 +166,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item menubar__item--publish"
-          @click="$emit('publish')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && $emit('publish')"
           @mouseenter="onEnter('publish', $event)"
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
@@ -181,7 +193,9 @@ function onLeave() {
           class="menubar__sep"
           aria-hidden="true"
         />
+        <!-- User avatar / sign-in -->
         <button
+          v-if="isAuthenticated"
           role="menuitem"
           class="menubar__item menubar__item--user"
           title="Sign out"
@@ -198,6 +212,17 @@ function onLeave() {
             v-else
             class="menubar__avatar menubar__avatar--initials"
           >{{ user?.name?.charAt(0) ?? '?' }}</span>
+        </button>
+        <button
+          v-else
+          role="menuitem"
+          class="menubar__item menubar__item--signin"
+          @click="$emit('signin')"
+          @mouseenter="onEnter('signin', $event)"
+          @mousemove="onMove('signin', $event)"
+          @mouseleave="onLeave"
+        >
+          Sign in
         </button>
       </div>
     </div>
@@ -306,8 +331,23 @@ function onLeave() {
   color: var(--ctp-green);
 }
 
-.menubar__item--user {
-  padding: 0.2rem;
+.menubar__item--disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.menubar__item--disabled:hover {
+  background: transparent;
+  color: var(--ctp-subtext1);
+}
+
+.menubar__item--signin {
+  color: var(--ctp-blue);
+}
+
+.menubar__item--signin:hover {
+  background: color-mix(in srgb, var(--ctp-blue) 12%, transparent);
+  color: var(--ctp-blue);
 }
 
 .menubar__avatar {

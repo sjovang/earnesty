@@ -10,6 +10,7 @@ import { useSettingsStore } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, saveDocument, type TiptapNode } from '../services/sanity'
+import { INTRO_HTML } from '../constants'
 import AppLogo from '../components/AppLogo.vue'
 
 const lowlight = createLowlight(common)
@@ -17,10 +18,6 @@ const lowlight = createLowlight(common)
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
 const auth = useAuthStore()
-
-const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
-<p>No distractions. No formatting toolbars. Just you and the blank page.</p>
-<p>Select any part of this text and start typing to replace it — or click anywhere to place your cursor and begin.</p>`
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)

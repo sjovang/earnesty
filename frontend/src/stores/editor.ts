@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { BlogDocument } from '../services/sanity'
+import { INTRO_HTML } from '../constants'
 
 export interface DocumentMeta {
   title: string
@@ -73,6 +74,11 @@ export const useEditorStore = defineStore('editor', () => {
     localStorage.removeItem(CONTENT_KEY)
   }
 
+  function resetToPlaceholder() {
+    clearDocument()
+    pendingHtml.value = INTRO_HTML
+  }
+
   function setContent(text: string) {
     currentContent.value = text
   }
@@ -106,6 +112,7 @@ export const useEditorStore = defineStore('editor', () => {
     meta,
     openDocument,
     clearDocument,
+    resetToPlaceholder,
     setContent,
     updateMeta,
     setSaveStatus,

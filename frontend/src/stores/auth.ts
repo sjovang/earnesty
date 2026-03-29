@@ -8,17 +8,42 @@ export interface SanityUser {
   profileImage?: string
 }
 
+export interface SanityAuthProvider {
+  name: string
+  title: string
+  url: string
+  signUpUrl?: string
+}
+
 const TOKEN_KEY = 'earnesty-auth-token'
+const PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID as string
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem(TOKEN_KEY))
   const user = ref<SanityUser | null>(null)
+  const providers = ref<SanityAuthProvider[]>([])
   const isAuthenticated = computed(() => !!token.value)
 
-  function login() {
+  /** Redirect the browser to a provider login page. */
+  function loginWith(providerUrl: string) {
     const origin = window.location.origin + window.location.pathname
-    const url = `https://api.sanity.io/v2021-06-07/auth/login?origin=${encodeURIComponent(origin)}&label=Earnesty`
-    window.location.href = url
+    window.location.href = `${providerUrl}?origin=${encodeURIComponent(origin)}`
+  }
+
+  /** Fetch the list of configured auth providers for this Sanity project. */
+  async function fetchProviders() {
+    if (providers.value.length) return
+    try {
+      const res = await fetch(
+        `https://api.sanity.io/v2021-06-07/auth/providers?projectId=${PROJECT_ID}`,
+      )
+      if (res.ok) {
+        const data = (await res.json()) as { providers: SanityAuthProvider[] }
+        providers.value = data.providers
+      }
+    } catch (err) {
+      console.error('[auth] Failed to fetch providers:', err)
+    }
   }
 
   function setToken(t: string) {
@@ -38,13 +63,8 @@ export const useAuthStore = defineStore('auth', () => {
       const res = await fetch('/v2021-10-04/users/me', {
         headers: { Authorization: `Bearer ${token.value}` },
       })
-      if (res.status === 401) {
-        logout()
-        return
-      }
-      if (res.ok) {
-        user.value = (await res.json()) as SanityUser
-      }
+      if (res.status === 401) { logout(); return }
+      if (res.ok) user.value = (await res.json()) as SanityUser
     } catch (err) {
       console.error('[auth] Failed to fetch user info:', err)
     }
@@ -59,11 +79,8 @@ export const useAuthStore = defineStore('auth', () => {
       clean.searchParams.delete('token')
       window.history.replaceState({}, '', clean.toString())
     }
-
-    if (token.value) {
-      await fetchUser()
-    }
+    if (token.value) await fetchUser()
   }
 
-  return { token, user, isAuthenticated, login, logout, initialize }
+  return { token, user, providers, isAuthenticated, loginWith, fetchProviders, logout, initialize }
 })
