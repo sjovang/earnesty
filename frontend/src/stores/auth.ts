@@ -39,8 +39,6 @@ export const useAuthStore = defineStore('auth', () => {
     log(`Redirecting to provider (origin: ${origin})`)
     window.location.href = url.toString()
   }
-    window.location.href = url.toString()
-  }
 
   /** Fetch the list of configured auth providers for this Sanity project. */
   async function fetchProviders() {
