@@ -2,7 +2,7 @@ The purpose of this application is to provide a clean and minimal user interface
 
 Content is stored in a Sanity.io project, which allows for flexible content management and easy integration with the frontend. The application is designed to be responsive and accessible, ensuring that users can write comfortably on any device.
 
-We are creating a single-page application (SPA) using Aspire.dev, which allows for a seamless user experience without page reloads. The frontend will be built using Vue, and we will utilize Sanity's APIs to fetch and manage content.
+This is a single-page application (SPA) built with Vue 3 and Vite, using Sanity's APIs to fetch and manage content.
 
 We use catppuccin for colors. The app have a light theme using catppuccin's latte palette, and a dark theme using catppuccin's macchiato palette. The user can switch between themes in the settings.
 
@@ -26,3 +26,13 @@ Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `buil
 - All other types (`chore:`, `ci:`, `docs:`, etc.) do not trigger a release
 
 Always include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>` trailer in every commit.
+
+## Session startup
+
+At the start of every session, start the local dev server in the background if it is not already running:
+
+```sh
+cd frontend && npm run dev &
+```
+
+The dev server runs at http://localhost:5173. Use `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
