@@ -26,6 +26,15 @@ const shortcuts = [
       Earnesty is a distraction-free writing environment. Click anywhere on the page and start
       typing. Your words are the only thing that matters.
     </p>
+    <p class="intro">
+      Markdown is supported for formatting.
+      <a
+        href="https://github.com/sjovang/earnesty/blob/main/docs/markdown.md"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="docs-link"
+      >See which syntax is available →</a>
+    </p>
 
     <h3 class="section-title">
       Keyboard shortcuts
@@ -50,6 +59,16 @@ const shortcuts = [
   font-size: 0.9rem;
   line-height: 1.6;
   margin-bottom: 1.25rem;
+}
+
+.docs-link {
+  color: var(--ctp-blue);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.docs-link:hover {
+  text-decoration: underline;
 }
 
 .section-title {
