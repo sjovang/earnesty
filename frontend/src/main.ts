@@ -27,7 +27,9 @@ if (import.meta.env.DEV) {
     sessionStorage.setItem('_url_log', JSON.stringify(_log))
     console.log('[boot] URL log (persisted across navigations):', _log)
     if (_earlyToken) console.log('[boot] ✅ Token captured early from URL')
-  } catch {}
+  } catch {
+    // ignore errors from non-critical logging
+  }
 }
 
 const app = createApp(App)
