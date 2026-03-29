@@ -29,6 +29,30 @@ onMounted(() => auth.fetchProviders())
       </p>
 
       <div
+        v-if="auth.corsError"
+        class="signin__cors-error"
+        role="alert"
+      >
+        <strong>⚠ CORS not configured for this origin</strong>
+        <p>
+          Sanity doesn't allow sign-in from
+          <code>{{ auth.corsError }}</code>.
+        </p>
+        <ol>
+          <li>Go to <a href="https://sanity.io/manage" target="_blank" rel="noopener">sanity.io/manage</a></li>
+          <li>Select your project → <strong>API</strong> → <strong>CORS Origins</strong></li>
+          <li>Add <code>{{ auth.corsError }}</code></li>
+        </ol>
+        <button
+          class="signin__error-dismiss"
+          aria-label="Dismiss"
+          @click="auth.clearError()"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div
         v-if="auth.error"
         class="signin__error"
         role="alert"
@@ -90,6 +114,56 @@ onMounted(() => auth.fetchProviders())
   color: var(--ctp-subtext0);
   margin: 0;
   line-height: 1.6;
+}
+
+.signin__cors-error {
+  position: relative;
+  padding: 0.75rem 0.85rem;
+  background: color-mix(in srgb, var(--ctp-yellow) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-yellow) 40%, transparent);
+  border-radius: 7px;
+  font-size: 0.83rem;
+  color: var(--ctp-text);
+  line-height: 1.5;
+
+  strong {
+    display: block;
+    color: var(--ctp-yellow);
+    margin-bottom: 0.4rem;
+  }
+
+  p {
+    margin: 0 0 0.5rem;
+  }
+
+  ol {
+    margin: 0;
+    padding-left: 1.4rem;
+  }
+
+  li {
+    margin-bottom: 0.15rem;
+  }
+
+  a {
+    color: var(--ctp-blue);
+    text-decoration: underline;
+  }
+
+  code {
+    font-family: monospace;
+    font-size: 0.9em;
+    background: color-mix(in srgb, var(--ctp-surface0) 60%, transparent);
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    word-break: break-all;
+  }
+
+  .signin__error-dismiss {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.6rem;
+  }
 }
 
 .signin__error {
