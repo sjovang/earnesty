@@ -221,6 +221,7 @@ onMounted(() => auth.fetchProviders())
 }
 
 
+.signin__loading {
   font-size: 0.85rem;
   color: var(--ctp-subtext0);
   margin: 0;
