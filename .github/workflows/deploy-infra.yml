@@ -1,0 +1,44 @@
+name: Deploy Infrastructure
+
+on:
+  release:
+    types: [published]
+
+# OIDC token needed for Azure federated credential login
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Bicep Stack
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # Creates (or updates) a subscription-scoped deployment stack.
+      # Using a deployment stack ensures resources are tracked and the deploy
+      # is idempotent — re-running on the same release will update in place
+      # rather than creating duplicate resources.
+      - name: Deploy infrastructure
+        run: |
+          az stack sub create \
+            --name "earnesty" \
+            --location "${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+            --template-file infra/main.bicep \
+            --parameters \
+              location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Free' }}" \
+            --deny-settings-mode none \
+            --action-on-unmanage detachResources \
+            --yes
