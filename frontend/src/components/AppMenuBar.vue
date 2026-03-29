@@ -253,9 +253,24 @@ function onLeave() {
           stroke-linecap="round"
           aria-hidden="true"
         >
-          <line x1="3" y1="5" x2="17" y2="5" />
-          <line x1="3" y1="10" x2="17" y2="10" />
-          <line x1="3" y1="15" x2="17" y2="15" />
+          <line
+            x1="3"
+            y1="5"
+            x2="17"
+            y2="5"
+          />
+          <line
+            x1="3"
+            y1="10"
+            x2="17"
+            y2="10"
+          />
+          <line
+            x1="3"
+            y1="15"
+            x2="17"
+            y2="15"
+          />
         </svg>
         <svg
           v-else
@@ -268,8 +283,18 @@ function onLeave() {
           stroke-linecap="round"
           aria-hidden="true"
         >
-          <line x1="4" y1="4" x2="16" y2="16" />
-          <line x1="16" y1="4" x2="4" y2="16" />
+          <line
+            x1="4"
+            y1="4"
+            x2="16"
+            y2="16"
+          />
+          <line
+            x1="16"
+            y1="4"
+            x2="4"
+            y2="16"
+          />
         </svg>
       </button>
     </div>
@@ -285,33 +310,43 @@ function onLeave() {
           role="menuitem"
           class="menubar__mobile-item"
           @click="mobileEmit('new')"
-        >New</button>
+        >
+          New
+        </button>
         <button
           role="menuitem"
           class="menubar__mobile-item"
           :class="{ 'menubar__item--disabled': !isAuthenticated }"
           :disabled="!isAuthenticated"
           @click="isAuthenticated && mobileEmit('open')"
-        >Open</button>
+        >
+          Open
+        </button>
         <button
           role="menuitem"
           class="menubar__mobile-item"
           :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
           :disabled="!isAuthenticated || !hasDocument"
           @click="isAuthenticated && hasDocument && mobileEmit('info')"
-        >Info</button>
+        >
+          Info
+        </button>
         <button
           role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--publish"
           :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
           :disabled="!isAuthenticated || !hasDocument"
           @click="isAuthenticated && hasDocument && mobileEmit('publish')"
-        >Publish</button>
+        >
+          Publish
+        </button>
         <button
           role="menuitem"
           class="menubar__mobile-item"
           @click="mobileEmit('help')"
-        >Help</button>
+        >
+          Help
+        </button>
         <div class="menubar__mobile-sep" />
         <button
           v-if="isAuthenticated"
@@ -336,7 +371,9 @@ function onLeave() {
           role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--signin"
           @click="mobileEmit('signin')"
-        >Sign in</button>
+        >
+          Sign in
+        </button>
       </div>
     </Transition>
   </nav>
