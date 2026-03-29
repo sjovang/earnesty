@@ -2,7 +2,6 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 
 const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID'] ?? '5ibtsfdc'
 
@@ -10,7 +9,6 @@ const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID'] ?? '5ibtsfdc'
 export default defineConfig({
   plugins: [
     vue(),
-    vueDevTools(),
   ],
   resolve: {
     alias: {
