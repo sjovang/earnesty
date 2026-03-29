@@ -537,10 +537,13 @@ function onLeave() {
 .menubar__mobile-panel {
   display: none;
   flex-direction: column;
-  padding: var(--space-2xs) var(--space-2xs);
-  border-top: 1px solid var(--ctp-surface0);
-  margin-top: var(--space-2xs);
+  padding: var(--space-2xs);
   gap: var(--space-3xs);
+  /* Solid background so it's fully opaque over content */
+  background: var(--ctp-mantle);
+  border: 1px solid var(--ctp-surface0);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
 }
 
 .menubar__mobile-item {
@@ -595,6 +598,12 @@ function onLeave() {
   position: fixed;
   inset: 0;
   z-index: 99;
+}
+
+/* Merge inner and panel into one box when panel is open */
+.menubar:has(.menubar__mobile-panel) .menubar__inner {
+  border-radius: 10px 10px 0 0;
+  border-bottom-color: transparent;
 }
 
 /* ── Mobile breakpoint ────────────────────────────────────────────────────── */
