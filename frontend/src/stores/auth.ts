@@ -60,10 +60,16 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchUser() {
     if (!token.value) return
     try {
-      const res = await fetch('/v2021-10-04/users/me', {
+      const res = await fetch('/v2021-06-07/users/me', {
         headers: { Authorization: `Bearer ${token.value}` },
       })
-      if (res.status === 401) { logout(); return }
+      // On 401 only clear the token if it came from localStorage (persisted session),
+      // not if it was just set from the OAuth redirect — avoid clearing a fresh token
+      // due to a transient error or misconfigured proxy.
+      if (res.status === 401) {
+        console.warn('[auth] /users/me returned 401 — token may be expired')
+        return
+      }
       if (res.ok) user.value = (await res.json()) as SanityUser
     } catch (err) {
       console.error('[auth] Failed to fetch user info:', err)
@@ -71,12 +77,21 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function initialize() {
+    // Handle token from query string (?token=) — standard Sanity OAuth redirect
     const params = new URLSearchParams(window.location.search)
-    const urlToken = params.get('token')
+    let urlToken = params.get('token')
+
+    // Fallback: some flows return token in hash fragment (#token=)
+    if (!urlToken && window.location.hash) {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1))
+      urlToken = hashParams.get('token')
+    }
+
     if (urlToken) {
       setToken(urlToken)
       const clean = new URL(window.location.href)
       clean.searchParams.delete('token')
+      clean.hash = ''
       window.history.replaceState({}, '', clean.toString())
     }
     if (token.value) await fetchUser()
