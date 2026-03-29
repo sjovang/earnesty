@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
     const origin = window.location.origin
     const url = new URL(providerUrl)
     url.searchParams.set('origin', origin)
-    log(`Redirecting to provider (origin: ${origin})`)
+    log('Provider URL before redirect:', url.toString())
     window.location.href = url.toString()
   }
 
