@@ -2,8 +2,8 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
+const TOKEN_KEY = 'earnesty-auth-token'
 const router = useRouter()
-const CHANNEL = 'earnesty-auth'
 const DEV = import.meta.env.DEV
 
 function log(...args: unknown[]) {
@@ -16,28 +16,17 @@ onMounted(() => {
   const errorCode = params.get('error')
   const errorDesc = params.get('error_description')
 
-  const channel = new BroadcastChannel(CHANNEL)
-
   if (token) {
-    log('Token received, broadcasting auth-success')
-    channel.postMessage({ type: 'auth-success', token })
-  } else if (errorCode) {
-    const message = errorDesc ?? errorCode
-    log('OAuth error received:', message)
-    channel.postMessage({ type: 'auth-error', message })
-  } else {
-    log('No token or error in callback URL')
-    channel.postMessage({ type: 'auth-error', message: 'Sign-in did not complete. Please try again.' })
-  }
-
-  channel.close()
-
-  // If we were opened as a popup, close the window.
-  // Otherwise (redirect fallback), navigate home — the main app will read from localStorage.
-  if (window.opener) {
-    window.close()
-  } else {
+    log('Token received, saving to localStorage')
+    localStorage.setItem(TOKEN_KEY, token)
     void router.replace('/')
+  } else if (errorCode) {
+    const message = encodeURIComponent(errorDesc ?? errorCode)
+    log('OAuth error received:', decodeURIComponent(message))
+    void router.replace(`/?auth_error=${message}`)
+  } else {
+    log('No token or error in callback URL — redirecting home')
+    void router.replace('/?auth_error=Sign-in+did+not+complete.+Please+try+again.')
   }
 })
 </script>
