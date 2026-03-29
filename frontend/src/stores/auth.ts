@@ -33,7 +33,11 @@ export const useAuthStore = defineStore('auth', () => {
   /** Redirect the browser to a provider login page. */
   function loginWith(providerUrl: string) {
     const origin = window.location.origin + window.location.pathname
-    const target = `${providerUrl}?origin=${encodeURIComponent(origin)}`
+    // Use URL API to safely append ?origin= regardless of existing params
+    const url = new URL(providerUrl)
+    url.searchParams.set('origin', origin)
+    const target = url.toString()
+    log(`Origin sent to Sanity: ${origin}`)
     log(`Redirecting to provider: ${target}`)
     window.location.href = target
   }
@@ -113,8 +117,21 @@ export const useAuthStore = defineStore('auth', () => {
   async function initialize() {
     log('Initializing — URL:', window.location.href)
 
-    // Handle token from query string (?token=) — standard Sanity OAuth redirect
+    // Check for OAuth error returned by Sanity (e.g. origin not allowed)
     const params = new URLSearchParams(window.location.search)
+    const oauthError = params.get('error')
+    if (oauthError) {
+      const description = params.get('error_description') ?? oauthError
+      console.error('[auth] OAuth error from Sanity:', description)
+      error.value = `Sign-in failed: ${description}. Make sure "${window.location.origin}" is added to CORS Origins in your Sanity project settings.`
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('error')
+      clean.searchParams.delete('error_description')
+      window.history.replaceState({}, '', clean.toString())
+      return
+    }
+
+    // Handle token from query string (?token=) — standard Sanity OAuth redirect
     let urlToken = params.get('token')
 
     // Fallback: some flows return token in hash fragment (#token=)
