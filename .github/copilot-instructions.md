@@ -12,7 +12,7 @@ User settings are stored in the browser's local storage, allowing for a personal
 
 All work is done in feature branches and merged into `main` through a pull request. Branch names should follow the pattern `feature/<short-description>`. Direct commits to `main` are not allowed.
 
-Pull requests must not be merged until all CI checks pass.
+Pull requests must not be merged until all CI checks pass. Pull requests are always created as drafts and must be reviewed and approved by the repository owner before merging — Copilot will not approve or merge them.
 
 ## Commits
 

@@ -28,14 +28,15 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref<SanityUser | null>(null)
   const providers = ref<SanityAuthProvider[]>([])
   const error = ref<string | null>(null)
+  const corsError = ref<string | null>(null) // set when Sanity rejects the origin
   const isAuthenticated = computed(() => !!token.value)
 
-  /** Redirect the browser to a provider login page. Sanity will redirect back to /callback. */
+  /** Redirect the browser to a provider login page. Sanity will redirect back to /. */
   function loginWith(providerUrl: string) {
-    const callbackUrl = window.location.origin + '/callback'
+    const origin = window.location.origin
     const url = new URL(providerUrl)
-    url.searchParams.set('origin', callbackUrl)
-    log(`Redirecting to provider (callback: ${callbackUrl})`)
+    url.searchParams.set('origin', origin)
+    log('Provider URL before redirect:', url.toString())
     window.location.href = url.toString()
   }
 
@@ -79,6 +80,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function clearError() {
     error.value = null
+    corsError.value = null
   }
 
   async function fetchUser() {
@@ -112,14 +114,36 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function initialize() {
+    // Skip initialization on the /callback route — CallbackView handles that.
+    if (window.location.pathname === '/callback') return
+
     log('Initializing — URL:', window.location.href)
     log('Query string:', window.location.search)
     log('Hash:', window.location.hash)
 
-    // Check for an auth error relayed from /callback (e.g. origin not allowed by Sanity)
+    // Check for token in URL — Sanity appends ?token= when redirecting to the root origin.
+    // Also handle #token= (some providers use hash fragments).
+    const urlParams = new URLSearchParams(window.location.search)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    const urlToken = urlParams.get('token') ?? hashParams.get('token')
+    if (urlToken) {
+      log('Token received in URL — saving to localStorage')
+      setToken(urlToken)
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('token')
+      window.history.replaceState({}, '', clean.toString())
+    }
+
     const params = new URLSearchParams(window.location.search)
     const authError = params.get('auth_error')
-    if (authError) {
+    if (authError === 'cors') {
+      const corsOrigin = decodeURIComponent(params.get('cors_origin') ?? window.location.origin)
+      corsError.value = corsOrigin
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('auth_error')
+      clean.searchParams.delete('cors_origin')
+      window.history.replaceState({}, '', clean.toString())
+    } else if (authError) {
       error.value = decodeURIComponent(authError)
       const clean = new URL(window.location.href)
       clean.searchParams.delete('auth_error')
@@ -140,7 +164,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { token, user, providers, error, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
+  return { token, user, providers, error, corsError, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
 })
 
 

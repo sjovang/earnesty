@@ -33,28 +33,14 @@ onMounted(() => {
     log('OAuth error received:', decodeURIComponent(message))
     void router.replace(`/?auth_error=${message}`)
   } else {
-    log('No token or error — check full URL above for clues')
-    void router.replace('/?auth_error=Sign-in+did+not+complete.+Please+try+again.')
+    // Sanity silently redirects here without a token when the origin is not
+    // whitelisted. Show a specific, actionable CORS error.
+    const origin = encodeURIComponent(window.location.origin)
+    log('No token — likely CORS not configured for', window.location.origin)
+    void router.replace(`/?auth_error=cors&cors_origin=${origin}`)
   }
 })
 </script>
-
-<template>
-  <div class="callback">
-    <p>Completing sign-in…</p>
-  </div>
-</template>
-
-<style scoped>
-.callback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-size: 0.9rem;
-  color: var(--ctp-subtext0);
-}
-</style>
 
 <template>
   <div class="callback">
