@@ -35,4 +35,14 @@ At the start of every session, start the local dev server in the background if i
 cd frontend && npm run dev &
 ```
 
-The dev server runs at http://localhost:5173. Use `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
+The dev server runs at http://localhost:5173. `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
+
+## Pre-commit checks
+
+Before every `git commit`, run pre-commit checks manually and fix any failures before proceeding:
+
+```sh
+pre-commit run
+```
+
+If checks fail, fix all reported errors and warnings, then re-run until they pass. Never commit with failing checks or use `--no-verify` to bypass them.
