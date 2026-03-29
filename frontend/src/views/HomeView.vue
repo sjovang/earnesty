@@ -8,13 +8,15 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { createLowlight, common } from 'lowlight'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
-import { tiptapJsonToPortableText, saveDocument, hasWriteAccess, type TiptapNode } from '../services/sanity'
+import { useAuthStore } from '../stores/auth'
+import { tiptapJsonToPortableText, saveDocument, type TiptapNode } from '../services/sanity'
 import AppLogo from '../components/AppLogo.vue'
 
 const lowlight = createLowlight(common)
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
+const auth = useAuthStore()
 
 const INTRO_HTML = `<p>Earnesty is your space for focused writing.</p>
 <p>No distractions. No formatting toolbars. Just you and the blank page.</p>
@@ -29,10 +31,10 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 async function doAutosave(json: TiptapNode) {
   const doc = editorStore.activeDocument
-  if (!doc || !hasWriteAccess()) return
+  if (!doc || !auth.token) return
   editorStore.setSaveStatus('saving')
   try {
-    await saveDocument(doc._id, tiptapJsonToPortableText(json))
+    await saveDocument(doc._id, tiptapJsonToPortableText(json), auth.token)
     editorStore.setSaveStatus('saved')
   } catch (err) {
     console.error('[autosave] failed:', err)
@@ -41,7 +43,7 @@ async function doAutosave(json: TiptapNode) {
 }
 
 function scheduleAutosave(json: TiptapNode) {
-  if (!editorStore.activeDocument || !hasWriteAccess()) return
+  if (!editorStore.activeDocument || !auth.token) return
   if (saveTimer) clearTimeout(saveTimer)
   editorStore.setSaveStatus('saving') // immediate feedback
   saveTimer = setTimeout(() => doAutosave(json), AUTOSAVE_DELAY)

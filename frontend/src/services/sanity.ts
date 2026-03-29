@@ -14,17 +14,15 @@ export const sanityClient = createClient({
   ...devProxyConfig,
 })
 
-/** Write client — requires VITE_SANITY_TOKEN with editor role. */
-export const sanityWriteClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
-  dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
-  apiVersion: '2024-01-01',
-  token: import.meta.env.VITE_SANITY_TOKEN,
-  ...devProxyConfig,
-})
-
-export function hasWriteAccess(): boolean {
-  return !!import.meta.env.VITE_SANITY_TOKEN
+/** Creates an authenticated write client using the current user's session token. */
+export function createWriteClient(token: string) {
+  return createClient({
+    projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
+    dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
+    apiVersion: '2024-01-01',
+    token,
+    ...devProxyConfig,
+  })
 }
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -329,8 +327,8 @@ function key() {
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 /** Saves PortableText blocks back to a Sanity document. */
-export async function saveDocument(id: string, blocks: SanityBodyBlock[]): Promise<void> {
-  await sanityWriteClient.patch(id).set({ body: blocks }).commit()
+export async function saveDocument(id: string, blocks: SanityBodyBlock[], token: string): Promise<void> {
+  await createWriteClient(token).patch(id).set({ body: blocks }).commit()
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -363,9 +361,10 @@ export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
 export async function createDraftBlogDocument(
   title: string,
   slug: string,
+  token: string,
 ): Promise<BlogDocument> {
   const id = `drafts.${crypto.randomUUID()}`
-  return sanityWriteClient.create({
+  return createWriteClient(token).create({
     _id: id,
     _type: 'blog',
     title,

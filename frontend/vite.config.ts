@@ -32,6 +32,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
       },
+      // Proxy user info endpoint (not project-specific) for the auth flow.
+      '/v2021-10-04': {
+        target: 'https://api.sanity.io',
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 })

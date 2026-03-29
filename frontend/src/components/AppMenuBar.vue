@@ -2,12 +2,13 @@
 import { ref } from 'vue'
 import AppLogo from './AppLogo.vue'
 import type { SaveStatus } from '../stores/editor'
+import type { SanityUser } from '../stores/auth'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
-defineProps<{ documentTitle?: string; saveStatus?: SaveStatus }>()
-defineEmits<{ new: []; open: []; info: []; publish: []; help: [] }>()
+defineProps<{ documentTitle?: string; saveStatus?: SaveStatus; user?: SanityUser }>()
+defineEmits<{ new: []; open: []; info: []; publish: []; help: []; logout: [] }>()
 
 // ── Cursor-following shortcut tooltip ─────────────────────────────────────────
 const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
@@ -176,6 +177,28 @@ function onLeave() {
         >
           Help
         </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item menubar__item--user"
+          title="Sign out"
+          @click="$emit('logout')"
+          @mouseleave="onLeave"
+        >
+          <img
+            v-if="user?.profileImage"
+            :src="user.profileImage"
+            :alt="user.name"
+            class="menubar__avatar"
+          >
+          <span
+            v-else
+            class="menubar__avatar menubar__avatar--initials"
+          >{{ user?.name?.charAt(0) ?? '?' }}</span>
+        </button>
       </div>
     </div>
   </nav>
@@ -281,6 +304,28 @@ function onLeave() {
 .menubar__item--publish:hover {
   background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
   color: var(--ctp-green);
+}
+
+.menubar__item--user {
+  padding: 0.2rem;
+}
+
+.menubar__avatar {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.menubar__avatar--initials {
+  background: var(--ctp-surface1);
+  color: var(--ctp-subtext1);
+  font-size: 0.7rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── Save status ──────────────────────────────────────────────────────────── */
