@@ -21,10 +21,14 @@ const shortcuts: Record<string, string> = {
 }
 
 function onEnter(key: string, e: MouseEvent) {
-  tooltip.value = { label: shortcuts[key], x: e.clientX, y: e.clientY }
+  const label = shortcuts[key] ?? key
+  tooltip.value = { label, x: e.clientX, y: e.clientY }
 }
 function onMove(key: string, e: MouseEvent) {
-  if (tooltip.value) tooltip.value = { label: shortcuts[key], x: e.clientX, y: e.clientY }
+  if (tooltip.value) {
+    const label = shortcuts[key] ?? key
+    tooltip.value = { label, x: e.clientX, y: e.clientY }
+  }
 }
 function onLeave() {
   tooltip.value = null

@@ -121,7 +121,7 @@ watch(
   () => editorStore.pendingHtml,
   (html) => {
     if (html === null || !tiptap.value) return
-    tiptap.value.commands.setContent(html, false)
+    tiptap.value.commands.setContent(html, { emitUpdate: false })
     localStorage.setItem(CONTENT_KEY, html)
     editorStore.consumePendingHtml()
     isIntro.value = false

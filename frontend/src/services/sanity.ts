@@ -116,6 +116,7 @@ export function portableTextToHtml(blocks: SanityBodyBlock[] | undefined): strin
 
   while (i < blocks.length) {
     const block = blocks[i]
+    if (!block) { i++; continue }
 
     // Image block
     if (block._type === 'image') {
@@ -144,7 +145,7 @@ export function portableTextToHtml(blocks: SanityBodyBlock[] | undefined): strin
       const items: string[] = []
       while (
         i < blocks.length &&
-        blocks[i]._type === 'block' &&
+        blocks[i]?._type === 'block' &&
         (blocks[i] as SanityBlock).listItem === textBlock.listItem
       ) {
         items.push(`<li>${renderInline(blocks[i] as SanityBlock)}</li>`)
@@ -277,7 +278,7 @@ function convertTiptapNode(
       // Only round-trip images that came from our Sanity CDN
       const cdnMatch = src.match(/cdn\.sanity\.io\/images\/[^/]+\/[^/]+\/(.+)$/)
       if (cdnMatch) {
-        const ref = 'image-' + cdnMatch[1].replace(/\.([^.]+)$/, '-$1')
+        const ref = 'image-' + (cdnMatch[1] ?? '').replace(/\.([^.]+)$/, '-$1')
         blocks.push({
           _key: key(),
           _type: 'image',
