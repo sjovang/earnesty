@@ -55,20 +55,3 @@ onMounted(() => {
   color: var(--ctp-subtext0);
 }
 </style>
-
-<template>
-  <div class="callback">
-    <p>Completing sign-in…</p>
-  </div>
-</template>
-
-<style scoped>
-.callback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  font-size: 0.9rem;
-  color: var(--ctp-subtext0);
-}
-</style>
