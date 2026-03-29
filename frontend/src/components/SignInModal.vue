@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { useAuthStore } from '../stores/auth'
 
 defineEmits<{ close: [] }>()
 
 const auth = useAuthStore()
+const isDev = import.meta.env.DEV
+const currentOrigin = computed(() => window.location.origin)
 
 const providerIcons: Record<string, string> = {
   github: '⌥',
@@ -63,6 +65,14 @@ onMounted(() => auth.fetchProviders())
       >
         Loading…
       </p>
+
+      <div
+        v-if="isDev"
+        class="signin__dev"
+      >
+        <strong>Dev:</strong> Register this origin in Sanity CORS settings:<br>
+        <code>{{ currentOrigin }}</code>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -154,6 +164,29 @@ onMounted(() => auth.fetchProviders())
   font-size: 0.85rem;
   color: var(--ctp-subtext0);
   margin: 0;
+}
+
+.signin__dev {
+  padding: 0.6rem 0.75rem;
+  background: color-mix(in srgb, var(--ctp-yellow) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-yellow) 30%, transparent);
+  border-radius: 7px;
+  font-size: 0.78rem;
+  color: var(--ctp-subtext1);
+  line-height: 1.6;
+}
+
+.signin__dev strong {
+  color: var(--ctp-yellow);
+}
+
+.signin__dev code {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: var(--ctp-text);
+  word-break: break-all;
 }
 </style>
 
