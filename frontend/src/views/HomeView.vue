@@ -164,9 +164,11 @@ watch(
 
 <style scoped>
 .editor {
-  max-width: 680px;
+  /* 60ch measured in Lora so the width tracks the actual typeface */
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  max-width: 60ch;
   margin: 0 auto;
-  padding: 40vh 1.5rem 50vh;
+  padding: 40vh var(--space-s) 50vh;
   min-height: 100vh;
 }
 
@@ -175,8 +177,8 @@ watch(
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 3rem;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
   color: var(--ctp-mauve);
 }
 
