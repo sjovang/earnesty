@@ -303,13 +303,13 @@ function onLeave() {
   height: 1.1rem;
   background: var(--ctp-surface1);
   flex-shrink: 0;
-  margin: 0 0.15rem;
+  margin: 0 0.5rem;
 }
 
 .menubar__item {
-  padding: 0.35rem 0.8rem;
+  padding: 0.45rem 1rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   background: transparent;
   color: var(--ctp-subtext1);
   font-size: 0.85rem;
