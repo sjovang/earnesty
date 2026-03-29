@@ -31,12 +31,14 @@ export const useAuthStore = defineStore('auth', () => {
   const corsError = ref<string | null>(null) // set when Sanity rejects the origin
   const isAuthenticated = computed(() => !!token.value)
 
-  /** Redirect the browser to a provider login page. Sanity will redirect back to /callback. */
+  /** Redirect the browser to a provider login page. Sanity will redirect back to /. */
   function loginWith(providerUrl: string) {
-    const callbackUrl = window.location.origin + '/callback'
+    const origin = window.location.origin
     const url = new URL(providerUrl)
-    url.searchParams.set('origin', callbackUrl)
-    log(`Redirecting to provider (callback: ${callbackUrl})`)
+    url.searchParams.set('origin', origin)
+    log(`Redirecting to provider (origin: ${origin})`)
+    window.location.href = url.toString()
+  }
     window.location.href = url.toString()
   }
 
@@ -120,6 +122,19 @@ export const useAuthStore = defineStore('auth', () => {
     log('Initializing — URL:', window.location.href)
     log('Query string:', window.location.search)
     log('Hash:', window.location.hash)
+
+    // Check for token in URL — Sanity appends ?token= when redirecting to the root origin.
+    // Also handle #token= (some providers use hash fragments).
+    const urlParams = new URLSearchParams(window.location.search)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    const urlToken = urlParams.get('token') ?? hashParams.get('token')
+    if (urlToken) {
+      log('Token received in URL — saving to localStorage')
+      setToken(urlToken)
+      const clean = new URL(window.location.href)
+      clean.searchParams.delete('token')
+      window.history.replaceState({}, '', clean.toString())
+    }
 
     const params = new URLSearchParams(window.location.search)
     const authError = params.get('auth_error')
