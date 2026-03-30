@@ -1,16 +1,16 @@
 # Earnesty
 
-A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and a [Sanity.io](https://sanity.io) backend, orchestrated by [.NET Aspire](https://aspire.dev).
+A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and a [Sanity.io](https://sanity.io) backend.
 
 > [!IMPORTANT]
 > I treat this "app" as a vibe coding experiment to try out all kinds of weird stuff. There is zero effort on quality assurance =)
 
 ## Prerequisites
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download)
-- [Node.js 20+](https://nodejs.org) with npm
+- [Node.js 22+](https://nodejs.org) with npm
+- [pre-commit](https://pre-commit.com) (optional, for local git hooks)
 
-## Setup
+## Local development
 
 1. **Install frontend dependencies**
 
@@ -18,54 +18,35 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    cd frontend && npm install
    ```
 
-2. **Trust the HTTPS dev certificate** *(first time only)*
-
-   ```sh
-   dotnet dev-certs https --trust
-   ```
-
-   This adds the ASP.NET Core dev certificate to your system keychain so the Aspire dashboard opens without browser security warnings. You will be prompted for your password on macOS.
-
-3. **Configure environment variables**
+2. **Configure environment variables**
 
    ```sh
    cp frontend/.env.example frontend/.env
    ```
 
-   Edit `frontend/.env` and set your Sanity project ID:
+   Edit `frontend/.env`:
 
    ```env
    VITE_SANITY_PROJECT_ID=your_project_id
-   VITE_SANITY_DATASET=Development
+   VITE_SANITY_DATASET=dev
+   VITE_SANITY_TOKEN=your_sanity_token
    ```
 
-## Running locally
+3. **Start the dev server**
 
-Start the full stack through the Aspire AppHost — this launches the Vue dev server and opens the Aspire dashboard:
+   ```sh
+   cd frontend && npm run dev
+   ```
 
-```sh
-dotnet run --project Earnesty.AppHost
-```
+   The app is available at <http://localhost:5173>.
 
-The Aspire dashboard will show all running resources and their URLs. The Vue frontend is available at the URL shown for the `frontend` resource (typically <http://localhost:5173>).
+4. **(Optional) Install pre-commit hooks**
 
-### Frontend only (without Aspire)
+   ```sh
+   pre-commit install
+   ```
 
-```sh
-cd frontend && npm run dev
-```
-
-## Live reload
-
-Live reload works automatically — no extra configuration needed.
-
-**Frontend (Vue/Vite):** Vite's built-in HMR (Hot Module Replacement) is always active during `npm run dev`. Saving any `.vue`, `.ts`, or `.css` file pushes the change to the browser instantly without a full page reload.
-
-**AppHost (.NET):** The AppHost itself rarely needs restarting since it only orchestrates the frontend. If you do need to pick up changes to `.cs` files, use `dotnet watch` instead of `dotnet run`:
-
-```sh
-dotnet watch --project Earnesty.AppHost
-```
+   This runs ESLint and type-check automatically before every commit.
 
 ## Building for production
 
@@ -74,3 +55,50 @@ cd frontend && npm run build
 ```
 
 Output is written to `frontend/dist/`.
+
+## GitHub environments
+
+The CI/CD pipelines use two GitHub environments to keep dev and production configuration separate.
+
+### Environments
+
+| Environment | Used by | Purpose |
+|-------------|---------|---------|
+| `dev` | PR build job (`frontend.yml`) | Validates PRs against the dev Sanity dataset |
+| `production` | Release deploy job (`deploy.yml`) | Builds and deploys to Azure Static Web Apps |
+
+Create these under **Settings → Environments** in the GitHub repository. It is recommended to add a required reviewer on the `production` environment.
+
+### Secrets and variables
+
+Configure the following secrets on **each environment** (not at repository level):
+
+#### `dev` environment
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_SANITY_PROJECT_ID` | Sanity project ID |
+| `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `dev`) |
+| `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
+
+#### `production` environment
+
+| Secret | Description |
+|--------|-------------|
+| `VITE_SANITY_PROJECT_ID` | Sanity project ID |
+| `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `production`) |
+| `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
+| `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token from Azure Static Web Apps |
+
+> [!TIP]
+> `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
+
+### Infrastructure secrets (repository level)
+
+The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (federated identity) and requires these secrets at **repository level** (not environment-scoped):
+
+| Secret | Description |
+|--------|-------------|
+| `AZURE_CLIENT_ID` | Azure app registration client ID |
+| `AZURE_TENANT_ID` | Azure tenant ID |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
