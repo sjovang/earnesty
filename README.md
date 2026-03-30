@@ -64,7 +64,7 @@ The CI/CD pipelines use two GitHub environments to keep dev and production confi
 
 | Environment | Used by | Purpose |
 |-------------|---------|---------|
-| `dev` | PR build job (`frontend.yml`) | Validates PRs against the dev Sanity dataset |
+| `dev` | PR build job (`app.yml`) | Validates PRs against the dev Sanity dataset |
 | `production` | Release deploy job (`deploy.yml`) | Builds and deploys to Azure Static Web Apps |
 
 Create these under **Settings → Environments** in the GitHub repository. It is recommended to add a required reviewer on the `production` environment.
