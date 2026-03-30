@@ -164,7 +164,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { token, user, providers, error, corsError, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
+  async function handleCallbackToken(t: string) {
+    setToken(t)
+    await fetchUser()
+  }
+
+  function handleCallbackError(code: string, desc: string | null, corsOrigin: string | null) {
+    if (code === 'cors') {
+      corsError.value = corsOrigin ?? window.location.origin
+    } else {
+      error.value = decodeURIComponent(desc ?? code)
+    }
+  }
+
+  return { token, user, providers, error, corsError, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize, handleCallbackToken, handleCallbackError }
 })
 
 
