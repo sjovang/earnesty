@@ -1,0 +1,16 @@
+repos:
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend ESLint
+        language: system
+        entry: bash -c 'cd frontend && npm run lint'
+        pass_filenames: false
+        files: ^frontend/.*\.(vue|ts|js)$
+
+      - id: frontend-typecheck
+        name: Frontend Type Check
+        language: system
+        entry: bash -c 'cd frontend && npm run type-check'
+        pass_filenames: false
+        files: ^frontend/.*\.(vue|ts)$
