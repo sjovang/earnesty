@@ -14,11 +14,11 @@ defineProps<{
   isAuthenticated?: boolean
   hasDocument?: boolean
 }>()
-const emit = defineEmits<{ new: []; open: []; info: []; publish: []; help: []; signin: []; logout: [] }>()
+const emit = defineEmits<{ new: []; open: []; publish: []; help: []; signin: []; logout: [] }>()
 
 const mobileMenuOpen = ref(false)
 
-function mobileEmit(event: 'new' | 'open' | 'info' | 'publish' | 'help' | 'signin' | 'logout') {
+function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'signin' | 'logout') {
   mobileMenuOpen.value = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event as any)
@@ -30,7 +30,6 @@ const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
 const shortcuts: Record<string, string> = {
   new:     `${mod}N`,
   open:    `${mod}O`,
-  info:    `${mod}I`,
   publish: `${mod}⇧P`,
   help:    'F1',
 }
@@ -56,74 +55,77 @@ function onLeave() {
     aria-label="Application menu"
   >
     <div class="menubar__inner">
-      <span class="menubar__brand">
-        <AppLogo :size="16" />
-        Earnesty
-      </span>
-      <span
-        v-if="documentTitle"
-        class="menubar__doc-title"
-      >{{ documentTitle }}</span>
-      <Transition name="save-fade">
-        <span
-          v-if="saveStatus && saveStatus !== 'idle'"
-          :class="['menubar__save', `menubar__save--${saveStatus}`]"
-        >
-          <template v-if="saveStatus === 'saving'">
-            <svg
-              class="menubar__save-spinner"
-              viewBox="0 0 12 12"
-              width="10"
-              height="10"
-              fill="none"
-            >
-              <circle
-                cx="6"
-                cy="6"
-                r="4.5"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-dasharray="14 8"
-                stroke-linecap="round"
-              />
-            </svg>
-            Saving
-          </template>
-          <template v-else-if="saveStatus === 'saved'">
-            <svg
-              viewBox="0 0 12 12"
-              width="10"
-              height="10"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M2 6l3 3 5-5" />
-            </svg>
-            Saved
-          </template>
-          <template v-else-if="saveStatus === 'error'">
-            <svg
-              viewBox="0 0 12 12"
-              width="10"
-              height="10"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-            >
-              <path d="M6 2v5M6 9v.5" />
-            </svg>
-            Save failed
-          </template>
+      <!-- Left: brand + doc title + save status -->
+      <div class="menubar__left">
+        <span class="menubar__brand">
+          <AppLogo :size="16" />
+          Earnesty
         </span>
-      </Transition>
+        <span
+          v-if="documentTitle"
+          class="menubar__doc-title"
+        >{{ documentTitle }}</span>
+        <Transition name="save-fade">
+          <span
+            v-if="saveStatus && saveStatus !== 'idle'"
+            :class="['menubar__save', `menubar__save--${saveStatus}`]"
+          >
+            <template v-if="saveStatus === 'saving'">
+              <svg
+                class="menubar__save-spinner"
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+              >
+                <circle
+                  cx="6"
+                  cy="6"
+                  r="4.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-dasharray="14 8"
+                  stroke-linecap="round"
+                />
+              </svg>
+              Saving
+            </template>
+            <template v-else-if="saveStatus === 'saved'">
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M2 6l3 3 5-5" />
+              </svg>
+              Saved
+            </template>
+            <template v-else-if="saveStatus === 'error'">
+              <svg
+                viewBox="0 0 12 12"
+                width="10"
+                height="10"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+              >
+                <path d="M6 2v5M6 9v.5" />
+              </svg>
+              Save failed
+            </template>
+          </span>
+        </Transition>
+      </div>
 
-      <!-- Desktop menu items -->
+      <!-- Center: actions with separators (desktop only) -->
       <div
-        class="menubar__items"
+        class="menubar__actions"
         role="menubar"
       >
         <button
@@ -158,22 +160,6 @@ function onLeave() {
         />
         <button
           role="menuitem"
-          class="menubar__item"
-          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
-          :disabled="!isAuthenticated || !hasDocument"
-          @click="isAuthenticated && hasDocument && $emit('info')"
-          @mouseenter="onEnter('info', $event)"
-          @mousemove="onMove('info', $event)"
-          @mouseleave="onLeave"
-        >
-          Info
-        </button>
-        <span
-          class="menubar__sep"
-          aria-hidden="true"
-        />
-        <button
-          role="menuitem"
           class="menubar__item menubar__item--publish"
           :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
           :disabled="!isAuthenticated || !hasDocument"
@@ -184,10 +170,10 @@ function onLeave() {
         >
           Publish
         </button>
-        <span
-          class="menubar__sep"
-          aria-hidden="true"
-        />
+      </div>
+
+      <!-- Right: help + user / sign-in (desktop only) -->
+      <div class="menubar__right">
         <button
           role="menuitem"
           class="menubar__item"
@@ -198,11 +184,6 @@ function onLeave() {
         >
           Help
         </button>
-        <span
-          class="menubar__sep"
-          aria-hidden="true"
-        />
-        <!-- User avatar / sign-in -->
         <button
           v-if="isAuthenticated"
           role="menuitem"
@@ -324,15 +305,6 @@ function onLeave() {
         </button>
         <button
           role="menuitem"
-          class="menubar__mobile-item"
-          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
-          :disabled="!isAuthenticated || !hasDocument"
-          @click="isAuthenticated && hasDocument && mobileEmit('info')"
-        >
-          Info
-        </button>
-        <button
-          role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--publish"
           :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
           :disabled="!isAuthenticated || !hasDocument"
@@ -404,11 +376,12 @@ function onLeave() {
 </template>
 
 <style scoped>
+/* ── Desktop: full-width three-column bar ────────────────────────────────── */
 .menubar {
   position: fixed;
-  top: var(--space-s);
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   opacity: 0;
   transition: opacity 0.35s ease;
@@ -420,17 +393,36 @@ function onLeave() {
 }
 
 .menubar__inner {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: var(--space-m);
-  padding: var(--space-xs) var(--space-m);
+  padding: var(--space-xs) var(--space-l);
   background: var(--ctp-mantle);
-  border: 1px solid var(--ctp-surface0);
-  border-radius: 10px;
+  border-bottom: 1px solid var(--ctp-surface0);
   backdrop-filter: blur(8px);
   white-space: nowrap;
 }
 
+/* ── Three-column sections ────────────────────────────────────────────────── */
+.menubar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-s);
+}
+
+.menubar__actions {
+  display: flex;
+  align-items: center;
+}
+
+.menubar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2xs);
+}
+
+/* ── Brand ────────────────────────────────────────────────────────────────── */
 .menubar__brand {
   display: inline-flex;
   align-items: center;
@@ -440,7 +432,6 @@ function onLeave() {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ctp-subtext1);
-  margin-right: var(--space-3xs);
 }
 
 .menubar__doc-title {
@@ -454,11 +445,7 @@ function onLeave() {
   white-space: nowrap;
 }
 
-.menubar__items {
-  display: flex;
-  align-items: center;
-}
-
+/* ── Separators (actions section only) ───────────────────────────────────── */
 .menubar__sep {
   width: 1px;
   height: 1.1rem;
@@ -467,6 +454,7 @@ function onLeave() {
   margin: 0 var(--space-2xs);
 }
 
+/* ── Menu items ───────────────────────────────────────────────────────────── */
 .menubar__item {
   padding: var(--space-2xs) var(--space-s);
   border: none;
@@ -511,6 +499,7 @@ function onLeave() {
   color: var(--ctp-blue);
 }
 
+/* ── User avatar ──────────────────────────────────────────────────────────── */
 .menubar__avatar {
   display: block;
   width: 24px;
@@ -576,7 +565,6 @@ function onLeave() {
   flex-direction: column;
   padding: var(--space-2xs);
   gap: var(--space-3xs);
-  /* Solid background so it's fully opaque over content */
   background: var(--ctp-mantle);
   border: 1px solid var(--ctp-surface0);
   border-top: none;
@@ -637,30 +625,32 @@ function onLeave() {
   z-index: 99;
 }
 
-/* Merge inner and panel into one box when panel is open */
-.menubar:has(.menubar__mobile-panel) .menubar__inner {
-  border-radius: 10px 10px 0 0;
-  border-bottom-color: transparent;
-}
-
 /* ── Mobile breakpoint ────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .menubar {
+    top: var(--space-xs);
     left: var(--space-xs);
     right: var(--space-xs);
-    transform: none;
-    /* Ensure always slightly visible so users can find it */
     opacity: 0.85;
   }
 
   .menubar__inner {
+    display: flex;
     flex-wrap: wrap;
     gap: var(--space-xs);
     justify-content: space-between;
+    border: 1px solid var(--ctp-surface0);
+    border-radius: 10px;
   }
 
-  .menubar__doc-title,
-  .menubar__items {
+  /* Merge inner and panel into one rounded box when the panel is open */
+  .menubar:has(.menubar__mobile-panel) .menubar__inner {
+    border-radius: 10px 10px 0 0;
+    border-bottom-color: transparent;
+  }
+
+  .menubar__actions,
+  .menubar__right {
     display: none;
   }
 
