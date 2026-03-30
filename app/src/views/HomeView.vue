@@ -139,6 +139,7 @@ watch(
 
   <main
     class="editor"
+    :class="{ 'editor--has-content': !isIntro }"
     :style="{ fontSize: settings.fontSize + 'px', lineHeight: settings.lineSpacing }"
   >
     <!-- Logo lockup shown only while intro is displayed -->
@@ -170,6 +171,10 @@ watch(
   margin: 0 auto;
   padding: 40vh var(--space-s) 50vh;
   min-height: 100vh;
+}
+
+.editor--has-content {
+  padding-top: var(--space-2xl);
 }
 
 /* ── Intro lockup ─────────────────────────────────────────────────────────── */
