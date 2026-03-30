@@ -8,10 +8,10 @@ obj/
 
 # Node
 node_modules/
-frontend/dist/
-frontend/.env
-frontend/.env.local
-frontend/.env.*.local
+app/dist/
+app/.env
+app/.env.local
+app/.env.*.local
 
 # Aspire dashboard / secrets
 .secrets/

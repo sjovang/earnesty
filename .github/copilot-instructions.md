@@ -32,7 +32,7 @@ Always include the `Co-authored-by: Copilot <223556219+Copilot@users.noreply.git
 At the start of every session, start the local dev server in the background if it is not already running:
 
 ```sh
-cd frontend && npm run dev &
+cd app && npm run dev &
 ```
 
 The dev server runs at http://localhost:5173. `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
