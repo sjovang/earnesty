@@ -39,7 +39,13 @@ onMounted(() => auth.fetchProviders())
           <code>{{ auth.corsError }}</code>.
         </p>
         <ol>
-          <li>Go to <a href="https://sanity.io/manage" target="_blank" rel="noopener">sanity.io/manage</a></li>
+          <li>
+            Go to <a
+              href="https://sanity.io/manage"
+              target="_blank"
+              rel="noopener"
+            >sanity.io/manage</a>
+          </li>
           <li>Select your project → <strong>API</strong> → <strong>CORS Origins</strong></li>
           <li>Add <code>{{ auth.corsError }}</code></li>
         </ol>
