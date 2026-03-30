@@ -12,19 +12,19 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
 
 ## Local development
 
-1. **Install frontend dependencies**
+1. **Install dependencies**
 
    ```sh
-   cd frontend && npm install
+   cd app && npm install
    ```
 
 2. **Configure environment variables**
 
    ```sh
-   cp frontend/.env.example frontend/.env
+   cp app/.env.example app/.env
    ```
 
-   Edit `frontend/.env`:
+   Edit `app/.env`:
 
    ```env
    VITE_SANITY_PROJECT_ID=your_project_id
@@ -35,7 +35,7 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
 3. **Start the dev server**
 
    ```sh
-   cd frontend && npm run dev
+   cd app && npm run dev
    ```
 
    The app is available at <http://localhost:5173>.
@@ -51,10 +51,10 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
 ## Building for production
 
 ```sh
-cd frontend && npm run build
+cd app && npm run build
 ```
 
-Output is written to `frontend/dist/`.
+Output is written to `app/dist/`.
 
 ## GitHub environments
 
@@ -102,3 +102,4 @@ The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (fed
 | `AZURE_CLIENT_ID` | Azure app registration client ID |
 | `AZURE_TENANT_ID` | Azure tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+
