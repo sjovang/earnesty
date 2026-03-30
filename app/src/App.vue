@@ -72,7 +72,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   />
   <SignInModal
     v-if="showSignIn"
-    @close="showSignIn = false"
+    @close="showSignIn = false; auth.clearError()"
   />
 </template>
 

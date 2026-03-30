@@ -93,8 +93,8 @@ export const useAuthStore = defineStore('auth', () => {
       log(`/users/me response: ${res.status}`)
       if (res.status === 401) {
         console.warn('[auth] /users/me returned 401 — token may be expired or invalid')
+        logout() // clears token and error; set error after so the watcher fires with it
         error.value = 'Your session has expired. Please sign in again.'
-        logout()
         return
       }
       if (!res.ok) {
