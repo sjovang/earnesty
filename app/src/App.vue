@@ -31,8 +31,11 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 // Show sign-in modal automatically when an auth error arrives outside the modal
-// (e.g. expired session detected on page load)
+// (e.g. expired session detected on page load, or CORS error from callback)
 watch(() => auth.error, (err) => {
+  if (err && !showSignIn.value) showSignIn.value = true
+})
+watch(() => auth.corsError, (err) => {
   if (err && !showSignIn.value) showSignIn.value = true
 })
 
@@ -69,7 +72,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   />
   <SignInModal
     v-if="showSignIn"
-    @close="showSignIn = false"
+    @close="showSignIn = false; auth.clearError()"
   />
 </template>
 

@@ -93,8 +93,8 @@ export const useAuthStore = defineStore('auth', () => {
       log(`/users/me response: ${res.status}`)
       if (res.status === 401) {
         console.warn('[auth] /users/me returned 401 — token may be expired or invalid')
+        logout() // clears token and error; set error after so the watcher fires with it
         error.value = 'Your session has expired. Please sign in again.'
-        logout()
         return
       }
       if (!res.ok) {
@@ -164,7 +164,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { token, user, providers, error, corsError, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize }
+  async function handleCallbackToken(t: string) {
+    setToken(t)
+    await fetchUser()
+  }
+
+  function handleCallbackError(code: string, desc: string | null, corsOrigin: string | null) {
+    if (code === 'cors') {
+      corsError.value = corsOrigin ?? window.location.origin
+    } else {
+      error.value = decodeURIComponent(desc ?? code)
+    }
+  }
+
+  return { token, user, providers, error, corsError, isAuthenticated, loginWith, fetchProviders, logout, clearError, initialize, handleCallbackToken, handleCallbackError }
 })
 
 
