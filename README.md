@@ -121,6 +121,17 @@ The app uses Azure Static Web Apps' built-in authentication with Microsoft Entra
 
 5. Click **Register**
 
+### Enable ID tokens
+
+Azure Static Web Apps uses the hybrid OIDC flow (`response_type=code id_token`), which requires the app to issue ID tokens.
+
+1. In the App Registration, go to **Authentication**
+2. Under **Implicit grant and hybrid flows**, check **ID tokens (used for implicit and hybrid flows)**
+3. Click **Save**
+
+> [!IMPORTANT]
+> Without this setting, the SWA auth callback will return **401 Unauthorized** after a successful Entra ID login.
+
 ### Create a client secret
 
 1. In the App Registration, go to **Certificates & secrets → Client secrets → New client secret**
