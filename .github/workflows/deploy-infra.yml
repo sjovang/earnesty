@@ -1,8 +1,14 @@
 name: Deploy Infrastructure
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      location:
+        description: Azure region
+        default: swedencentral
+      sku:
+        description: Static Web App SKU
+        default: Standard
 
 # OIDC token needed for Azure federated credential login
 permissions:
@@ -34,11 +40,11 @@ jobs:
         run: |
           az stack sub create \
             --name "earnesty" \
-            --location "${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+            --location "${{ inputs.location || vars.AZURE_LOCATION || 'swedencentral' }}" \
             --template-file infra/main.bicep \
             --parameters \
-              location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
-              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
+              location="${{ inputs.location || vars.AZURE_LOCATION || 'swedencentral' }}" \
+              staticWebAppSku="${{ inputs.sku || vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
               entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
               entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
               entraTenantId="${{ secrets.ENTRA_TENANT_ID }}" \
@@ -48,3 +54,4 @@ jobs:
             --deny-settings-mode none \
             --action-on-unmanage detachResources \
             --yes
+

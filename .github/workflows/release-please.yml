@@ -24,3 +24,94 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+  deploy-infra:
+    name: Deploy Infrastructure
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        run: |
+          az stack sub create \
+            --name "earnesty" \
+            --location "${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+            --template-file infra/main.bicep \
+            --parameters \
+              location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
+              entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
+              entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
+              entraTenantId="${{ secrets.ENTRA_TENANT_ID }}" \
+              sanityToken="${{ secrets.SANITY_TOKEN }}" \
+              sanityProjectId="${{ secrets.SANITY_PROJECT_ID }}" \
+              sanityDataset="${{ secrets.SANITY_DATASET }}" \
+            --deny-settings-mode none \
+            --action-on-unmanage detachResources \
+            --yes
+
+  deploy-app:
+    name: Build and Deploy App
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies
+        working-directory: app
+        run: npm ci
+
+      - name: Build
+        working-directory: app
+        env:
+          VITE_SANITY_PROJECT_ID: ${{ secrets.VITE_SANITY_PROJECT_ID }}
+          VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
+        run: npm run build
+
+      - name: Install API dependencies
+        working-directory: app/api
+        run: npm ci
+
+      - name: Build API
+        working-directory: app/api
+        run: npm run build
+
+      - name: Deploy to Azure Static Web Apps
+        uses: azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: app
+          api_location: app/api
+          output_location: dist
+          skip_app_build: true
+          skip_api_build: true
