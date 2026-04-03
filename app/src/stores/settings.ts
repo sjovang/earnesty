@@ -127,16 +127,25 @@ export const useSettingsStore = defineStore('settings', () => {
 
   let fontBeforeWhimsical: Font | null = null
 
+  // Restore saved pre-whimsical font on init
+  const FONT_BEFORE_KEY = 'ernesty:fontBeforeWhimsical'
+  if (settings.value.theme === 'whimsical') {
+    const saved = localStorage.getItem(FONT_BEFORE_KEY)
+    if (saved) fontBeforeWhimsical = saved as Font
+  }
+
   function setTheme(theme: Theme) {
     if (theme === 'whimsical') {
       fontBeforeWhimsical = settings.value.font
+      localStorage.setItem(FONT_BEFORE_KEY, fontBeforeWhimsical)
       settings.value.font = 'comic-sans'
       applyWhimsicalPalette()
     } else {
       if (settings.value.theme === 'whimsical' && fontBeforeWhimsical) {
         settings.value.font = fontBeforeWhimsical
-        fontBeforeWhimsical = null
       }
+      fontBeforeWhimsical = null
+      localStorage.removeItem(FONT_BEFORE_KEY)
       clearWhimsicalPalette()
     }
     settings.value.theme = theme
@@ -151,6 +160,10 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   function setFont(font: Font) {
+    if (settings.value.theme === 'whimsical' && font !== 'comic-sans') {
+      fontBeforeWhimsical = font
+      localStorage.setItem(FONT_BEFORE_KEY, font)
+    }
     settings.value.font = font
   }
 
