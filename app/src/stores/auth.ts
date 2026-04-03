@@ -17,7 +17,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function login() {
-    window.location.href = '/.auth/login/aad'
+    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'
   }
 
   function logout() {
