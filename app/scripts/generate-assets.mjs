@@ -137,8 +137,8 @@ const ogSvg = `<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none"
   xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="${latte.base}" />
-      <stop offset="100%" stop-color="${latte.mantle}" />
+      <stop offset="0%" stop-color="${macchiato.base}" />
+      <stop offset="100%" stop-color="${macchiato.mantle}" />
     </linearGradient>
   </defs>
 
@@ -146,43 +146,48 @@ const ogSvg = `<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none"
   <rect width="1200" height="630" fill="url(#bg)" />
 
   <!-- Subtle grid lines -->
-  <line x1="0" y1="210" x2="1200" y2="210" stroke="${latte.crust}" stroke-width="1" />
-  <line x1="0" y1="420" x2="1200" y2="420" stroke="${latte.crust}" stroke-width="1" />
-  <line x1="400" y1="0" x2="400" y2="630" stroke="${latte.crust}" stroke-width="1" />
-  <line x1="800" y1="0" x2="800" y2="630" stroke="${latte.crust}" stroke-width="1" />
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
+  <line x1="400" y1="0" x2="400" y2="630" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
+  <line x1="800" y1="0" x2="800" y2="630" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
 
-  <!-- Large decorative typewriter (right, faint) -->
-  <g transform="translate(640, 75) scale(9.375)" stroke-linecap="round" stroke-linejoin="round" opacity="0.15">
-    ${typewriterPaths(latte.text)}
-  </g>
-
-  <!-- Small logo (left) -->
-  <g transform="translate(80, 155) scale(2.5)" stroke-linecap="round" stroke-linejoin="round">
-    ${typewriterPaths(latte.text)}
+  <!-- Logo (single typewriter, top-left) -->
+  <g transform="translate(80, 80) scale(2.5)" stroke-linecap="round" stroke-linejoin="round">
+    ${typewriterPaths(macchiato.text)}
   </g>
 
   <!-- Title -->
-  <text x="80" y="370"
+  <text x="80" y="310"
     font-family="Georgia, 'Times New Roman', serif"
     font-size="100"
-    fill="${latte.text}"
+    fill="${macchiato.text}"
     letter-spacing="-2">Earnesty</text>
 
   <!-- Accent line -->
-  <rect x="80" y="384" width="480" height="2.5" fill="${latte.mauve}" opacity="0.6" rx="1" />
+  <rect x="80" y="326" width="480" height="2.5" fill="#8839ef" opacity="0.6" rx="1" />
 
-  <!-- Subtitle -->
-  <text x="80" y="430"
+  <!-- Description -->
+  <text x="80" y="380"
     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
-    font-size="30"
-    fill="${latte.subtext0}"
-    letter-spacing="0.2">Your space for focused writing</text>
+    font-size="26"
+    fill="#a5adcb"
+    letter-spacing="0.2">No distractions. No formatting toolbars.</text>
+  <text x="80" y="418"
+    font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+    font-size="26"
+    fill="#a5adcb"
+    letter-spacing="0.2">Just you and the blank page.</text>
+  <text x="80" y="456"
+    font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
+    font-size="26"
+    fill="#a5adcb"
+    letter-spacing="0.2">All vibes. No QA.</text>
 
   <!-- Domain -->
-  <text x="80" y="555"
+  <text x="80" y="560"
     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
     font-size="22"
-    fill="${latte.overlay2}"
+    fill="#6e738d"
     letter-spacing="1.5">write.liasis.dev</text>
 </svg>`
 
