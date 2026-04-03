@@ -57,7 +57,7 @@ const filtered = computed(() => {
 
   switch (sortBy.value) {
     case 'oldest':
-      list.sort((a, b) => (a.doc._updatedAt > b.doc._updatedAt ? 1 : -1))
+      list.sort((a, b) => (a.doc._updatedAt > b.doc._updatedAt ? -1 : 1))
       break
     case 'title-asc':
       list.sort((a, b) => (a.doc.title ?? '').localeCompare(b.doc.title ?? ''))
