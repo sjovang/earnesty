@@ -183,8 +183,8 @@ On the app registration, add a federated credential to trust GitHub Actions toke
 1. Go to **App registration → Certificates & secrets → Federated credentials → Add credential**
 2. Select **GitHub Actions deploying Azure resources**
 3. Set the following:
-   - **Organisation:** `sjovang`
-   - **Repository:** `earnesty`
+   - **Organisation:** your GitHub organisation or username
+   - **Repository:** your fork of this repository
    - **Entity type:** `Environment`
    - **GitHub environment name:** `production`
 4. Click **Add**
