@@ -50,10 +50,10 @@ jobs:
         run: |
           az stack sub create \
             --name "earnesty" \
-            --location "${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+            --location "${{ vars.AZURE_LOCATION || 'westeurope' }}" \
             --template-file infra/main.bicep \
             --parameters \
-              location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+              location="${{ vars.AZURE_LOCATION || 'westeurope' }}" \
               staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
               entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
               entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
@@ -96,14 +96,6 @@ jobs:
           VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
         run: npm run build
 
-      - name: Install API dependencies
-        working-directory: app/api
-        run: npm ci
-
-      - name: Build API
-        working-directory: app/api
-        run: npm run build
-
       - name: Deploy to Azure Static Web Apps
         uses: azure/static-web-apps-deploy@v1
         with:
@@ -114,4 +106,3 @@ jobs:
           api_location: app/api
           output_location: dist
           skip_app_build: true
-          skip_api_build: true
