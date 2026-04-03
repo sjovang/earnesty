@@ -58,7 +58,9 @@ export type SanityBodyBlock = SanityBlock | SanityImageBlock | SanityCodeBlock
 
 export interface BlogDocument {
   _id: string
+  _createdAt: string
   _updatedAt: string
+  publishedAt?: string
   title: string
   body?: SanityBodyBlock[]
 }
@@ -318,10 +320,12 @@ function key() {
 /** Fetch list of blog documents (title + enough body blocks for 50-word preview). */
 export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
   return sanityClient.fetch(`
-    *[_type == "blog"] | order(_updatedAt desc) {
+    *[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
       _id,
-      title,
+      _createdAt,
       _updatedAt,
+      publishedAt,
+      title,
       "body": body[_type == "block"][0..10]
     }
   `)
@@ -330,7 +334,7 @@ export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
 /** Fetch the full body of a single document for editing. */
 export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
   return sanityClient.fetch(
-    `*[_type == "blog" && _id == $id][0]{ _id, title, _updatedAt, body }`,
+    `*[_type == "blog" && _id == $id][0]{ _id, _createdAt, _updatedAt, publishedAt, title, body }`,
     { id },
   )
 }
