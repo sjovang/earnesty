@@ -3,6 +3,17 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Apply saved theme before first paint to prevent flash of wrong theme -->
+    <script>
+      ;(function () {
+        try {
+          var s = JSON.parse(localStorage.getItem('ernesty:settings') || '{}')
+          document.documentElement.setAttribute('data-theme', s.theme || 'dark')
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        }
+      })()
+    </script>
     <title>Earnesty — Your space for focused writing</title>
     <meta name="description" content="Earnesty is a clean, distraction-free writing app. Write, save, and revisit your work in a calm and focused environment.">
 

@@ -17,13 +17,13 @@
   ],
   "responseOverrides": {
     "401": {
-      "redirect": "/.auth/login/aad",
+      "redirect": "/.auth/login/aad?post_login_redirect_uri=/",
       "statusCode": 302
     }
   },
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*", "/favicon.ico"]
+    "exclude": ["/assets/*", "/favicon*", "/.auth/*"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
