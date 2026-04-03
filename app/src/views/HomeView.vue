@@ -12,6 +12,8 @@ import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
 import { apiSaveDocument } from '../services/api'
 import { INTRO_HTML } from '../constants'
+import { TitleNode } from '../extensions/TitleNode'
+import { TitleDocument } from '../extensions/TitleDocument'
 import AppLogo from '../components/AppLogo.vue'
 
 const lowlight = createLowlight(common)
@@ -42,12 +44,20 @@ async function doAutosave(json: TiptapNode) {
   if (!doc || !auth.isAuthenticated) return
   editorStore.setSaveStatus('saving')
   try {
-    await apiSaveDocument(doc._id, tiptapJsonToPortableText(json))
+    const titleText = extractTitleText(json)
+    const bodyJson = { ...json, content: json.content?.slice(1) ?? [] }
+    await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText)
     editorStore.setSaveStatus('saved')
   } catch (err) {
     console.error('[autosave] failed:', err)
     editorStore.setSaveStatus('error')
   }
+}
+
+function extractTitleText(doc: TiptapNode): string {
+  const titleNode = doc.content?.[0]
+  if (titleNode?.type !== 'title') return ''
+  return titleNode.content?.map((n) => n.text ?? '').join('') ?? ''
 }
 
 function scheduleAutosave(json: TiptapNode) {
@@ -96,7 +106,9 @@ function scrollToCaret() {
 // ── Tiptap editor ─────────────────────────────────────────────────────────────
 const tiptap = useEditor({
   extensions: [
-    StarterKit.configure({ codeBlock: false }), // replaced by CodeBlockLowlight
+    TitleDocument,
+    TitleNode,
+    StarterKit.configure({ document: false, codeBlock: false }),
     Link.configure({
       openOnClick: false,
       autolink: true,
@@ -112,7 +124,14 @@ const tiptap = useEditor({
     checkContentLength()
     editorStore.setContent(editor.getText())
     localStorage.setItem(CONTENT_KEY, editor.getHTML())
-    scheduleAutosave(editor.getJSON() as TiptapNode)
+
+    const json = editor.getJSON() as TiptapNode
+    const titleText = extractTitleText(json)
+    if (titleText !== editorStore.meta.title) {
+      editorStore.updateMeta({ title: titleText })
+    }
+
+    scheduleAutosave(json)
     requestAnimationFrame(scrollToCaret)
   },
   onSelectionUpdate() {
@@ -279,6 +298,19 @@ watch(
 
 .editor__content :deep(.ProseMirror p:last-child) {
   margin-bottom: 0;
+}
+
+/* ── Title node ───────────────────────────────────────────────────────────── */
+.editor__content :deep(.ProseMirror h1[data-type='title']) {
+  font-size: 2em;
+  margin: 0 0 0.6em;
+  color: var(--ctp-text);
+}
+
+.editor__content :deep(.ProseMirror h1[data-type='title']:empty::before) {
+  content: 'Untitled';
+  color: var(--ctp-overlay0);
+  pointer-events: none;
 }
 
 /* ── Headings ─────────────────────────────────────────────────────────────── */

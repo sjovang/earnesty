@@ -121,6 +121,17 @@ The app uses Azure Static Web Apps' built-in authentication with Microsoft Entra
 
 5. Click **Register**
 
+### Enable ID tokens
+
+Azure Static Web Apps uses the hybrid OIDC flow (`response_type=code id_token`), which requires the app to issue ID tokens.
+
+1. In the App Registration, go to **Authentication**
+2. Under **Implicit grant and hybrid flows**, check **ID tokens (used for implicit and hybrid flows)**
+3. Click **Save**
+
+> [!IMPORTANT]
+> Without this setting, the SWA auth callback will return **401 Unauthorized** after a successful Entra ID login.
+
 ### Create a client secret
 
 1. In the App Registration, go to **Certificates & secrets → Client secrets → New client secret**
@@ -146,8 +157,6 @@ App settings are managed automatically by the Bicep infrastructure deployment. S
 | `ENTRA_TENANT_ID` | `AZURE_TENANT_ID` | Directory (tenant) ID — used in the OpenID Connect issuer URL |
 
 > [!NOTE]
-> The `AZURE_TENANT_ID` app setting is required because `staticwebapp.config.json` references `{AZURE_TENANT_ID}` in the `openIdIssuer` URL. SWA resolves this at runtime from app settings.
->
 > The `ENTRA_*` secret names are distinct from the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` repository-level secrets used for OIDC infrastructure deployment.
 
 ### Infrastructure secrets (repository level)

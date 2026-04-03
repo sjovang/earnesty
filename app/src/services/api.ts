@@ -27,10 +27,13 @@ async function apiFetch<T>(
 ): Promise<T> {
   const res = await fetch(url, {
     ...init,
+    redirect: 'manual',
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
 
-  if (res.status === 401) {
+  // Platform-level 401s (e.g. from responseOverrides) arrive as opaque redirects
+  // when redirect: 'manual' is set. Function-level 401s arrive with status 401.
+  if (res.type === 'opaqueredirect' || res.status === 401) {
     redirectToLogin()
   }
 
@@ -43,14 +46,15 @@ async function apiFetch<T>(
   return res.json() as Promise<T>
 }
 
-/** Saves PortableText blocks to an existing Sanity document via the API proxy. */
+/** Saves PortableText blocks (and optionally title) to an existing Sanity document via the API proxy. */
 export async function apiSaveDocument(
   id: string,
   blocks: SanityBodyBlock[],
+  title?: string,
 ): Promise<void> {
   await apiFetch<void>(`/api/sanity/documents/${encodeURIComponent(id)}`, {
     method: 'PATCH',
-    body: JSON.stringify({ blocks }),
+    body: JSON.stringify({ blocks, ...(title !== undefined && { title }) }),
   })
 }
 
