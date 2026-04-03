@@ -152,11 +152,40 @@ App settings are managed automatically by the Bicep infrastructure deployment. S
 
 ### Infrastructure secrets (repository level)
 
-The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (federated identity) and requires these secrets at **repository level** (not environment-scoped):
+The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (workload identity federation) — no client secret is stored in GitHub. Instead, GitHub's OIDC token is exchanged for an Azure access token at runtime.
+
+These repository-level secrets identify which service principal to authenticate as:
 
 | Secret | Description |
 |--------|-------------|
-| `AZURE_CLIENT_ID` | Azure app registration client ID |
+| `AZURE_CLIENT_ID` | Client ID of the app registration used for infrastructure deployment |
 | `AZURE_TENANT_ID` | Azure tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+
+#### Required Azure RBAC permissions
+
+The service principal (app registration) used for infrastructure deployment must be granted **Contributor** on the target subscription. This allows it to create and manage resource groups and all resources within them.
+
+```bash
+az role assignment create \
+  --assignee "<app-registration-client-id>" \
+  --role "Contributor" \
+  --scope "/subscriptions/<subscription-id>"
+```
+
+> [!NOTE]
+> **Contributor** is sufficient for creating resource groups, deploying the Static Web App, and writing app settings. You do not need **Owner** unless you plan to assign Azure RBAC roles as part of the deployment.
+
+#### Setting up workload identity federation
+
+On the app registration, add a federated credential to trust GitHub Actions tokens from this repository:
+
+1. Go to **App registration → Certificates & secrets → Federated credentials → Add credential**
+2. Select **GitHub Actions deploying Azure resources**
+3. Set the following:
+   - **Organisation:** `sjovang`
+   - **Repository:** `earnesty`
+   - **Entity type:** `Environment`
+   - **GitHub environment name:** `production`
+4. Click **Add**
 
