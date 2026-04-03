@@ -7,6 +7,14 @@ export type Font = 'serif' | 'sans-serif' | 'comic-sans'
 export const FONT_SIZES = [18, 24, 30] as const
 export const CONTENT_WIDTHS = [50, 60, 70] as const
 
+export function fontFamilyFor(font: Font): string {
+  switch (font) {
+    case 'sans-serif': return 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+    case 'comic-sans': return '\'Comic Sans MS\', \'Comic Sans\', cursive'
+    default:           return '\'Lora\', Georgia, \'Times New Roman\', serif'
+  }
+}
+
 const STORAGE_KEY = 'ernesty:settings'
 
 interface Settings {

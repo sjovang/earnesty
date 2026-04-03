@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
-import { useSettingsStore, FONT_SIZES, CONTENT_WIDTHS, type Theme, type Font } from '../stores/settings'
+import { useSettingsStore, fontFamilyFor, FONT_SIZES, CONTENT_WIDTHS, type Theme, type Font } from '../stores/settings'
 
 defineEmits<{ close: [] }>()
 
@@ -93,18 +93,12 @@ const widthLabels: Record<number, string> = {
             v-for="f in fonts"
             :key="f.value"
             :class="['settings__pill', { 'settings__pill--active': store.settings.font === f.value }]"
-            :style="{ fontFamily: f.value === 'serif' ? '\'Lora\', Georgia, serif' : f.value === 'sans-serif' ? 'system-ui, sans-serif' : '\'Comic Sans MS\', cursive' }"
+            :style="{ fontFamily: fontFamilyFor(f.value) }"
             @click="store.setFont(f.value)"
           >
             {{ f.label }}
           </button>
         </div>
-        <p
-          v-if="store.settings.theme === 'whimsical' && store.settings.font !== 'comic-sans'"
-          class="settings__hint"
-        >
-          Whimsical mode sets Comic Sans automatically. You can switch fonts above.
-        </p>
       </section>
 
       <!-- Content width -->
@@ -186,11 +180,5 @@ const widthLabels: Record<number, string> = {
   background: var(--ctp-mauve);
   color: var(--ctp-base);
   border-color: var(--ctp-mauve);
-}
-
-.settings__hint {
-  font-size: 0.78rem;
-  color: var(--ctp-subtext0);
-  font-style: italic;
 }
 </style>

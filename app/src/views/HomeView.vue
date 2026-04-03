@@ -6,7 +6,7 @@ import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { createLowlight, common } from 'lowlight'
-import { useSettingsStore } from '../stores/settings'
+import { useSettingsStore, fontFamilyFor } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
@@ -20,13 +20,7 @@ const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
 const auth = useAuthStore()
 
-const fontFamily = computed(() => {
-  switch (settings.font) {
-    case 'sans-serif': return 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
-    case 'comic-sans': return '\'Comic Sans MS\', \'Comic Sans\', cursive'
-    default:           return '\'Lora\', Georgia, \'Times New Roman\', serif'
-  }
-})
+const fontFamily = computed(() => fontFamilyFor(settings.font))
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
@@ -204,8 +198,6 @@ watch(
 
 <style scoped>
 .editor {
-  /* 60ch measured in Lora so the width tracks the actual typeface */
-  max-width: 60ch;
   margin: 0 auto;
   padding: 0 var(--space-s);
   min-height: 100vh;
