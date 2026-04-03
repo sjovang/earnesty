@@ -14,8 +14,8 @@ jobs:
     name: Release Please
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      release_created: ${{ steps.release.outputs['app--release_created'] }}
+      tag_name: ${{ steps.release.outputs['app--tag_name'] }}
 
     steps:
       - uses: googleapis/release-please-action@v4.4.0
@@ -67,7 +67,7 @@ jobs:
 
   deploy-app:
     name: Build and Deploy App
-    needs: release-please
+    needs: [release-please, deploy-infra]
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     environment: production
