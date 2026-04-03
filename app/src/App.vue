@@ -41,6 +41,10 @@ async function publishDocument() {
     const { _id: publishedId } = await apiPublishDocument(doc._id)
     // Reload the published document and update the editor state
     const published = await fetchBlogDocument(publishedId)
+    if (!published) {
+      console.error('[publish] could not fetch published document', publishedId)
+      return
+    }
     editorStore.openDocument(published)
   } catch (err) {
     console.error('[publish] failed:', err)

@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { sanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, parseClientPrincipal } from '../shared.js'
 
 app.http('saveDocument', {
   methods: ['PATCH'],
@@ -50,7 +50,7 @@ app.http('saveDocument', {
       if (typeof body.title === 'string') {
         fields['title'] = body.title
       }
-      await sanityClient.patch(id).set(fields).commit()
+      await getSanityClient().patch(id).set(fields).commit()
       return { status: 204 }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'

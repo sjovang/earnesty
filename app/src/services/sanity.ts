@@ -2,10 +2,10 @@ import { createClient } from '@sanity/client'
 
 // In development the Vite server proxies /v2024-01-01/… to the real Sanity
 // API, avoiding the CORS restriction on localhost. In production the client
-// talks directly to the Sanity CDN for public reads.
+// talks directly to the Sanity API (bypassing CDN to avoid stale content).
 const devProxyConfig = import.meta.env.DEV
   ? { apiHost: window.location.origin, useProjectHostname: false, useCdn: false }
-  : { useCdn: true }
+  : { useCdn: false }
 
 export const sanityClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID,

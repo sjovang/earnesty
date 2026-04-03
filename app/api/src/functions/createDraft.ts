@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { sanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, parseClientPrincipal } from '../shared.js'
 
 app.http('createDraft', {
   methods: ['POST'],
@@ -35,7 +35,7 @@ app.http('createDraft', {
 
     try {
       const id = `drafts.${crypto.randomUUID()}`
-      const doc = await sanityClient.create({
+      const doc = await getSanityClient().create({
         _id: id,
         _type: 'blog',
         title: body.title.trim(),
