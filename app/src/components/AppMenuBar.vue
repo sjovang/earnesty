@@ -15,7 +15,7 @@ defineProps<{
   isAuthenticated?: boolean
   hasDocument?: boolean
 }>()
-const emit = defineEmits<{ new: []; open: []; publish: []; help: []; signin: []; logout: [] }>()
+const emit = defineEmits<{ new: []; open: []; publish: []; help: []; settings: []; signin: []; logout: [] }>()
 
 const mobileMenuOpen = ref(false)
 const showUserModal = ref(false)
@@ -25,7 +25,7 @@ function openUserModal() {
   showUserModal.value = true
 }
 
-function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'signin' | 'logout') {
+function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 'signin' | 'logout') {
   mobileMenuOpen.value = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event as any)
@@ -179,8 +179,34 @@ function onLeave() {
         </button>
       </div>
 
-      <!-- Right: help + user / sign-in (desktop only) -->
+      <!-- Right: settings + help + user / sign-in (desktop only) -->
       <div class="menubar__right">
+        <button
+          role="menuitem"
+          class="menubar__item menubar__item--icon"
+          title="Settings"
+          aria-label="Settings"
+          @click="$emit('settings')"
+        >
+          <svg
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle
+              cx="10"
+              cy="10"
+              r="2.5"
+            />
+            <path d="M10 2.5v1M10 16.5v1M2.5 10h1M16.5 10h1M4.4 4.4l.7.7M14.9 14.9l.7.7M4.4 15.6l.7-.7M14.9 5.1l.7-.7" />
+          </svg>
+        </button>
         <button
           role="menuitem"
           class="menubar__item"
@@ -316,6 +342,13 @@ function onLeave() {
           @click="mobileEmit('help')"
         >
           Help
+        </button>
+        <button
+          role="menuitem"
+          class="menubar__mobile-item"
+          @click="mobileEmit('settings')"
+        >
+          Settings
         </button>
         <div class="menubar__mobile-sep" />
         <button
@@ -493,6 +526,14 @@ function onLeave() {
 .menubar__item--signin:hover {
   background: color-mix(in srgb, var(--ctp-blue) 12%, transparent);
   color: var(--ctp-blue);
+}
+
+/* ── Icon-only menu item ─────────────────────────────────────────────────── */
+.menubar__item--icon {
+  padding: var(--space-2xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ── User avatar ──────────────────────────────────────────────────────────── */

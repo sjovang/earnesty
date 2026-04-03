@@ -4,12 +4,14 @@ import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
 import HelpModal from './components/HelpModal.vue'
+import SettingsModal from './components/SettingsModal.vue'
 import { useEditorStore } from './stores/editor'
 import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
+const showSettings = ref(false)
 const editorStore = useEditorStore()
 const auth = useAuthStore()
 
@@ -46,6 +48,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     @open="showOpen = true"
     @publish="() => {}"
     @help="showHelp = true"
+    @settings="showSettings = true"
     @signin="auth.login()"
     @logout="auth.logout()"
   />
@@ -58,6 +61,10 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <HelpModal
     v-if="showHelp"
     @close="showHelp = false"
+  />
+  <SettingsModal
+    v-if="showSettings"
+    @close="showSettings = false"
   />
 </template>
 

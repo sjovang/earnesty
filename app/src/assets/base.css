@@ -59,6 +59,37 @@
   --ctp-crust:     #181926;
 }
 
+/* Catppuccin-inspired Whimsical mode — vibrant accents, no base/text neutrals */
+[data-theme="whimsical"] {
+  --ctp-rosewater: #f4dbd6;
+  --ctp-flamingo:  #f0c6c6;
+  --ctp-pink:      #f5bde6;
+  --ctp-mauve:     #c6a0f6;
+  --ctp-red:       #ed8796;
+  --ctp-maroon:    #ee99a0;
+  --ctp-peach:     #f5a97f;
+  --ctp-yellow:    #eed49f;
+  --ctp-green:     #a6da95;
+  --ctp-teal:      #8bd5ca;
+  --ctp-sky:       #91d7e3;
+  --ctp-sapphire:  #7dc4e4;
+  --ctp-blue:      #8aadf4;
+  --ctp-lavender:  #b7bdf8;
+  /* Vibrant replacements: avoid base/text neutrals */
+  --ctp-text:      #f5bde6;
+  --ctp-subtext1:  #f0c6c6;
+  --ctp-subtext0:  #eed49f;
+  --ctp-overlay2:  #c6a0f6;
+  --ctp-overlay1:  #b7bdf8;
+  --ctp-overlay0:  #8aadf4;
+  --ctp-surface2:  #494d64;
+  --ctp-surface1:  #363a4f;
+  --ctp-surface0:  #2c2040;
+  --ctp-base:      #231935;
+  --ctp-mantle:    #1a1127;
+  --ctp-crust:     #130d1c;
+}
+
 *,
 *::before,
 *::after {

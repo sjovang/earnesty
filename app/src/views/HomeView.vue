@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -19,6 +19,14 @@ const lowlight = createLowlight(common)
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
 const auth = useAuthStore()
+
+const fontFamily = computed(() => {
+  switch (settings.font) {
+    case 'sans-serif': return 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+    case 'comic-sans': return '\'Comic Sans MS\', \'Comic Sans\', cursive'
+    default:           return '\'Lora\', Georgia, \'Times New Roman\', serif'
+  }
+})
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
@@ -166,7 +174,12 @@ watch(
       'editor--intro': isIntro,
       'editor--long-content': isLongContent,
     }"
-    :style="{ fontSize: settings.fontSize + 'px', lineHeight: settings.lineSpacing }"
+    :style="{
+      fontSize: settings.fontSize + 'px',
+      lineHeight: settings.lineSpacing,
+      fontFamily: fontFamily,
+      maxWidth: settings.contentWidth + 'ch',
+    }"
   >
     <!-- Logo lockup shown only while intro is displayed -->
     <Transition name="logo-fade">
@@ -192,7 +205,6 @@ watch(
 <style scoped>
 .editor {
   /* 60ch measured in Lora so the width tracks the actual typeface */
-  font-family: 'Lora', Georgia, 'Times New Roman', serif;
   max-width: 60ch;
   margin: 0 auto;
   padding: 0 var(--space-s);
@@ -253,7 +265,7 @@ watch(
   outline: none;
   caret-color: var(--ctp-mauve);
   color: var(--ctp-text);
-  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  font-family: inherit;
   overflow-wrap: break-word;
   hyphens: auto;
   text-wrap: pretty;
@@ -281,7 +293,7 @@ watch(
 .editor__content :deep(.ProseMirror h1),
 .editor__content :deep(.ProseMirror h2),
 .editor__content :deep(.ProseMirror h3) {
-  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+  font-family: inherit;
   font-weight: 700;
   line-height: 1.25;
   margin: 1.6em 0 0.4em;
