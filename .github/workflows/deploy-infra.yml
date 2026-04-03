@@ -52,6 +52,6 @@ jobs:
               sanityProjectId="${{ secrets.SANITY_PROJECT_ID }}" \
               sanityDataset="${{ secrets.SANITY_DATASET }}" \
             --deny-settings-mode none \
-            --action-on-unmanage detachResources \
+            --action-on-unmanage detachAll \
             --yes
 
