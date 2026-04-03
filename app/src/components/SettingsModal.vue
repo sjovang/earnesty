@@ -137,6 +137,7 @@ const widthLabels: Record<number, string> = {
 
 .settings__choices {
   display: flex;
+  flex: 1;
   border: 1px solid var(--ctp-surface1);
   border-radius: 6px;
   overflow: hidden;
@@ -151,6 +152,7 @@ const widthLabels: Record<number, string> = {
   color: var(--ctp-subtext1);
   font-size: 0.82rem;
   white-space: nowrap;
+  text-align: center;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
 }
