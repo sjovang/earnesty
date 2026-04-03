@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/sjovang/earnesty/compare/frontend-v1.1.1...frontend-v1.2.0) (2026-04-03)
+
+
+### Features
+
+* add favicon, apple touch icon, and Open Graph image ([#45](https://github.com/sjovang/earnesty/issues/45)) ([fde6916](https://github.com/sjovang/earnesty/commit/fde69169b0062af56e8a5564b82fcdd379e05a20))
+
 ## [1.1.1](https://github.com/sjovang/earnesty/compare/frontend-v1.1.0...frontend-v1.1.1) (2026-04-03)
 
 
