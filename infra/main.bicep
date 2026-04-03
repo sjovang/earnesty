@@ -2,8 +2,9 @@ targetScope = 'subscription'
 
 // ── Parameters ────────────────────────────────────────────────────────────────
 
-@description('Azure region for the resource group and all resources.')
-param location string = 'swedencentral'
+@description('Azure region for the resource group and all resources. Must be a region supported by Microsoft.Web/staticSites.')
+@allowed(['westus2', 'centralus', 'eastus2', 'westeurope', 'eastasia'])
+param location string = 'westeurope'
 
 @description('Base name used for resource naming across the stack.')
 param appName string = 'earnesty'
