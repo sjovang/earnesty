@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.3.0](https://github.com/sjovang/earnesty/compare/frontend-v1.2.1...frontend-v1.3.0) (2026-04-03)
+
+
+### Features
+
+* add Entra ID authentication via SWA built-in auth ([#37](https://github.com/sjovang/earnesty/issues/37)) ([ebb9472](https://github.com/sjovang/earnesty/commit/ebb9472ebaeaa59d93a843698697676e667808ee))
+* add favicon, apple touch icon, and Open Graph image ([#45](https://github.com/sjovang/earnesty/issues/45)) ([fde6916](https://github.com/sjovang/earnesty/commit/fde69169b0062af56e8a5564b82fcdd379e05a20))
+* anchor empty/short documents near viewport bottom ([#53](https://github.com/sjovang/earnesty/issues/53)) ([537eab0](https://github.com/sjovang/earnesty/commit/537eab0b97157b4d3147a473f6964e9cb54aa424))
+* full-width three-column menubar on large viewports ([#32](https://github.com/sjovang/earnesty/issues/32)) ([68b1791](https://github.com/sjovang/earnesty/commit/68b17918df740333e365cd499694b40c54e58f75))
+* open user profile modal on avatar click ([#54](https://github.com/sjovang/earnesty/issues/54)) ([9bb1c50](https://github.com/sjovang/earnesty/commit/9bb1c5071acdb84c8d24479b83c30fc9ed4e696e))
+
+
+### Bug Fixes
+
+* auth state not updated after OAuth callback ([#33](https://github.com/sjovang/earnesty/issues/33)) ([c3b3759](https://github.com/sjovang/earnesty/commit/c3b37592266644ee6932933d8429026ad89e7b07))
+* correct newest/oldest sort order in open document modal ([#40](https://github.com/sjovang/earnesty/issues/40)) ([de4e1e9](https://github.com/sjovang/earnesty/commit/de4e1e9c1c32e1c2965560fc899ae654384c1aa0))
+* hardcode tenant ID in SWA auth issuer URL ([#52](https://github.com/sjovang/earnesty/issues/52)) ([c4034cb](https://github.com/sjovang/earnesty/commit/c4034cbd0f28415374e9e76669538eaafd274a39))
+* prevent theme FOUC and add post_login_redirect_uri for auth ([#49](https://github.com/sjovang/earnesty/issues/49)) ([ce4d19d](https://github.com/sjovang/earnesty/commit/ce4d19d49ca6fd92478e9d1b2b312093bce24b49))
+* remove large top margin when document is loaded ([#31](https://github.com/sjovang/earnesty/issues/31)) ([e825c40](https://github.com/sjovang/earnesty/commit/e825c40591bb1b013d428b20ef0314804ad9ed83))
+
 ## [1.2.1](https://github.com/sjovang/earnesty/compare/frontend-v1.2.0...frontend-v1.2.1) (2026-04-03)
 
 
