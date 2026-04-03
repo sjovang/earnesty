@@ -3,7 +3,6 @@ import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { createDraftBlogDocument } from '../services/sanity'
 import { useEditorStore } from '../stores/editor'
-import { useAuthStore } from '../stores/auth'
 
 const emit = defineEmits<{
   close: []
@@ -11,7 +10,6 @@ const emit = defineEmits<{
 }>()
 
 const editorStore = useEditorStore()
-const auth = useAuthStore()
 
 const title = ref('')
 const creating = ref(false)
@@ -22,12 +20,12 @@ const slug = computed(() => editorStore.slugify(title.value))
 
 // ── Create ────────────────────────────────────────────────────────────────────
 async function create() {
-  if (!title.value.trim() || !auth.token) return
+  if (!title.value.trim()) return
 
   creating.value = true
   error.value = null
   try {
-    const doc = await createDraftBlogDocument(title.value.trim(), slug.value, auth.token)
+    const doc = await createDraftBlogDocument(title.value.trim(), slug.value)
     editorStore.openDocument(doc, '<p></p>')
     emit('created')
     emit('close')
