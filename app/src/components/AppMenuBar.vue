@@ -209,13 +209,38 @@ function onLeave() {
         </button>
         <button
           role="menuitem"
-          class="menubar__item"
+          class="menubar__item menubar__item--icon"
+          title="Help"
+          aria-label="Help"
           @click="$emit('help')"
           @mouseenter="onEnter('help', $event)"
           @mousemove="onMove('help', $event)"
           @mouseleave="onLeave"
         >
-          Help
+          <svg
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle
+              cx="10"
+              cy="10"
+              r="8"
+            />
+            <path d="M7.5 7.5a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.6 1.7-2.6 3.2" />
+            <circle
+              cx="10"
+              cy="15"
+              r="0.5"
+              fill="currentColor"
+              stroke="none"
+            />
+          </svg>
         </button>
         <button
           v-if="isAuthenticated"
