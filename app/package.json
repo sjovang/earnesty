@@ -11,7 +11,8 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --max-warnings 0",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "generate-assets": "node scripts/generate-assets.mjs"
   },
   "dependencies": {
     "@catppuccin/palette": "^1.8.0",
@@ -37,6 +38,7 @@
     "eslint": "^10.1.0",
     "eslint-plugin-vue": "^10.8.0",
     "npm-run-all2": "^8.0.4",
+    "sharp": "^0.34.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.2",
     "vite": "^7.3.1",
