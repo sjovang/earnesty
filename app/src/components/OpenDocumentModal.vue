@@ -55,9 +55,11 @@ const filtered = computed(() => {
     list = list.filter(({ doc }) => doc.title?.toLowerCase().includes(q))
   }
 
+  const sortKey = (doc: typeof list[0]['doc']) => doc.publishedAt ?? doc._createdAt
+
   switch (sortBy.value) {
     case 'oldest':
-      list.sort((a, b) => (a.doc._updatedAt > b.doc._updatedAt ? 1 : -1))
+      list.sort((a, b) => (sortKey(a.doc) > sortKey(b.doc) ? 1 : -1))
       break
     case 'title-asc':
       list.sort((a, b) => (a.doc.title ?? '').localeCompare(b.doc.title ?? ''))
@@ -65,8 +67,8 @@ const filtered = computed(() => {
     case 'title-desc':
       list.sort((a, b) => (b.doc.title ?? '').localeCompare(a.doc.title ?? ''))
       break
-    default:
-      list.sort((a, b) => (b.doc._updatedAt > a.doc._updatedAt ? 1 : -1))
+    default: // newest
+      list.sort((a, b) => (sortKey(a.doc) > sortKey(b.doc) ? -1 : 1))
   }
 
   return list
