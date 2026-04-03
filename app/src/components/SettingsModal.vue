@@ -150,6 +150,7 @@ const widthLabels: Record<number, string> = {
   background: transparent;
   color: var(--ctp-subtext1);
   font-size: 0.82rem;
+  white-space: nowrap;
   cursor: pointer;
   transition: background 0.12s ease, color 0.12s ease;
 }
