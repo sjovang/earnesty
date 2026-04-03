@@ -8,6 +8,7 @@ import SettingsModal from './components/SettingsModal.vue'
 import { useEditorStore } from './stores/editor'
 import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
+import { apiPublishDocument } from './services/api'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
@@ -31,11 +32,26 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
+async function publishDocument() {
+  const doc = editorStore.activeDocument
+  if (!doc || !auth.isAuthenticated) return
+  if (!doc._id.startsWith('drafts.')) return
+
+  try {
+    const { _id: publishedId } = await apiPublishDocument(doc._id)
+    // Reload the published document and update the editor state
+    const published = await fetchBlogDocument(publishedId)
+    editorStore.openDocument(published)
+  } catch (err) {
+    console.error('[publish] failed:', err)
+  }
+}
+
 function onKeydown(e: KeyboardEvent) {
   const mod = e.metaKey || e.ctrlKey
   if (mod && e.key === 'n') { e.preventDefault(); editorStore.resetToPlaceholder() }
   if (mod && e.key === 'o' && auth.isAuthenticated) { e.preventDefault(); showOpen.value = true }
-  if (mod && e.shiftKey && e.key === 'P') { e.preventDefault(); /* TODO: publish */ }
+  if (mod && e.shiftKey && e.key === 'P') { e.preventDefault(); publishDocument() }
   if (e.key === 'F1') { e.preventDefault(); showHelp.value = true }
 }
 
@@ -55,7 +71,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     :has-document="!!editorStore.activeDocument"
     @new="editorStore.resetToPlaceholder()"
     @open="showOpen = true"
-    @publish="() => {}"
+    @publish="publishDocument"
     @help="showHelp = true"
     @settings="showSettings = true"
     @signin="auth.login()"
