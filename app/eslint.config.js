@@ -14,6 +14,6 @@ export default defineConfigWithVueTs(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '.vite/**', 'api/**'],
+    ignores: ['dist/**', 'node_modules/**', '.vite/**', 'api/**', 'scripts/**'],
   },
 )
