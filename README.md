@@ -85,10 +85,15 @@ Configure the following secrets on **each environment** (not at repository level
 
 | Secret | Description |
 |--------|-------------|
-| `VITE_SANITY_PROJECT_ID` | Sanity project ID |
+| `VITE_SANITY_PROJECT_ID` | Sanity project ID (used at build time) |
 | `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `production`) |
-| `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token from Azure Static Web Apps |
+| `ENTRA_CLIENT_ID` | Entra ID App Registration client ID |
+| `ENTRA_CLIENT_SECRET` | Entra ID App Registration client secret |
+| `ENTRA_TENANT_ID` | Entra ID Directory (tenant) ID |
+| `SANITY_TOKEN` | Sanity API token (server-side, for API functions) |
+| `SANITY_PROJECT_ID` | Sanity project ID (server-side, for API functions) |
+| `SANITY_DATASET` | Sanity dataset name (server-side, for API functions) |
 
 > [!TIP]
 > `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
@@ -132,15 +137,18 @@ The app uses Azure Static Web Apps' built-in authentication with Microsoft Entra
 
 ### Configure SWA app settings
 
-Add these as application settings in the Azure Static Web App (portal → Configuration → Application settings, or via `az staticwebapp appsettings set`):
+App settings are managed automatically by the Bicep infrastructure deployment. Supply them as GitHub secrets in the `production` environment (see [GitHub secrets](#github-secrets) below):
 
-| Setting | Value |
-|---------|-------|
-| `AZURE_CLIENT_ID` | Application (client) ID from the App Registration |
-| `AZURE_CLIENT_SECRET` | Client secret value |
+| GitHub Secret | SWA App Setting | Description |
+|---------------|-----------------|-------------|
+| `ENTRA_CLIENT_ID` | `AZURE_CLIENT_ID` | Application (client) ID from the App Registration |
+| `ENTRA_CLIENT_SECRET` | `AZURE_CLIENT_SECRET` | Client secret value |
+| `ENTRA_TENANT_ID` | `AZURE_TENANT_ID` | Directory (tenant) ID — used in the OpenID Connect issuer URL |
 
 > [!NOTE]
-> These settings are server-side only and are never exposed to the browser. The `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` here are the Entra ID App Registration credentials used by SWA's built-in auth — they are separate from the identically-named repository-level secrets used for infrastructure deployment OIDC.
+> The `AZURE_TENANT_ID` app setting is required because `staticwebapp.config.json` references `{AZURE_TENANT_ID}` in the `openIdIssuer` URL. SWA resolves this at runtime from app settings.
+>
+> The `ENTRA_*` secret names are distinct from the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` repository-level secrets used for OIDC infrastructure deployment.
 
 ### Infrastructure secrets (repository level)
 
