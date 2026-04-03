@@ -11,8 +11,12 @@ export function getSanityClient(): SanityClient {
     const projectId = process.env['SANITY_PROJECT_ID']
     const token = process.env['SANITY_TOKEN']
     if (!projectId || !token) {
+      const missing = [
+        !projectId && 'SANITY_PROJECT_ID',
+        !token && 'SANITY_TOKEN',
+      ].filter(Boolean).join(', ')
       throw new Error(
-        'Missing required environment variables: SANITY_PROJECT_ID and SANITY_TOKEN must be set',
+        `Missing required environment variable(s): ${missing}`,
       )
     }
     _client = createClient({
