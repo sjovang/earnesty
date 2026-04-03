@@ -1,8 +1,7 @@
 name: Deploy to Azure Static Web Apps
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: read
