@@ -22,6 +22,14 @@ const auth = useAuthStore()
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
+const isLongContent = ref(false)
+
+function checkContentLength() {
+  const proseMirror = document.querySelector('.ProseMirror')
+  if (!proseMirror) return
+  // Switch to long-content mode once text would require scrolling
+  isLongContent.value = proseMirror.scrollHeight > window.innerHeight * 0.65
+}
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
 const AUTOSAVE_DELAY = 1500
@@ -73,6 +81,7 @@ function getCaretTop(): number | null {
 }
 
 function scrollToCaret() {
+  if (!isLongContent.value) return
   const caretTop = getCaretTop()
   if (caretTop == null) return
   const targetTop = window.innerHeight * CURSOR_RATIO
@@ -98,6 +107,7 @@ const tiptap = useEditor({
   autofocus: 'end',
   onUpdate({ editor }) {
     if (isIntro.value) isIntro.value = false
+    checkContentLength()
     editorStore.setContent(editor.getText())
     localStorage.setItem(CONTENT_KEY, editor.getHTML())
     scheduleAutosave(editor.getJSON() as TiptapNode)
@@ -107,6 +117,7 @@ const tiptap = useEditor({
     requestAnimationFrame(scrollToCaret)
   },
   onCreate() {
+    checkContentLength()
     requestAnimationFrame(scrollToCaret)
   },
 })
@@ -133,7 +144,10 @@ watch(
     }
 
     window.scrollTo({ top: 0 })
-    requestAnimationFrame(scrollToCaret)
+    requestAnimationFrame(() => {
+      checkContentLength()
+      scrollToCaret()
+    })
   },
 )
 </script>
@@ -142,12 +156,16 @@ watch(
   <!-- Fixed gradient overlay — fades out text above the cursor zone -->
   <div
     class="focus-fade"
+    :class="{ 'focus-fade--active': isLongContent }"
     aria-hidden="true"
   />
 
   <main
     class="editor"
-    :class="{ 'editor--has-content': !isIntro }"
+    :class="{
+      'editor--intro': isIntro,
+      'editor--long-content': isLongContent,
+    }"
     :style="{ fontSize: settings.fontSize + 'px', lineHeight: settings.lineSpacing }"
   >
     <!-- Logo lockup shown only while intro is displayed -->
@@ -181,10 +199,19 @@ watch(
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Default: anchor content near the bottom of the viewport */
+  justify-content: flex-end;
+  padding-bottom: 33vh;
 }
 
-.editor--has-content {
+/* Intro state: center the logo lockup and intro text */
+.editor--intro {
+  justify-content: center;
+  padding-bottom: 0;
+}
+
+/* Long-form content: top-aligned with typewriter bottom padding */
+.editor--long-content {
   justify-content: flex-start;
   padding-top: var(--space-2xl);
   padding-bottom: 50vh;
@@ -401,6 +428,8 @@ watch(
   inset: 0;
   pointer-events: none;
   z-index: 5;
+  opacity: 0;
+  transition: opacity 0.5s ease;
   background: linear-gradient(
     to bottom,
     var(--ctp-base)                                    0%,
@@ -409,5 +438,9 @@ watch(
     color-mix(in srgb, var(--ctp-base) 20%, transparent) 52%,
     transparent                                        62%
   );
+}
+
+.focus-fade--active {
+  opacity: 1;
 }
 </style>
