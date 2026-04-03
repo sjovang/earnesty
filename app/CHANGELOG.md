@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/sjovang/earnesty/compare/frontend-v1.2.0...frontend-v1.2.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* prevent theme FOUC and add post_login_redirect_uri for auth ([#49](https://github.com/sjovang/earnesty/issues/49)) ([ce4d19d](https://github.com/sjovang/earnesty/commit/ce4d19d49ca6fd92478e9d1b2b312093bce24b49))
+
 ## [1.2.0](https://github.com/sjovang/earnesty/compare/frontend-v1.1.1...frontend-v1.2.0) (2026-04-03)
 
 
