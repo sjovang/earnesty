@@ -37,6 +37,7 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+.vite/
 
 # Local environment — never commit real credentials
 .env
