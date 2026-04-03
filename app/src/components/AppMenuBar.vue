@@ -554,7 +554,8 @@ function onLeave() {
 }
 
 /* ── Icon-only menu item ─────────────────────────────────────────────────── */
-.menubar__item--icon {
+.menubar__item--icon,
+.menubar__item--user {
   padding: var(--space-2xs);
   display: flex;
   align-items: center;
