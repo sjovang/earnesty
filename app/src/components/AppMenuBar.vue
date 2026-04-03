@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import AppLogo from './AppLogo.vue'
 import type { SaveStatus } from '../stores/editor'
+import type { SwaUser } from '../stores/auth'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -9,13 +10,15 @@ const mod = isMac ? '⌘' : 'Ctrl+'
 defineProps<{
   documentTitle?: string
   saveStatus?: SaveStatus
+  user?: SwaUser
+  isAuthenticated?: boolean
   hasDocument?: boolean
 }>()
-const emit = defineEmits<{ new: []; open: []; publish: []; help: [] }>()
+const emit = defineEmits<{ new: []; open: []; publish: []; help: []; signin: []; logout: [] }>()
 
 const mobileMenuOpen = ref(false)
 
-function mobileEmit(event: 'new' | 'open' | 'publish' | 'help') {
+function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'signin' | 'logout') {
   mobileMenuOpen.value = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event as any)
@@ -142,7 +145,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item"
-          @click="$emit('open')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated }"
+          :disabled="!isAuthenticated"
+          @click="isAuthenticated && $emit('open')"
           @mouseenter="onEnter('open', $event)"
           @mousemove="onMove('open', $event)"
           @mouseleave="onLeave"
@@ -156,9 +161,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item menubar__item--publish"
-          :class="{ 'menubar__item--disabled': !hasDocument }"
-          :disabled="!hasDocument"
-          @click="hasDocument && $emit('publish')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && $emit('publish')"
           @mouseenter="onEnter('publish', $event)"
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
@@ -167,7 +172,7 @@ function onLeave() {
         </button>
       </div>
 
-      <!-- Right: help -->
+      <!-- Right: help + user / sign-in (desktop only) -->
       <div class="menubar__right">
         <button
           role="menuitem"
@@ -178,6 +183,27 @@ function onLeave() {
           @mouseleave="onLeave"
         >
           Help
+        </button>
+        <button
+          v-if="isAuthenticated"
+          role="menuitem"
+          class="menubar__item menubar__item--user"
+          title="Sign out"
+          @click="$emit('logout')"
+          @mouseleave="onLeave"
+        >
+          <span class="menubar__avatar menubar__avatar--initials">{{ user?.userDetails?.charAt(0) ?? '?' }}</span>
+        </button>
+        <button
+          v-else
+          role="menuitem"
+          class="menubar__item menubar__item--signin"
+          @click="$emit('signin')"
+          @mouseenter="onEnter('signin', $event)"
+          @mousemove="onMove('signin', $event)"
+          @mouseleave="onLeave"
+        >
+          Sign in
         </button>
       </div>
 
@@ -262,16 +288,18 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__mobile-item"
-          @click="mobileEmit('open')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated }"
+          :disabled="!isAuthenticated"
+          @click="isAuthenticated && mobileEmit('open')"
         >
           Open
         </button>
         <button
           role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--publish"
-          :class="{ 'menubar__item--disabled': !hasDocument }"
-          :disabled="!hasDocument"
-          @click="hasDocument && mobileEmit('publish')"
+          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
+          :disabled="!isAuthenticated || !hasDocument"
+          @click="isAuthenticated && hasDocument && mobileEmit('publish')"
         >
           Publish
         </button>
@@ -281,6 +309,24 @@ function onLeave() {
           @click="mobileEmit('help')"
         >
           Help
+        </button>
+        <div class="menubar__mobile-sep" />
+        <button
+          v-if="isAuthenticated"
+          role="menuitem"
+          class="menubar__mobile-item menubar__mobile-item--user"
+          @click="mobileEmit('logout')"
+        >
+          <span class="menubar__avatar menubar__avatar--initials">{{ user?.userDetails?.charAt(0) ?? '?' }}</span>
+          Sign out
+        </button>
+        <button
+          v-else
+          role="menuitem"
+          class="menubar__mobile-item menubar__mobile-item--signin"
+          @click="mobileEmit('signin')"
+        >
+          Sign in
         </button>
       </div>
     </Transition>
@@ -426,6 +472,34 @@ function onLeave() {
   color: var(--ctp-subtext1);
 }
 
+.menubar__item--signin {
+  color: var(--ctp-blue);
+}
+
+.menubar__item--signin:hover {
+  background: color-mix(in srgb, var(--ctp-blue) 12%, transparent);
+  color: var(--ctp-blue);
+}
+
+/* ── User avatar ──────────────────────────────────────────────────────────── */
+.menubar__avatar {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.menubar__avatar--initials {
+  background: var(--ctp-surface1);
+  color: var(--ctp-subtext1);
+  font-size: var(--step--2);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Save status ──────────────────────────────────────────────────────────── */
 .menubar__save {
   display: inline-flex;
@@ -506,6 +580,24 @@ function onLeave() {
 
 .menubar__mobile-item--publish:hover {
   background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
+}
+
+.menubar__mobile-item--signin {
+  color: var(--ctp-blue);
+}
+
+.menubar__mobile-item--signin:hover {
+  background: color-mix(in srgb, var(--ctp-blue) 12%, transparent);
+}
+
+.menubar__mobile-item--user {
+  gap: var(--space-xs);
+}
+
+.menubar__mobile-sep {
+  height: 1px;
+  background: var(--ctp-surface0);
+  margin: var(--space-3xs) var(--space-2xs);
 }
 
 /* ── Backdrop (mobile, outside click to close) ────────────────────────────── */

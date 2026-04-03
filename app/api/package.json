@@ -1,0 +1,20 @@
+{
+  "name": "earnesty-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@sanity/client": "^7.0.0"
+  },
+  "devDependencies": {
+    "@azure/functions": "^4.6.0",
+    "typescript": "~5.8.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

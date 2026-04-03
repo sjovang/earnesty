@@ -13,7 +13,7 @@ param resourceGroupName string = 'rg-${appName}'
 
 @description('Pricing tier for the Azure Static Web App.')
 @allowed(['Free', 'Standard'])
-param staticWebAppSku string = 'Free'
+param staticWebAppSku string = 'Standard'
 
 // ── Resource group ────────────────────────────────────────────────────────────
 

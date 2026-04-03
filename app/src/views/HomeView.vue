@@ -8,7 +8,9 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { createLowlight, common } from 'lowlight'
 import { useSettingsStore } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
-import { tiptapJsonToPortableText, saveDocument, type TiptapNode } from '../services/sanity'
+import { useAuthStore } from '../stores/auth'
+import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
+import { apiSaveDocument } from '../services/api'
 import { INTRO_HTML } from '../constants'
 import AppLogo from '../components/AppLogo.vue'
 
@@ -16,6 +18,7 @@ const lowlight = createLowlight(common)
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
+const auth = useAuthStore()
 
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
@@ -26,10 +29,10 @@ let saveTimer: ReturnType<typeof setTimeout> | null = null
 
 async function doAutosave(json: TiptapNode) {
   const doc = editorStore.activeDocument
-  if (!doc) return
+  if (!doc || !auth.isAuthenticated) return
   editorStore.setSaveStatus('saving')
   try {
-    await saveDocument(doc._id, tiptapJsonToPortableText(json))
+    await apiSaveDocument(doc._id, tiptapJsonToPortableText(json))
     editorStore.setSaveStatus('saved')
   } catch (err) {
     console.error('[autosave] failed:', err)
@@ -38,7 +41,7 @@ async function doAutosave(json: TiptapNode) {
 }
 
 function scheduleAutosave(json: TiptapNode) {
-  if (!editorStore.activeDocument) return
+  if (!editorStore.activeDocument || !auth.isAuthenticated) return
   if (saveTimer) clearTimeout(saveTimer)
   editorStore.setSaveStatus('saving') // immediate feedback
   saveTimer = setTimeout(() => doAutosave(json), AUTOSAVE_DELAY)

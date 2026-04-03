@@ -2,18 +2,15 @@ import { createClient } from '@sanity/client'
 
 // In development the Vite server proxies /v2024-01-01/… to the real Sanity
 // API, avoiding the CORS restriction on localhost. In production the client
-// talks directly to the Sanity API using the token.
+// talks directly to the Sanity CDN for public reads.
 const devProxyConfig = import.meta.env.DEV
-  ? { apiHost: window.location.origin, useProjectHostname: false }
-  : {}
+  ? { apiHost: window.location.origin, useProjectHostname: false, useCdn: false }
+  : { useCdn: true }
 
 export const sanityClient = createClient({
   projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
   dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
   apiVersion: '2024-01-01',
-  token: import.meta.env.VITE_SANITY_TOKEN,
-  // Authenticated requests must bypass the CDN so mutations are always visible
-  useCdn: false,
   ...devProxyConfig,
 })
 
@@ -316,13 +313,6 @@ function key() {
   return crypto.randomUUID()
 }
 
-// ── Mutations ─────────────────────────────────────────────────────────────────
-
-/** Saves PortableText blocks back to a Sanity document. */
-export async function saveDocument(id: string, blocks: SanityBodyBlock[]): Promise<void> {
-  await sanityClient.patch(id).set({ body: blocks }).commit()
-}
-
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 /** Fetch list of blog documents (title + enough body blocks for 50-word preview). */
@@ -343,22 +333,4 @@ export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
     `*[_type == "blog" && _id == $id][0]{ _id, title, _updatedAt, body }`,
     { id },
   )
-}
-
-/**
- * Creates a new blog draft in Sanity.
- * Draft documents have an _id prefixed with "drafts." so they are not
- * published until explicitly promoted to a live document.
- */
-export async function createDraftBlogDocument(
-  title: string,
-  slug: string,
-): Promise<BlogDocument> {
-  const id = `drafts.${crypto.randomUUID()}`
-  return sanityClient.create({
-    _id: id,
-    _type: 'blog',
-    title,
-    slug: { _type: 'slug', current: slug },
-  }) as Promise<BlogDocument>
 }
