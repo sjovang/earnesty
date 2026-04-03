@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppLogo from './AppLogo.vue'
+import UserModal from './UserModal.vue'
 import type { SaveStatus } from '../stores/editor'
 import type { SwaUser } from '../stores/auth'
 
@@ -17,6 +18,12 @@ defineProps<{
 const emit = defineEmits<{ new: []; open: []; publish: []; help: []; signin: []; logout: [] }>()
 
 const mobileMenuOpen = ref(false)
+const showUserModal = ref(false)
+
+function openUserModal() {
+  mobileMenuOpen.value = false
+  showUserModal.value = true
+}
 
 function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'signin' | 'logout') {
   mobileMenuOpen.value = false
@@ -188,8 +195,8 @@ function onLeave() {
           v-if="isAuthenticated"
           role="menuitem"
           class="menubar__item menubar__item--user"
-          title="Sign out"
-          @click="$emit('logout')"
+          title="Account"
+          @click="openUserModal"
           @mouseleave="onLeave"
         >
           <span class="menubar__avatar menubar__avatar--initials">{{ user?.userDetails?.charAt(0) ?? '?' }}</span>
@@ -315,10 +322,10 @@ function onLeave() {
           v-if="isAuthenticated"
           role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--user"
-          @click="mobileEmit('logout')"
+          @click="openUserModal"
         >
           <span class="menubar__avatar menubar__avatar--initials">{{ user?.userDetails?.charAt(0) ?? '?' }}</span>
-          Sign out
+          Account
         </button>
         <button
           v-else
@@ -354,7 +361,14 @@ function onLeave() {
         {{ tooltip.label }}
       </div>
     </Transition>
-  </Teleport>
+    <!-- User profile modal -->
+    <UserModal
+      v-if="showUserModal && user"
+      :user="user"
+      @close="showUserModal = false"
+      @logout="emit('logout')"
+    />
+  </teleport>
 </template>
 
 <style scoped>
