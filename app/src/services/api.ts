@@ -1,6 +1,25 @@
 import type { SanityBodyBlock, BlogDocument } from './sanity'
 
 const LOGIN_PATH = '/.auth/login/aad'
+const REDIRECT_COOLDOWN_MS = 10_000
+const REDIRECT_TS_KEY = '__auth_redirect_ts'
+
+function redirectToLogin(): never {
+  const now = Date.now()
+  const last = Number(sessionStorage.getItem(REDIRECT_TS_KEY) || '0')
+  if (now - last < REDIRECT_COOLDOWN_MS) {
+    throw new Error('Not authenticated (redirect suppressed to prevent loop)')
+  }
+  sessionStorage.setItem(REDIRECT_TS_KEY, String(now))
+
+  let redirectUri = window.location.pathname + window.location.search + window.location.hash
+  // Ensure the URI is a safe relative path (defence-in-depth against open redirects)
+  if (!redirectUri.startsWith('/') || redirectUri.startsWith('//')) {
+    redirectUri = '/'
+  }
+  window.location.href = `${LOGIN_PATH}?post_login_redirect_uri=${encodeURIComponent(redirectUri)}`
+  throw new Error('Not authenticated')
+}
 
 async function apiFetch<T>(
   url: string,
@@ -12,8 +31,7 @@ async function apiFetch<T>(
   })
 
   if (res.status === 401) {
-    window.location.href = LOGIN_PATH
-    throw new Error('Not authenticated')
+    redirectToLogin()
   }
 
   if (!res.ok) {
