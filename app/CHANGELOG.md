@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/sjovang/earnesty/compare/frontend-v1.1.0...frontend-v1.1.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* correct newest/oldest sort order in open document modal ([#40](https://github.com/sjovang/earnesty/issues/40)) ([de4e1e9](https://github.com/sjovang/earnesty/commit/de4e1e9c1c32e1c2965560fc899ae654384c1aa0))
+
 ## [1.1.0](https://github.com/sjovang/earnesty/compare/frontend-v1.0.0...frontend-v1.1.0) (2026-04-03)
 
 
