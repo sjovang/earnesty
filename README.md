@@ -93,6 +93,55 @@ Configure the following secrets on **each environment** (not at repository level
 > [!TIP]
 > `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
 
+## Entra ID App Registration
+
+The app uses Azure Static Web Apps' built-in authentication with Microsoft Entra ID. An App Registration must be created manually in the Azure portal before deploying.
+
+### Create the App Registration
+
+1. Go to **Microsoft Entra ID → App registrations → New registration**
+2. **Name:** `Earnesty`
+3. **Supported account types:** "Accounts in this organizational directory only" (single tenant)
+4. **Redirect URI:** Select **Web** and enter:
+
+   ```
+   https://<your-swa-hostname>/.auth/login/aad/callback
+   ```
+
+   For local development with the SWA CLI, also add:
+
+   ```
+   http://localhost:4280/.auth/login/aad/callback
+   ```
+
+5. Click **Register**
+
+### Create a client secret
+
+1. In the App Registration, go to **Certificates & secrets → Client secrets → New client secret**
+2. Set a description (e.g. `SWA auth`) and expiry
+3. Copy the **Value** immediately — it is only shown once
+
+### Note the required values
+
+| Value | Where to find it |
+|-------|-----------------|
+| Application (client) ID | App Registration → Overview |
+| Directory (tenant) ID | App Registration → Overview |
+| Client secret value | Copied in the previous step |
+
+### Configure SWA app settings
+
+Add these as application settings in the Azure Static Web App (portal → Configuration → Application settings, or via `az staticwebapp appsettings set`):
+
+| Setting | Value |
+|---------|-------|
+| `AZURE_CLIENT_ID` | Application (client) ID from the App Registration |
+| `AZURE_CLIENT_SECRET` | Client secret value |
+
+> [!NOTE]
+> These settings are server-side only and are never exposed to the browser. The `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` here are the Entra ID App Registration credentials used by SWA's built-in auth — they are separate from the identically-named repository-level secrets used for infrastructure deployment OIDC.
+
 ### Infrastructure secrets (repository level)
 
 The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (federated identity) and requires these secrets at **repository level** (not environment-scoped):
