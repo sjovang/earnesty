@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.1.0](https://github.com/sjovang/earnesty/compare/frontend-v1.0.0...frontend-v1.1.0) (2026-04-03)
+
+
+### Features
+
+* add Entra ID authentication via SWA built-in auth ([#37](https://github.com/sjovang/earnesty/issues/37)) ([ebb9472](https://github.com/sjovang/earnesty/commit/ebb9472ebaeaa59d93a843698697676e667808ee))
+* full-width three-column menubar on large viewports ([#32](https://github.com/sjovang/earnesty/issues/32)) ([68b1791](https://github.com/sjovang/earnesty/commit/68b17918df740333e365cd499694b40c54e58f75))
+
+
+### Bug Fixes
+
+* auth state not updated after OAuth callback ([#33](https://github.com/sjovang/earnesty/issues/33)) ([c3b3759](https://github.com/sjovang/earnesty/commit/c3b37592266644ee6932933d8429026ad89e7b07))
+* remove large top margin when document is loaded ([#31](https://github.com/sjovang/earnesty/issues/31)) ([e825c40](https://github.com/sjovang/earnesty/commit/e825c40591bb1b013d428b20ef0314804ad9ed83))
+
 ## 1.0.0 (2026-03-29)
 
 
