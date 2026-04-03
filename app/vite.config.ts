@@ -60,15 +60,42 @@ function devAuthPlugin(): Plugin {
         res.end(JSON.stringify(mockPrincipal))
       })
 
-      // PATCH /api/sanity/documents/:id — proxy save to Sanity
+      // /api/sanity/documents/* — proxy document operations to Sanity
       server.middlewares.use('/api/sanity/documents', async (req, res) => {
         try {
           const client = await getSanityClient()
-          // Extract document ID from URL: /api/sanity/documents/{id}
+          // Extract document ID from URL: /api/sanity/documents/{id}[/publish]
           const urlPath = req.url ?? ''
-          const id = decodeURIComponent(urlPath.replace(/^\//, ''))
+          const publishMatch = urlPath.match(/^\/([^/]+)\/publish$/)
+          const id = publishMatch
+            ? decodeURIComponent(publishMatch[1])
+            : decodeURIComponent(urlPath.replace(/^\//, ''))
 
-          if (req.method === 'POST' && !id) {
+          if (publishMatch && req.method === 'POST') {
+            // Publish a draft document
+            if (!id.startsWith('drafts.')) {
+              res.writeHead(400, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'Document is not a draft' }))
+              return
+            }
+            const draft = await client.getDocument(id)
+            if (!draft) {
+              res.writeHead(404, { 'Content-Type': 'application/json' })
+              res.end(JSON.stringify({ error: 'Draft not found' }))
+              return
+            }
+            const publishedId = id.slice('drafts.'.length)
+            const fields = Object.fromEntries(
+              Object.entries(draft).filter(([k]) => k !== '_id' && k !== '_rev'),
+            )
+            const tx = await client
+              .transaction()
+              .createOrReplace({ ...fields, _id: publishedId } as Parameters<typeof client.createOrReplace>[0])
+              .delete(id)
+              .commit()
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify({ _id: publishedId, transactionId: tx.transactionId }))
+          } else if (req.method === 'POST' && !id) {
             // Create draft
             const body = await readBody(req)
             const { title, slug } = JSON.parse(body)
@@ -84,8 +111,12 @@ function devAuthPlugin(): Plugin {
           } else if (req.method === 'PATCH' && id) {
             // Save document
             const body = await readBody(req)
-            const { blocks } = JSON.parse(body)
-            await client.patch(id).set({ body: blocks }).commit()
+            const { blocks, title } = JSON.parse(body)
+            const fields: Record<string, unknown> = { body: blocks }
+            if (typeof title === 'string') {
+              fields['title'] = title
+            }
+            await client.patch(id).set(fields).commit()
             res.writeHead(204)
             res.end()
           } else {

@@ -69,6 +69,16 @@ export async function apiCreateDraft(
   })
 }
 
+/** Publishes a draft document, promoting it to published and removing the draft. */
+export async function apiPublishDocument(
+  id: string,
+): Promise<{ _id: string }> {
+  return apiFetch<{ _id: string }>(
+    `/api/sanity/documents/${encodeURIComponent(id)}/publish`,
+    { method: 'POST' },
+  )
+}
+
 export interface SwaUser {
   identityProvider: string
   userId: string
