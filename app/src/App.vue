@@ -15,9 +15,18 @@ const auth = useAuthStore()
 
 async function onDocumentSelected(doc: BlogDocument) {
   const full = await fetchBlogDocument(doc._id)
-  const html = portableTextToHtml(full.body)
-  editorStore.openDocument(full, html)
+  const bodyHtml = portableTextToHtml(full.body)
+  const titleHtml = `<h1 data-type="title">${escapeHtml(full.title ?? '')}</h1>`
+  editorStore.openDocument(full, titleHtml + bodyHtml)
   showOpen.value = false
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 
 function onKeydown(e: KeyboardEvent) {
