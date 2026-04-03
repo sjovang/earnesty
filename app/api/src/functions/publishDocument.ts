@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { sanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, parseClientPrincipal } from '../shared.js'
 
 app.http('publishDocument', {
   methods: ['POST'],
@@ -29,7 +29,7 @@ app.http('publishDocument', {
     }
 
     try {
-      const draft = await sanityClient.getDocument(id)
+      const draft = await getSanityClient().getDocument(id)
       if (!draft) {
         return { status: 404, jsonBody: { error: 'Draft not found' } }
       }
@@ -39,7 +39,7 @@ app.http('publishDocument', {
       // Copy the draft content to the published document and delete the draft
       // in a single transaction so Sanity never sees an inconsistent state.
       const { _id: _draftId, _rev: _draftRev, ...fields } = draft
-      const published = await sanityClient
+      const published = await getSanityClient()
         .transaction()
         .createOrReplace({ ...fields, _id: publishedId })
         .delete(id)

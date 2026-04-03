@@ -1,12 +1,34 @@
-import { createClient } from '@sanity/client'
+import { createClient, type SanityClient } from '@sanity/client'
 
-export const sanityClient = createClient({
-  projectId: process.env['SANITY_PROJECT_ID']!,
-  dataset: process.env['SANITY_DATASET'] ?? 'production',
-  apiVersion: '2024-01-01',
-  token: process.env['SANITY_TOKEN']!,
-  useCdn: false,
-})
+let _client: SanityClient | null = null
+
+/** Returns a lazily-initialised Sanity client.
+ *  Deferring creation to first use (inside a request handler) ensures the
+ *  module can be loaded and function registrations can run even if env vars
+ *  are not yet available at cold-start time. */
+export function getSanityClient(): SanityClient {
+  if (!_client) {
+    const projectId = process.env['SANITY_PROJECT_ID']
+    const token = process.env['SANITY_TOKEN']
+    if (!projectId || !token) {
+      const missing = [
+        !projectId && 'SANITY_PROJECT_ID',
+        !token && 'SANITY_TOKEN',
+      ].filter(Boolean).join(', ')
+      throw new Error(
+        `Missing required environment variable(s): ${missing}`,
+      )
+    }
+    _client = createClient({
+      projectId,
+      dataset: process.env['SANITY_DATASET'] ?? 'production',
+      apiVersion: '2024-01-01',
+      token,
+      useCdn: false,
+    })
+  }
+  return _client
+}
 
 export interface ClientPrincipal {
   identityProvider: string
