@@ -85,8 +85,9 @@ function devAuthPlugin(): Plugin {
               return
             }
             const publishedId = id.slice('drafts.'.length)
-            const { _id, _rev, ...fields } = draft as Record<string, unknown>
-            void _id; void _rev
+            const fields = Object.fromEntries(
+              Object.entries(draft).filter(([k]) => k !== '_id' && k !== '_rev'),
+            )
             const tx = await client
               .transaction()
               .createOrReplace({ ...fields, _id: publishedId } as Parameters<typeof client.createOrReplace>[0])
