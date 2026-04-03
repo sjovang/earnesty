@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
-import { createDraftBlogDocument } from '../services/sanity'
+import { apiCreateDraft } from '../services/api'
 import { useEditorStore } from '../stores/editor'
 
 const emit = defineEmits<{
@@ -25,7 +25,7 @@ async function create() {
   creating.value = true
   error.value = null
   try {
-    const doc = await createDraftBlogDocument(title.value.trim(), slug.value)
+    const doc = await apiCreateDraft(title.value.trim(), slug.value)
     editorStore.openDocument(doc, '<p></p>')
     emit('created')
     emit('close')

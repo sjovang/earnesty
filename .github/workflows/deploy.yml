@@ -35,6 +35,14 @@ jobs:
           VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
         run: npm run build
 
+      - name: Install API dependencies
+        working-directory: app/api
+        run: npm ci
+
+      - name: Build API
+        working-directory: app/api
+        run: npm run build
+
       - name: Deploy to Azure Static Web Apps
         uses: azure/static-web-apps-deploy@v1
         with:
@@ -42,5 +50,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: app
+          api_location: app/api
           output_location: dist
           skip_app_build: true
+          skip_api_build: true

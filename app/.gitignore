@@ -43,3 +43,8 @@ __screenshots__/
 .env
 .env.local
 .env.*.local
+
+# Azure Functions API
+api/local.settings.json
+api/node_modules/
+api/dist/
