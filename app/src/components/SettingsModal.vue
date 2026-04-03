@@ -37,90 +37,78 @@ const widthLabels: Record<number, string> = {
     @close="$emit('close')"
   >
     <div class="settings">
-      <!-- Theme -->
-      <section class="settings__section">
-        <h3 class="settings__label">
-          Theme
-        </h3>
+      <div class="settings__row">
+        <span class="settings__label">Theme</span>
         <div
-          class="settings__pill-group"
+          class="settings__choices"
           role="group"
           aria-label="Theme"
         >
           <button
             v-for="t in themes"
             :key="t.value"
-            :class="['settings__pill', { 'settings__pill--active': store.settings.theme === t.value }]"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.theme === t.value }]"
             @click="store.setTheme(t.value)"
           >
             {{ t.label }}
           </button>
         </div>
-      </section>
+      </div>
 
-      <!-- Font size -->
-      <section class="settings__section">
-        <h3 class="settings__label">
-          Font size
-        </h3>
+      <div class="settings__row">
+        <span class="settings__label">Font size</span>
         <div
-          class="settings__pill-group"
+          class="settings__choices"
           role="group"
           aria-label="Font size"
         >
           <button
             v-for="size in FONT_SIZES"
             :key="size"
-            :class="['settings__pill', { 'settings__pill--active': store.settings.fontSize === size }]"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.fontSize === size }]"
             @click="store.setFontSize(size)"
           >
             {{ fontSizeLabels[size] }}
           </button>
         </div>
-      </section>
+      </div>
 
-      <!-- Font -->
-      <section class="settings__section">
-        <h3 class="settings__label">
-          Font
-        </h3>
+      <div class="settings__row">
+        <span class="settings__label">Font</span>
         <div
-          class="settings__pill-group"
+          class="settings__choices"
           role="group"
           aria-label="Font"
         >
           <button
             v-for="f in fonts"
             :key="f.value"
-            :class="['settings__pill', { 'settings__pill--active': store.settings.font === f.value }]"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.font === f.value }]"
             :style="{ fontFamily: fontFamilyFor(f.value) }"
             @click="store.setFont(f.value)"
           >
             {{ f.label }}
           </button>
         </div>
-      </section>
+      </div>
 
-      <!-- Content width -->
-      <section class="settings__section">
-        <h3 class="settings__label">
-          Content width
-        </h3>
+      <div class="settings__row">
+        <span class="settings__label">Width</span>
         <div
-          class="settings__pill-group"
+          class="settings__choices"
           role="group"
           aria-label="Content width"
         >
           <button
             v-for="w in CONTENT_WIDTHS"
             :key="w"
-            :class="['settings__pill', { 'settings__pill--active': store.settings.contentWidth === w }]"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.contentWidth === w }]"
             @click="store.setContentWidth(w)"
           >
             {{ widthLabels[w] }}
           </button>
         </div>
-      </section>
+      </div>
     </div>
   </BaseModal>
 </template>
@@ -129,56 +117,60 @@ const widthLabels: Record<number, string> = {
 .settings {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.settings__section {
+.settings__row {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 1rem;
 }
 
 .settings__label {
-  font-size: 0.75rem;
+  flex-shrink: 0;
+  width: 5.5rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
   color: var(--ctp-subtext0);
+  text-align: left;
 }
 
-.settings__pill-group {
+.settings__choices {
   display: flex;
-  gap: 0.4rem;
-  flex-wrap: wrap;
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
-.settings__pill {
-  padding: 0.35rem 0.9rem;
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 20px;
+.settings__btn {
+  flex: 1;
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-right: 1px solid var(--ctp-surface1);
   background: transparent;
   color: var(--ctp-subtext1);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
 }
 
-.settings__pill:hover {
+.settings__btn:last-child {
+  border-right: none;
+}
+
+.settings__btn:hover {
   background: var(--ctp-surface0);
   color: var(--ctp-text);
-  border-color: var(--ctp-surface2);
 }
 
-.settings__pill--active {
+.settings__btn--active {
   background: var(--ctp-mauve);
-  border-color: var(--ctp-mauve);
   color: var(--ctp-base);
   font-weight: 600;
 }
 
-.settings__pill--active:hover {
+.settings__btn--active:hover {
   background: var(--ctp-mauve);
   color: var(--ctp-base);
-  border-color: var(--ctp-mauve);
 }
 </style>

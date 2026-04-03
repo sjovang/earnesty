@@ -34,20 +34,20 @@ function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 's
 // ── Cursor-following shortcut tooltip ─────────────────────────────────────────
 const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
 
-const tooltipLabels: Record<string, string> = {
-  new:     `Create new document (${mod}N)`,
-  open:    `Open document (${mod}O)`,
-  publish: `Publish document (${mod}⇧P)`,
-  help:    `Help (F1)`,
+const shortcuts: Record<string, string> = {
+  new:     `${mod}N`,
+  open:    `${mod}O`,
+  publish: `${mod}⇧P`,
+  help:    'F1',
 }
 
 function onEnter(key: string, e: MouseEvent) {
-  const label = tooltipLabels[key] ?? key
+  const label = shortcuts[key] ?? key
   tooltip.value = { label, x: e.clientX, y: e.clientY }
 }
 function onMove(key: string, e: MouseEvent) {
   if (tooltip.value) {
-    const label = tooltipLabels[key] ?? key
+    const label = shortcuts[key] ?? key
     tooltip.value = { label, x: e.clientX, y: e.clientY }
   }
 }
@@ -143,20 +143,6 @@ function onLeave() {
           @mousemove="onMove('new', $event)"
           @mouseleave="onLeave"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6z" />
-            <polyline points="9 2 9 6 13 6" />
-          </svg>
           New
         </button>
         <span
@@ -173,19 +159,6 @@ function onLeave() {
           @mousemove="onMove('open', $event)"
           @mouseleave="onLeave"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M2 4a1 1 0 0 1 1-1h3.5l1.5 2H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" />
-          </svg>
           Open
         </button>
         <span
@@ -202,20 +175,6 @@ function onLeave() {
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M8 10V3M5 6l3-3 3 3" />
-            <path d="M3 13h10" />
-          </svg>
           Publish
         </button>
       </div>
@@ -250,37 +209,38 @@ function onLeave() {
         </button>
         <button
           role="menuitem"
-          class="menubar__item"
+          class="menubar__item menubar__item--icon"
+          title="Help"
+          aria-label="Help"
           @click="$emit('help')"
           @mouseenter="onEnter('help', $event)"
           @mousemove="onMove('help', $event)"
           @mouseleave="onLeave"
         >
           <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
+            viewBox="0 0 20 20"
+            width="16"
+            height="16"
             fill="none"
             stroke="currentColor"
             stroke-width="1.5"
             stroke-linecap="round"
             stroke-linejoin="round"
-            aria-hidden="true"
           >
             <circle
-              cx="8"
-              cy="8"
-              r="6"
+              cx="10"
+              cy="10"
+              r="8"
             />
-            <path d="M6.5 6a1.5 1.5 0 1 1 2 1.4C8 8 8 8.5 8 9" />
+            <path d="M7.5 7.5a2.5 2.5 0 0 1 4.6 1.3c0 1.7-2.6 1.7-2.6 3.2" />
             <circle
-              cx="8"
-              cy="11"
-              r=".5"
+              cx="10"
+              cy="15"
+              r="0.5"
               fill="currentColor"
+              stroke="none"
             />
           </svg>
-          Help
         </button>
         <button
           v-if="isAuthenticated"
@@ -381,20 +341,6 @@ function onLeave() {
           class="menubar__mobile-item"
           @click="mobileEmit('new')"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M9 2H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V6z" />
-            <polyline points="9 2 9 6 13 6" />
-          </svg>
           New
         </button>
         <button
@@ -404,19 +350,6 @@ function onLeave() {
           :disabled="!isAuthenticated"
           @click="isAuthenticated && mobileEmit('open')"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M2 4a1 1 0 0 1 1-1h3.5l1.5 2H13a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z" />
-          </svg>
           Open
         </button>
         <button
@@ -426,20 +359,6 @@ function onLeave() {
           :disabled="!isAuthenticated || !hasDocument"
           @click="isAuthenticated && hasDocument && mobileEmit('publish')"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M8 10V3M5 6l3-3 3 3" />
-            <path d="M3 13h10" />
-          </svg>
           Publish
         </button>
         <button
@@ -447,30 +366,6 @@ function onLeave() {
           class="menubar__mobile-item"
           @click="mobileEmit('help')"
         >
-          <svg
-            viewBox="0 0 16 16"
-            width="14"
-            height="14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <circle
-              cx="8"
-              cy="8"
-              r="6"
-            />
-            <path d="M6.5 6a1.5 1.5 0 1 1 2 1.4C8 8 8 8.5 8 9" />
-            <circle
-              cx="8"
-              cy="11"
-              r=".5"
-              fill="currentColor"
-            />
-          </svg>
           Help
         </button>
         <button
@@ -615,9 +510,6 @@ function onLeave() {
 
 /* ── Menu items ───────────────────────────────────────────────────────────── */
 .menubar__item {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2xs);
   padding: var(--space-2xs) var(--space-s);
   border: none;
   border-radius: 6px;
@@ -662,7 +554,8 @@ function onLeave() {
 }
 
 /* ── Icon-only menu item ─────────────────────────────────────────────────── */
-.menubar__item--icon {
+.menubar__item--icon,
+.menubar__item--user {
   padding: var(--space-2xs);
   display: flex;
   align-items: center;
