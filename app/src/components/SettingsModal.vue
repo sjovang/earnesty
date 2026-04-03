@@ -132,34 +132,39 @@ const widthLabels: Record<number, string> = {
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--ctp-subtext0);
-  text-align: right;
+  text-align: left;
 }
 
 .settings__choices {
   display: flex;
-  gap: 0.3rem;
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .settings__btn {
+  flex: 1;
   padding: 0.3rem 0.75rem;
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 6px;
+  border: none;
+  border-right: 1px solid var(--ctp-surface1);
   background: transparent;
   color: var(--ctp-subtext1);
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.settings__btn:last-child {
+  border-right: none;
 }
 
 .settings__btn:hover {
   background: var(--ctp-surface0);
   color: var(--ctp-text);
-  border-color: var(--ctp-surface2);
 }
 
 .settings__btn--active {
   background: var(--ctp-mauve);
-  border-color: var(--ctp-mauve);
   color: var(--ctp-base);
   font-weight: 600;
 }
@@ -167,6 +172,5 @@ const widthLabels: Record<number, string> = {
 .settings__btn--active:hover {
   background: var(--ctp-mauve);
   color: var(--ctp-base);
-  border-color: var(--ctp-mauve);
 }
 </style>
