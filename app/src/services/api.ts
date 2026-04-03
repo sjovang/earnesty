@@ -27,10 +27,13 @@ async function apiFetch<T>(
 ): Promise<T> {
   const res = await fetch(url, {
     ...init,
+    redirect: 'manual',
     headers: { 'Content-Type': 'application/json', ...init?.headers },
   })
 
-  if (res.status === 401) {
+  // Platform-level 401s (e.g. from responseOverrides) arrive as opaque redirects
+  // when redirect: 'manual' is set. Function-level 401s arrive with status 401.
+  if (res.type === 'opaqueredirect' || res.status === 401) {
     redirectToLogin()
   }
 
