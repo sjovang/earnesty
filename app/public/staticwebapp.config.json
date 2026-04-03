@@ -11,10 +11,15 @@
     }
   },
   "routes": [
-    { "route": "/api/*", "allowedRoles": ["authenticated"] },
     { "route": "/.auth/login/github", "statusCode": 404 },
     { "route": "/.auth/login/twitter", "statusCode": 404 }
   ],
+  "responseOverrides": {
+    "401": {
+      "statusCode": 302,
+      "redirect": "/"
+    }
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/assets/*", "/favicon*", "/.auth/*"]

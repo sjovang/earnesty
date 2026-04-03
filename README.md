@@ -146,8 +146,6 @@ App settings are managed automatically by the Bicep infrastructure deployment. S
 | `ENTRA_TENANT_ID` | `AZURE_TENANT_ID` | Directory (tenant) ID — used in the OpenID Connect issuer URL |
 
 > [!NOTE]
-> The `AZURE_TENANT_ID` app setting is required because `staticwebapp.config.json` references `{AZURE_TENANT_ID}` in the `openIdIssuer` URL. SWA resolves this at runtime from app settings.
->
 > The `ENTRA_*` secret names are distinct from the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` repository-level secrets used for OIDC infrastructure deployment.
 
 ### Infrastructure secrets (repository level)
