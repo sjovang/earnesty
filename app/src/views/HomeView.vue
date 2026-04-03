@@ -122,9 +122,16 @@ watch(
   (html) => {
     if (html === null || !tiptap.value) return
     tiptap.value.commands.setContent(html, { emitUpdate: false })
-    localStorage.setItem(CONTENT_KEY, html)
     editorStore.consumePendingHtml()
-    isIntro.value = false
+
+    if (html === INTRO_HTML) {
+      localStorage.removeItem(CONTENT_KEY)
+      isIntro.value = true
+    } else {
+      localStorage.setItem(CONTENT_KEY, html)
+      isIntro.value = false
+    }
+
     window.scrollTo({ top: 0 })
     requestAnimationFrame(scrollToCaret)
   },
@@ -170,12 +177,17 @@ watch(
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
   max-width: 60ch;
   margin: 0 auto;
-  padding: 40vh var(--space-s) 50vh;
+  padding: 0 var(--space-s);
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .editor--has-content {
+  justify-content: flex-start;
   padding-top: var(--space-2xl);
+  padding-bottom: 50vh;
 }
 
 /* ── Intro lockup ─────────────────────────────────────────────────────────── */
@@ -184,7 +196,7 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: var(--space-xs);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-s);
   color: var(--ctp-mauve);
 }
 
@@ -215,7 +227,9 @@ watch(
   caret-color: var(--ctp-mauve);
   color: var(--ctp-text);
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-wrap: pretty;
 }
 
 .editor__content--intro :deep(.ProseMirror) {
@@ -245,6 +259,7 @@ watch(
   line-height: 1.25;
   margin: 1.6em 0 0.4em;
   color: var(--ctp-text);
+  text-wrap: balance;
 }
 
 .editor__content :deep(.ProseMirror h1) { font-size: 1.65em; }
