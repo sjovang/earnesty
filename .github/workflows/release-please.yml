@@ -50,10 +50,10 @@ jobs:
         run: |
           az stack sub create \
             --name "earnesty" \
-            --location "${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+            --location "${{ vars.AZURE_LOCATION || 'westeurope' }}" \
             --template-file infra/main.bicep \
             --parameters \
-              location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
+              location="${{ vars.AZURE_LOCATION || 'westeurope' }}" \
               staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
               entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
               entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
