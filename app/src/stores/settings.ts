@@ -51,11 +51,17 @@ export const useSettingsStore = defineStore('settings', () => {
     { deep: true, immediate: true },
   )
 
+  let fontBeforeWhimsical: Font | null = null
+
   function setTheme(theme: Theme) {
-    settings.value.theme = theme
     if (theme === 'whimsical') {
+      fontBeforeWhimsical = settings.value.font
       settings.value.font = 'comic-sans'
+    } else if (settings.value.theme === 'whimsical' && fontBeforeWhimsical) {
+      settings.value.font = fontBeforeWhimsical
+      fontBeforeWhimsical = null
     }
+    settings.value.theme = theme
   }
 
   function setFontSize(size: number) {
