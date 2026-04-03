@@ -24,9 +24,9 @@ app.http('saveDocument', {
       return { status: 400, jsonBody: { error: 'Missing document ID' } }
     }
 
-    let body: { blocks: unknown }
+    let body: { blocks: unknown; title?: unknown }
     try {
-      body = (await request.json()) as { blocks: unknown }
+      body = (await request.json()) as { blocks: unknown; title?: unknown }
     } catch {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } }
     }
@@ -38,8 +38,19 @@ app.http('saveDocument', {
       }
     }
 
+    if (body.title !== undefined && typeof body.title !== 'string') {
+      return {
+        status: 400,
+        jsonBody: { error: '"title" must be a string when provided' },
+      }
+    }
+
     try {
-      await sanityClient.patch(id).set({ body: body.blocks }).commit()
+      const fields: Record<string, unknown> = { body: body.blocks }
+      if (typeof body.title === 'string') {
+        fields['title'] = body.title
+      }
+      await sanityClient.patch(id).set(fields).commit()
       return { status: 204 }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
