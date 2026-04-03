@@ -85,10 +85,15 @@ Configure the following secrets on **each environment** (not at repository level
 
 | Secret | Description |
 |--------|-------------|
-| `VITE_SANITY_PROJECT_ID` | Sanity project ID |
+| `VITE_SANITY_PROJECT_ID` | Sanity project ID (used at build time) |
 | `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `production`) |
-| `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
 | `AZURE_STATIC_WEB_APPS_API_TOKEN` | Deployment token from Azure Static Web Apps |
+| `ENTRA_CLIENT_ID` | Entra ID App Registration client ID |
+| `ENTRA_CLIENT_SECRET` | Entra ID App Registration client secret |
+| `ENTRA_TENANT_ID` | Entra ID Directory (tenant) ID |
+| `SANITY_TOKEN` | Sanity API token (server-side, for API functions) |
+| `SANITY_PROJECT_ID` | Sanity project ID (server-side, for API functions) |
+| `SANITY_DATASET` | Sanity dataset name (server-side, for API functions) |
 
 > [!TIP]
 > `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
@@ -132,23 +137,55 @@ The app uses Azure Static Web Apps' built-in authentication with Microsoft Entra
 
 ### Configure SWA app settings
 
-Add these as application settings in the Azure Static Web App (portal → Configuration → Application settings, or via `az staticwebapp appsettings set`):
+App settings are managed automatically by the Bicep infrastructure deployment. Supply them as GitHub secrets in the `production` environment (see [GitHub secrets](#github-secrets) below):
 
-| Setting | Value |
-|---------|-------|
-| `AZURE_CLIENT_ID` | Application (client) ID from the App Registration |
-| `AZURE_CLIENT_SECRET` | Client secret value |
+| GitHub Secret | SWA App Setting | Description |
+|---------------|-----------------|-------------|
+| `ENTRA_CLIENT_ID` | `AZURE_CLIENT_ID` | Application (client) ID from the App Registration |
+| `ENTRA_CLIENT_SECRET` | `AZURE_CLIENT_SECRET` | Client secret value |
+| `ENTRA_TENANT_ID` | `AZURE_TENANT_ID` | Directory (tenant) ID — used in the OpenID Connect issuer URL |
 
 > [!NOTE]
-> These settings are server-side only and are never exposed to the browser. The `AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` here are the Entra ID App Registration credentials used by SWA's built-in auth — they are separate from the identically-named repository-level secrets used for infrastructure deployment OIDC.
+> The `AZURE_TENANT_ID` app setting is required because `staticwebapp.config.json` references `{AZURE_TENANT_ID}` in the `openIdIssuer` URL. SWA resolves this at runtime from app settings.
+>
+> The `ENTRA_*` secret names are distinct from the `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` repository-level secrets used for OIDC infrastructure deployment.
 
 ### Infrastructure secrets (repository level)
 
-The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (federated identity) and requires these secrets at **repository level** (not environment-scoped):
+The infrastructure deployment workflow (`deploy-infra.yml`) uses Azure OIDC (workload identity federation) — no client secret is stored in GitHub. Instead, GitHub's OIDC token is exchanged for an Azure access token at runtime.
+
+These repository-level secrets identify which service principal to authenticate as:
 
 | Secret | Description |
 |--------|-------------|
-| `AZURE_CLIENT_ID` | Azure app registration client ID |
+| `AZURE_CLIENT_ID` | Client ID of the app registration used for infrastructure deployment |
 | `AZURE_TENANT_ID` | Azure tenant ID |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription ID |
+
+#### Required Azure RBAC permissions
+
+The service principal (app registration) used for infrastructure deployment must be granted **Contributor** on the target subscription. This allows it to create and manage resource groups and all resources within them.
+
+```bash
+az role assignment create \
+  --assignee "<app-registration-client-id>" \
+  --role "Contributor" \
+  --scope "/subscriptions/<subscription-id>"
+```
+
+> [!NOTE]
+> **Contributor** is sufficient for creating resource groups, deploying the Static Web App, and writing app settings. You do not need **Owner** unless you plan to assign Azure RBAC roles as part of the deployment.
+
+#### Setting up workload identity federation
+
+On the app registration, add a federated credential to trust GitHub Actions tokens from this repository:
+
+1. Go to **App registration → Certificates & secrets → Federated credentials → Add credential**
+2. Select **GitHub Actions deploying Azure resources**
+3. Set the following:
+   - **Organisation:** `sjovang`
+   - **Repository:** `earnesty`
+   - **Entity type:** `Environment`
+   - **GitHub environment name:** `production`
+4. Click **Add**
 

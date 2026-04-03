@@ -15,6 +15,26 @@ param resourceGroupName string = 'rg-${appName}'
 @allowed(['Free', 'Standard'])
 param staticWebAppSku string = 'Standard'
 
+@description('Entra ID Application (client) ID.')
+param entraClientId string
+
+@description('Entra ID client secret.')
+@secure()
+param entraClientSecret string
+
+@description('Entra ID Directory (tenant) ID.')
+param entraTenantId string
+
+@description('Sanity API token for server-side write operations.')
+@secure()
+param sanityToken string
+
+@description('Sanity project ID.')
+param sanityProjectId string
+
+@description('Sanity dataset name.')
+param sanityDataset string
+
 // ── Resource group ────────────────────────────────────────────────────────────
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
@@ -35,6 +55,12 @@ module staticWebApp 'modules/static-web-app.bicep' = {
     name: 'stapp-${appName}'
     location: location
     sku: staticWebAppSku
+    entraClientId: entraClientId
+    entraClientSecret: entraClientSecret
+    entraTenantId: entraTenantId
+    sanityToken: sanityToken
+    sanityProjectId: sanityProjectId
+    sanityDataset: sanityDataset
   }
 }
 

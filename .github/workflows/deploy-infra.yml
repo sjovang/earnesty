@@ -38,7 +38,13 @@ jobs:
             --template-file infra/main.bicep \
             --parameters \
               location="${{ vars.AZURE_LOCATION || 'swedencentral' }}" \
-              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Free' }}" \
+              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
+              entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
+              entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
+              entraTenantId="${{ secrets.ENTRA_TENANT_ID }}" \
+              sanityToken="${{ secrets.SANITY_TOKEN }}" \
+              sanityProjectId="${{ secrets.SANITY_PROJECT_ID }}" \
+              sanityDataset="${{ secrets.SANITY_DATASET }}" \
             --deny-settings-mode none \
             --action-on-unmanage detachResources \
             --yes
