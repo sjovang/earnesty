@@ -6,14 +6,18 @@
   "main": "dist/functions/*.js",
   "scripts": {
     "build": "tsc",
-    "start": "func start"
+    "start": "func start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@sanity/client": "^7.0.0"
   },
   "devDependencies": {
     "@azure/functions": "^4.6.0",
-    "typescript": "~5.8.0"
+    "typescript": "~5.8.0",
+    "vitest": "^4.1.4"
   },
   "engines": {
     "node": ">=20"

@@ -151,44 +151,37 @@ const ogSvg = `<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none"
   <line x1="400" y1="0" x2="400" y2="630" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
   <line x1="800" y1="0" x2="800" y2="630" stroke="${macchiato.text}" stroke-width="1" opacity="0.05" />
 
-  <!-- Logo (single typewriter, top-left) -->
-  <g transform="translate(80, 80) scale(2.5)" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Logo (large, right side, vertically centred) -->
+  <g transform="translate(810, 147) scale(7)" stroke-linecap="round" stroke-linejoin="round">
     ${typewriterPaths(macchiato.text)}
   </g>
 
   <!-- Title -->
-  <text x="80" y="310"
+  <text x="80" y="230"
     font-family="Georgia, 'Times New Roman', serif"
     font-size="100"
     fill="${macchiato.text}"
     letter-spacing="-2">Earnesty</text>
 
   <!-- Accent line -->
-  <rect x="80" y="326" width="480" height="2.5" fill="#8839ef" opacity="0.6" rx="1" />
+  <rect x="80" y="246" width="480" height="2.5" fill="#8839ef" opacity="0.6" rx="1" />
 
   <!-- Description -->
-  <text x="80" y="380"
+  <text x="80" y="316"
     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
     font-size="26"
     fill="#a5adcb"
     letter-spacing="0.2">No distractions. No formatting toolbars.</text>
-  <text x="80" y="418"
+  <text x="80" y="356"
     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
     font-size="26"
     fill="#a5adcb"
     letter-spacing="0.2">Just you and the blank page.</text>
-  <text x="80" y="456"
+  <text x="80" y="396"
     font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
     font-size="26"
     fill="#a5adcb"
     letter-spacing="0.2">All vibes. No QA.</text>
-
-  <!-- Domain -->
-  <text x="80" y="560"
-    font-family="-apple-system, 'Helvetica Neue', Arial, sans-serif"
-    font-size="22"
-    fill="#6e738d"
-    letter-spacing="1.5">write.liasis.dev</text>
 </svg>`
 
 await sharp(Buffer.from(ogSvg)).png().toFile(`${publicDir}/og-image.png`)

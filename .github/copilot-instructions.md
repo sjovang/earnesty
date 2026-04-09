@@ -37,6 +37,47 @@ cd app && npm run dev &
 
 The dev server runs at http://localhost:5173. `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
 
+## Testing
+
+Tests are written with [Vitest](https://vitest.dev/) and live alongside the source they test in `__tests__/` subdirectories.
+
+- **API** (`app/api/`) — node environment; run with `npm test` inside `app/api/`
+- **Frontend** (`app/`) — jsdom environment; run with `npm test` inside `app/`
+
+Test files are excluded from the TypeScript build (`tsc`) via `tsconfig.json` and are never compiled to `dist/`.
+
+Each Azure Function handler is tested by mocking `@azure/functions` (to capture the registered handler) and `../shared.js` (to inject a mock Sanity client and principal). Frontend service tests mock `@sanity/client` directly. Use `vi.hoisted()` when a variable must be accessible inside a `vi.mock()` factory.
+
+### Integration tests
+
+Integration tests (files ending in `*.integration.test.ts`) run against the real Sanity development dataset — no mocks. They require environment variables to be set and skip gracefully when they are not:
+
+| Variable | Required by |
+|---|---|
+| `SANITY_PROJECT_ID` | API integration tests |
+| `SANITY_TOKEN` | API integration tests + frontend test setup/teardown |
+| `SANITY_DATASET` | API integration tests |
+| `VITE_SANITY_PROJECT_ID` | Frontend integration tests |
+| `VITE_SANITY_DATASET` | Frontend integration tests |
+
+Run with:
+
+```sh
+cd app/api && npm run test:integration
+cd app && npm run test:integration
+```
+
+Integration tests use a unique timestamp-based document ID per run and always clean up in `afterAll`, even on failure.
+
+In GitHub Actions, integration tests run in the `test-integration` job under the `dev` environment, which holds the Sanity development dataset credentials. The `build` job depends on this job passing.
+
+Run the full test suite before committing whenever business logic or Sanity interactions are changed:
+
+```sh
+cd app/api && npm test
+cd app && npm test
+```
+
 ## Pre-commit checks
 
 Before every `git commit`, run pre-commit checks manually and fix any failures before proceeding:
