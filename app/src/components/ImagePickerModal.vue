@@ -353,8 +353,7 @@ onMounted(() => {
 }
 
 .grid__item {
-  display: grid;
-  aspect-ratio: 1;
+  position: relative;
   background: var(--ctp-surface0);
   border: 2px solid transparent;
   border-radius: 6px;
@@ -365,11 +364,19 @@ onMounted(() => {
   transition: border-color 0.15s ease;
 }
 
+.grid__item::before {
+  content: '';
+  display: block;
+  padding-bottom: 100%;
+}
+
 .grid__item:hover {
   border-color: var(--ctp-mauve);
 }
 
 .grid__thumb {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
