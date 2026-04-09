@@ -246,6 +246,46 @@ const tiptap = useEditor({
       return true
     },
     handlePaste(_view, event) {
+      const text = event.clipboardData?.getData('text/plain') ?? ''
+      const editor = tiptap.value
+      if (!editor) return false
+
+      // Select text + paste a URL → wrap selection as a link
+      if (!editor.state.selection.empty && /^https?:\/\/\S+$/.test(text.trim())) {
+        event.preventDefault()
+        editor.chain().focus().setLink({ href: text.trim() }).run()
+        return true
+      }
+
+      // Handle markdown link syntax: [text](url)
+      const mdLinkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+      if (mdLinkRe.test(text)) {
+        event.preventDefault()
+        mdLinkRe.lastIndex = 0
+
+        const content: Array<Record<string, unknown>> = []
+        let lastIndex = 0
+        let match
+        while ((match = mdLinkRe.exec(text)) !== null) {
+          if (match.index > lastIndex) {
+            content.push({ type: 'text', text: text.slice(lastIndex, match.index) })
+          }
+          content.push({
+            type: 'text',
+            text: match[1],
+            marks: [{ type: 'link', attrs: { href: match[2] } }],
+          })
+          lastIndex = match.index + match[0].length
+        }
+        if (lastIndex < text.length) {
+          content.push({ type: 'text', text: text.slice(lastIndex) })
+        }
+
+        editor.chain().focus().insertContent(content).run()
+        return true
+      }
+
+      // Handle pasted images
       const file = Array.from(event.clipboardData?.files ?? []).find((f) =>
         f.type.startsWith('image/'),
       )
