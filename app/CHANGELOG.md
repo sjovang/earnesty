@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.4.0](https://github.com/sjovang/earnesty/compare/frontend-v1.3.0...frontend-v1.4.0) (2026-04-09)
+
+
+### Features
+
+* add Application Insights for distributed tracing ([#79](https://github.com/sjovang/earnesty/issues/79)) ([bd2e8b3](https://github.com/sjovang/earnesty/commit/bd2e8b3f47b5542f68dbdaee2cae0b4ebd194c4f))
+* auto-create draft document on first autosave ([#81](https://github.com/sjovang/earnesty/issues/81)) ([db1fd35](https://github.com/sjovang/earnesty/commit/db1fd35dbf4ad9ae88969b0d72f65f8a3f3cda27))
+* display document title as schema-enforced editor headline ([#64](https://github.com/sjovang/earnesty/issues/64)) ([8d925ad](https://github.com/sjovang/earnesty/commit/8d925ad24e36bc2d8c18337fc86352e86fad191c))
+* image upload and block settings ([#78](https://github.com/sjovang/earnesty/issues/78)) ([f335520](https://github.com/sjovang/earnesty/commit/f3355202a739bd82bc9ca381e39b513844442045))
+* improve menubar button icons and helper tooltips ([#60](https://github.com/sjovang/earnesty/issues/60)) ([12f7098](https://github.com/sjovang/earnesty/commit/12f70989ed35c83da205b2ade4dd45adf1c4ddcc))
+* publish metadata modal with required/optional tabs ([#82](https://github.com/sjovang/earnesty/issues/82)) ([f0b0a15](https://github.com/sjovang/earnesty/commit/f0b0a15d8651fa1403ad0d70fca7e5980abfeca0))
+* settings menu with theme, font, size, and width controls ([#62](https://github.com/sjovang/earnesty/issues/62)) ([3bb3748](https://github.com/sjovang/earnesty/commit/3bb3748cee313c40bf54aebee20b06e87a0d4958))
+* settings menu with whimsical color palettes ([#66](https://github.com/sjovang/earnesty/issues/66)) ([a6a6d6d](https://github.com/sjovang/earnesty/commit/a6a6d6d9599d84c593621ffa887c86f08ea8db7d))
+
+
+### Bug Fixes
+
+* autosave title persistence, implement document publishing, and fix API function discovery ([#70](https://github.com/sjovang/earnesty/issues/70)) ([a009fa5](https://github.com/sjovang/earnesty/commit/a009fa587a6d5f409885d89ef85ed7d3661c38ce))
+* break infinite Entra ID login loop ([#57](https://github.com/sjovang/earnesty/issues/57)) ([8364853](https://github.com/sjovang/earnesty/commit/836485341dcf37447bf9721050a0073c3622e297))
+* guard sanityClient against missing VITE_SANITY_PROJECT_ID at import time ([#84](https://github.com/sjovang/earnesty/issues/84)) ([1b787dd](https://github.com/sjovang/earnesty/commit/1b787dda8895ecd1348f452da2a6733d9b8b6d0f))
+* lazy Sanity client init, bypass CDN, and guard publish flow ([#75](https://github.com/sjovang/earnesty/issues/75)) ([6dc8500](https://github.com/sjovang/earnesty/commit/6dc8500db8da5897fe727e9287d747e11a8e9bc4))
+* move @azure/functions to dependencies and add publish feedback ([#80](https://github.com/sjovang/earnesty/issues/80)) ([31301c7](https://github.com/sjovang/earnesty/commit/31301c72b7b92d49a24670dfcf73239ae0dad407))
+* redirect 401 to app instead of showing raw error page ([#63](https://github.com/sjovang/earnesty/issues/63)) ([c0fba78](https://github.com/sjovang/earnesty/commit/c0fba7873df3c5e7564923a56a40eac53e83350a))
+* resolve transitive dependency vulnerabilities in devDependencies ([#74](https://github.com/sjovang/earnesty/issues/74)) ([36ca3b7](https://github.com/sjovang/earnesty/commit/36ca3b7b6672000875fb0f221ee320b4de747a15))
+
 ## [1.3.0](https://github.com/sjovang/earnesty/compare/frontend-v1.2.1...frontend-v1.3.0) (2026-04-03)
 
 
