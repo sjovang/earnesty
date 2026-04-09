@@ -61,15 +61,18 @@ async function apiFetch<T>(
   return res.json() as Promise<T>
 }
 
-/** Saves PortableText blocks (and optionally title) to an existing Sanity document via the API proxy. */
+/** Saves PortableText blocks and/or title to an existing Sanity document via the API proxy. */
 export async function apiSaveDocument(
   id: string,
-  blocks: SanityBodyBlock[],
+  blocks?: SanityBodyBlock[],
   title?: string,
 ): Promise<void> {
   await apiFetch<void>(`/api/sanity/documents/${encodeURIComponent(id)}`, {
     method: 'PATCH',
-    body: JSON.stringify({ blocks, ...(title !== undefined && { title }) }),
+    body: JSON.stringify({
+      ...(blocks !== undefined && { blocks }),
+      ...(title !== undefined && { title }),
+    }),
   })
 }
 

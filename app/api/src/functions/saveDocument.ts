@@ -24,14 +24,14 @@ app.http('saveDocument', {
       return { status: 400, jsonBody: { error: 'Missing document ID' } }
     }
 
-    let body: { blocks: unknown; title?: unknown }
+    let body: { blocks?: unknown; title?: unknown }
     try {
-      body = (await request.json()) as { blocks: unknown; title?: unknown }
+      body = (await request.json()) as { blocks?: unknown; title?: unknown }
     } catch {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } }
     }
 
-    if (!Array.isArray(body.blocks)) {
+    if (body.blocks !== undefined && !Array.isArray(body.blocks)) {
       return {
         status: 400,
         jsonBody: { error: '"blocks" must be an array of PortableText blocks' },
@@ -45,8 +45,18 @@ app.http('saveDocument', {
       }
     }
 
+    if (body.blocks === undefined && body.title === undefined) {
+      return {
+        status: 400,
+        jsonBody: { error: 'At least one of "blocks" or "title" must be provided' },
+      }
+    }
+
     try {
-      const fields: Record<string, unknown> = { body: body.blocks }
+      const fields: Record<string, unknown> = {}
+      if (Array.isArray(body.blocks)) {
+        fields['body'] = body.blocks
+      }
       if (typeof body.title === 'string') {
         fields['title'] = body.title
       }
