@@ -119,3 +119,26 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+/* ── Block settings cogwheel (appended to body by BlockSettings extension) ── */
+.block-settings-cog {
+  align-items: center;
+  background: color-mix(in srgb, var(--ctp-mantle) 85%, transparent);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 5px;
+  color: var(--ctp-overlay1);
+  cursor: pointer;
+  display: none; /* JS shows this via display: flex */
+  height: 26px;
+  justify-content: center;
+  position: fixed;
+  transition: background 0.12s ease, color 0.12s ease;
+  width: 26px;
+  z-index: 150;
+}
+
+.block-settings-cog:hover {
+  background: var(--ctp-surface0);
+  border-color: var(--ctp-surface2);
+  color: var(--ctp-text);
+}

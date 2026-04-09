@@ -16,10 +16,12 @@ import { INTRO_HTML } from '../constants'
 import { TitleNode } from '../extensions/TitleNode'
 import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
+import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
 import BlockPickerPopover from '../components/BlockPickerPopover.vue'
+import BlockSettingsPopover from '../components/BlockSettingsPopover.vue'
 
 const lowlight = createLowlight(common)
 
@@ -74,12 +76,22 @@ function onBlockInserterOpen(e: Event) {
   showBlockPicker.value = true
 }
 
+// ── Block settings popover ─────────────────────────────────────────────────────
+const blockSettings = ref<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number } | null>(null)
+
+function onBlockSettingsOpen(e: Event) {
+  const { nodeType, pos, x, y } = (e as CustomEvent<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number }>).detail
+  blockSettings.value = { nodeType, pos, x, y }
+}
+
 onMounted(() => {
   document.addEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
+  document.addEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
+  document.removeEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
 })
 
 async function doAutosave(json: TiptapNode) {
@@ -162,6 +174,7 @@ const tiptap = useEditor({
     Image.configure({ inline: false, allowBase64: false }),
     CodeBlockLowlight.configure({ lowlight }),
     BlockInserter,
+    BlockSettings,
   ],
   content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
@@ -311,6 +324,17 @@ watch(
     @close="showBlockPicker = false"
     @insert-image="openImagePicker(false)"
     @insert-code-block="tiptap?.chain().focus().toggleCodeBlock().run()"
+  />
+
+  <!-- Block settings popover — shown when cogwheel is clicked on a block -->
+  <BlockSettingsPopover
+    v-if="blockSettings && tiptap"
+    :node-type="blockSettings.nodeType"
+    :pos="blockSettings.pos"
+    :x="blockSettings.x"
+    :y="blockSettings.y"
+    :editor="tiptap"
+    @close="blockSettings = null"
   />
 
   <!-- Image picker modal -->
