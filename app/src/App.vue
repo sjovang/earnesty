@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
@@ -33,23 +33,33 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
-async function publishDocument() {
-  const doc = editorStore.activeDocument
-  if (!doc || !auth.isAuthenticated) return
-  if (!doc._id.startsWith('drafts.')) return
+const canPublish = computed(() =>
+  auth.isAuthenticated
+  && !!editorStore.activeDocument
+  && editorStore.activeDocument._id.startsWith('drafts.')
+  && editorStore.saveStatus !== 'saving'
+  && editorStore.publishStatus !== 'publishing',
+)
 
+async function publishDocument() {
+  if (!canPublish.value) return
+  const doc = editorStore.activeDocument!
+
+  editorStore.setPublishStatus('publishing')
   try {
     const { _id: publishedId } = await apiPublishDocument(doc._id)
-    // Reload the published document and update the editor state
     const published = await fetchBlogDocument(publishedId)
     if (!published) {
       console.error('[publish] could not fetch published document', publishedId)
+      editorStore.setPublishStatus('error')
       return
     }
     editorStore.openDocument(published)
+    editorStore.setPublishStatus('published')
     trackEvent('document_published', { documentId: publishedId })
   } catch (err) {
     console.error('[publish] failed:', err)
+    editorStore.setPublishStatus('error')
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'publish', documentId: doc._id })
   }
 }
@@ -73,9 +83,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <AppMenuBar
     :document-title="editorStore.activeDocument?.title"
     :save-status="editorStore.saveStatus"
+    :publish-status="editorStore.publishStatus"
     :user="auth.user ?? undefined"
     :is-authenticated="auth.isAuthenticated"
     :has-document="!!editorStore.activeDocument"
+    :can-publish="canPublish"
     @new="editorStore.resetToPlaceholder()"
     @open="showOpen = true"
     @publish="publishDocument"

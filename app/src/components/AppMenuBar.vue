@@ -1,20 +1,34 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import AppLogo from './AppLogo.vue'
 import UserModal from './UserModal.vue'
-import type { SaveStatus } from '../stores/editor'
+import type { SaveStatus, PublishStatus } from '../stores/editor'
 import type { SwaUser } from '../stores/auth'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
 
-defineProps<{
+const props = defineProps<{
   documentTitle?: string
   saveStatus?: SaveStatus
+  publishStatus?: PublishStatus
   user?: SwaUser
   isAuthenticated?: boolean
   hasDocument?: boolean
+  canPublish?: boolean
 }>()
+
+const statusLabel = computed(() => {
+  const ps = props.publishStatus
+  if (ps === 'publishing') return { text: 'Publishing', style: 'saving' as const }
+  if (ps === 'published') return { text: 'Published', style: 'saved' as const }
+  if (ps === 'error') return { text: 'Publish failed', style: 'error' as const }
+  const ss = props.saveStatus
+  if (ss === 'saving') return { text: 'Saving', style: 'saving' as const }
+  if (ss === 'saved') return { text: 'Saved', style: 'saved' as const }
+  if (ss === 'error') return { text: 'Save failed', style: 'error' as const }
+  return null
+})
 const emit = defineEmits<{ new: []; open: []; publish: []; help: []; settings: []; signin: []; logout: [] }>()
 
 const mobileMenuOpen = ref(false)
@@ -74,10 +88,11 @@ function onLeave() {
         >{{ documentTitle }}</span>
         <Transition name="save-fade">
           <span
-            v-if="saveStatus && saveStatus !== 'idle'"
-            :class="['menubar__save', `menubar__save--${saveStatus}`]"
+            v-if="statusLabel"
+            :key="statusLabel.text"
+            :class="['menubar__save', `menubar__save--${statusLabel.style}`]"
           >
-            <template v-if="saveStatus === 'saving'">
+            <template v-if="statusLabel.style === 'saving'">
               <svg
                 class="menubar__save-spinner"
                 viewBox="0 0 12 12"
@@ -95,9 +110,8 @@ function onLeave() {
                   stroke-linecap="round"
                 />
               </svg>
-              Saving
             </template>
-            <template v-else-if="saveStatus === 'saved'">
+            <template v-else-if="statusLabel.style === 'saved'">
               <svg
                 viewBox="0 0 12 12"
                 width="10"
@@ -110,9 +124,8 @@ function onLeave() {
               >
                 <path d="M2 6l3 3 5-5" />
               </svg>
-              Saved
             </template>
-            <template v-else-if="saveStatus === 'error'">
+            <template v-else-if="statusLabel.style === 'error'">
               <svg
                 viewBox="0 0 12 12"
                 width="10"
@@ -124,8 +137,8 @@ function onLeave() {
               >
                 <path d="M6 2v5M6 9v.5" />
               </svg>
-              Save failed
             </template>
+            {{ statusLabel.text }}
           </span>
         </Transition>
       </div>
@@ -168,9 +181,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__item menubar__item--publish"
-          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
-          :disabled="!isAuthenticated || !hasDocument"
-          @click="isAuthenticated && hasDocument && $emit('publish')"
+          :class="{ 'menubar__item--disabled': !canPublish }"
+          :disabled="!canPublish"
+          @click="canPublish && $emit('publish')"
           @mouseenter="onEnter('publish', $event)"
           @mousemove="onMove('publish', $event)"
           @mouseleave="onLeave"
@@ -355,9 +368,9 @@ function onLeave() {
         <button
           role="menuitem"
           class="menubar__mobile-item menubar__mobile-item--publish"
-          :class="{ 'menubar__item--disabled': !isAuthenticated || !hasDocument }"
-          :disabled="!isAuthenticated || !hasDocument"
-          @click="isAuthenticated && hasDocument && mobileEmit('publish')"
+          :class="{ 'menubar__item--disabled': !canPublish }"
+          :disabled="!canPublish"
+          @click="canPublish && mobileEmit('publish')"
         >
           Publish
         </button>
