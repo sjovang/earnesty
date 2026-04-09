@@ -1,0 +1,50 @@
+version: 2
+updates:
+  # ── Frontend app (Vue/Vite) ─────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      npm-app:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 3
+
+  # ── API (Azure Functions) ───────────────────────────────────────────────────
+  - package-ecosystem: "npm"
+    directory: "/app/api"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      npm-api:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 3
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  # Monitors action versions pinned with `uses:` in .github/workflows/*.yml
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    cooldown:
+      default-days: 3
