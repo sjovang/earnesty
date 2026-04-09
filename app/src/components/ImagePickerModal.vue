@@ -346,20 +346,21 @@ onMounted(() => {
 /* ── Library grid ── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   max-height: 320px;
   overflow-y: auto;
 }
 
 .grid__item {
-  position: relative;
-  padding-top: 100%; /* aspect-ratio 1:1 — reliable across all browsers */
+  aspect-ratio: 1;
   background: var(--ctp-surface0);
   border: 2px solid transparent;
   border-radius: 6px;
   cursor: pointer;
+  display: block;
   overflow: hidden;
+  padding: 0;
   transition: border-color 0.15s ease;
 }
 
@@ -368,8 +369,7 @@ onMounted(() => {
 }
 
 .grid__thumb {
-  position: absolute;
-  inset: 0;
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
