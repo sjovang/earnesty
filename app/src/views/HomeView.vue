@@ -10,7 +10,7 @@ import { useSettingsStore, fontFamilyFor } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
-import { apiSaveDocument, apiUploadImage, type ImageAsset } from '../services/api'
+import { apiSaveDocument, apiCreateDraft, apiUploadImage, type ImageAsset } from '../services/api'
 import { trackException, trackEvent } from '../services/appInsights'
 import { INTRO_HTML } from '../constants'
 import { TitleNode } from '../extensions/TitleNode'
@@ -45,6 +45,10 @@ function checkContentLength() {
 // ── Autosave ──────────────────────────────────────────────────────────────────
 const AUTOSAVE_DELAY = 1500
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+let latestJson: TiptapNode | null = null
+let creatingDraft = false
+
+const INTRO_TITLE = 'Earnesty is your space for focused writing'
 
 // ── Image picker ───────────────────────────────────────────────────────────────
 const showImagePicker = ref(false)
@@ -94,20 +98,59 @@ onBeforeUnmount(() => {
   document.removeEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
 })
 
-async function doAutosave(json: TiptapNode) {
+async function doAutosave() {
+  const json = latestJson
+  if (!json || !auth.isAuthenticated) return
+  latestJson = null
+
+  // Auto-create a draft document on the first save
+  if (!editorStore.activeDocument) {
+    if (creatingDraft) {
+      // Re-queue so latest content isn't dropped
+      latestJson = json
+      return
+    }
+    creatingDraft = true
+    editorStore.setSaveStatus('saving')
+    try {
+      let titleText = extractTitleText(json)
+      if (!titleText || titleText === INTRO_TITLE) titleText = 'Untitled'
+      const slug = editorStore.slugify(titleText) || 'untitled'
+      const doc = await apiCreateDraft(titleText, slug)
+      // Guard against stale completion: user may have opened another doc
+      if (!editorStore.activeDocument) {
+        editorStore.openDocument(doc)
+        trackEvent('draft_created', { documentId: doc._id })
+      }
+    } catch (err) {
+      console.error('[autosave] draft creation failed:', err)
+      editorStore.setSaveStatus('error')
+      trackException(err instanceof Error ? err : new Error(String(err)), { action: 'create_draft' })
+      return
+    } finally {
+      creatingDraft = false
+      // If edits arrived during creation, re-trigger save
+      if (latestJson) setTimeout(() => doAutosave(), 0)
+    }
+  }
+
   const doc = editorStore.activeDocument
-  if (!doc || !auth.isAuthenticated) return
+  if (!doc) return
+
   editorStore.setSaveStatus('saving')
   try {
     const titleText = extractTitleText(json)
     const bodyJson = { ...json, content: json.content?.slice(1) ?? [] }
-    await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText)
+    await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText || undefined)
     editorStore.setSaveStatus('saved')
     trackEvent('document_saved', { documentId: doc._id })
   } catch (err) {
     console.error('[autosave] failed:', err)
     editorStore.setSaveStatus('error')
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'autosave' })
+  } finally {
+    // If edits arrived during save, re-trigger
+    if (latestJson) setTimeout(() => doAutosave(), 0)
   }
 }
 
@@ -118,10 +161,11 @@ function extractTitleText(doc: TiptapNode): string {
 }
 
 function scheduleAutosave(json: TiptapNode) {
-  if (!editorStore.activeDocument || !auth.isAuthenticated) return
+  if (!auth.isAuthenticated) return
+  latestJson = json
   if (saveTimer) clearTimeout(saveTimer)
   editorStore.setSaveStatus('saving') // immediate feedback
-  saveTimer = setTimeout(() => doAutosave(json), AUTOSAVE_DELAY)
+  saveTimer = setTimeout(() => doAutosave(), AUTOSAVE_DELAY)
 }
 
 // ── Typewriter scroll ─────────────────────────────────────────────────────────
