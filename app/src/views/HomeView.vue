@@ -232,8 +232,18 @@ const tiptap = useEditor({
       return true
     },
     handlePaste(_view, event) {
-      // Handle markdown link syntax: [text](url)
       const text = event.clipboardData?.getData('text/plain') ?? ''
+      const editor = tiptap.value
+      if (!editor) return false
+
+      // Select text + paste a URL → wrap selection as a link
+      if (!editor.state.selection.empty && /^https?:\/\/\S+$/.test(text.trim())) {
+        event.preventDefault()
+        editor.chain().focus().setLink({ href: text.trim() }).run()
+        return true
+      }
+
+      // Handle markdown link syntax: [text](url)
       const mdLinkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
       if (mdLinkRe.test(text)) {
         event.preventDefault()
@@ -257,7 +267,7 @@ const tiptap = useEditor({
           content.push({ type: 'text', text: text.slice(lastIndex) })
         }
 
-        tiptap.value?.chain().focus().insertContent(content).run()
+        editor.chain().focus().insertContent(content).run()
         return true
       }
 
