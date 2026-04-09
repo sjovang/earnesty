@@ -95,6 +95,12 @@ describe('saveDocument handler', () => {
     expect(res.jsonBody).toEqual({ error: '"blocks" must be an array of PortableText blocks' })
   })
 
+  it('returns 400 when neither blocks nor title is provided', async () => {
+    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: {} }))
+    expect(res.status).toBe(400)
+    expect(res.jsonBody).toEqual({ error: 'At least one of "blocks" or "title" must be provided' })
+  })
+
   it('returns 400 when title is provided but not a string', async () => {
     const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: [], title: 42 } }))
     expect(res.status).toBe(400)
@@ -134,6 +140,29 @@ describe('saveDocument handler', () => {
 
     const setArg = vi.mocked(set).mock.calls[0][0] as Record<string, unknown>
     expect(setArg).not.toHaveProperty('title')
+  })
+
+  it('saves title without blocks and returns 204', async () => {
+    const { patch, set, commit } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+
+    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { title: 'Updated Title' } }))
+
+    expect(patch).toHaveBeenCalledWith('doc-123')
+    expect(set).toHaveBeenCalledWith({ title: 'Updated Title' })
+    expect(commit).toHaveBeenCalled()
+    expect(res.status).toBe(204)
+  })
+
+  it('does not include body field when blocks is undefined', async () => {
+    const { patch, set } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+
+    await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { title: 'Only Title' } }))
+
+    const setArg = vi.mocked(set).mock.calls[0][0] as Record<string, unknown>
+    expect(setArg).not.toHaveProperty('body')
+    expect(setArg).toHaveProperty('title', 'Only Title')
   })
 
   it('returns 502 when Sanity client throws', async () => {

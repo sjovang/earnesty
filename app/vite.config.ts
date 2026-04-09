@@ -191,7 +191,10 @@ function devAuthPlugin(): Plugin {
             // Save document
             const body = await readBody(req)
             const { blocks, title } = JSON.parse(body)
-            const fields: Record<string, unknown> = { body: blocks }
+            const fields: Record<string, unknown> = {}
+            if (Array.isArray(blocks)) {
+              fields['body'] = blocks
+            }
             if (typeof title === 'string') {
               fields['title'] = title
             }

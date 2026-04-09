@@ -83,6 +83,16 @@ describe('apiSaveDocument', () => {
     expect(result).toBeUndefined()
   })
 
+  it('sends title-only request when blocks is undefined', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204))
+    await apiSaveDocument('doc-123', undefined, 'New Title')
+
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    const body = JSON.parse(init.body as string)
+    expect(body).toEqual({ title: 'New Title' })
+    expect(body).not.toHaveProperty('blocks')
+  })
+
   it('throws on a non-2xx response', async () => {
     mockFetch.mockResolvedValue(makeResponse(502, { error: 'Server error' }))
     await expect(apiSaveDocument('doc-123', [])).rejects.toThrow('Server error')

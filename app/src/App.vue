@@ -5,15 +5,17 @@ import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
 import HelpModal from './components/HelpModal.vue'
 import SettingsModal from './components/SettingsModal.vue'
-import { useEditorStore } from './stores/editor'
+import PublishModal from './components/PublishModal.vue'
+import { useEditorStore, type DocumentMeta } from './stores/editor'
 import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
-import { apiPublishDocument } from './services/api'
+import { apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
 const showSettings = ref(false)
+const showPublishModal = ref(false)
 const editorStore = useEditorStore()
 const auth = useAuthStore()
 
@@ -43,7 +45,39 @@ const canPublish = computed(() =>
 
 async function publishDocument() {
   if (!canPublish.value) return
-  const doc = editorStore.activeDocument!
+
+  // Check required fields — show modal if any are missing
+  const { title, slug } = editorStore.meta
+  if (!title.trim() || !slug.trim()) {
+    showPublishModal.value = true
+    return
+  }
+
+  await doPublish()
+}
+
+async function onPublishConfirm(meta: DocumentMeta) {
+  showPublishModal.value = false
+  const doc = editorStore.activeDocument
+  if (!doc) return
+
+  editorStore.updateMeta(meta)
+
+  try {
+    // Save the updated title to Sanity before publishing
+    await apiSaveDocument(doc._id, undefined, meta.title)
+  } catch (err) {
+    console.error('[publish] pre-publish save failed:', err)
+    trackException(err instanceof Error ? err : new Error(String(err)), { action: 'pre_publish_save' })
+    return
+  }
+
+  await doPublish()
+}
+
+async function doPublish() {
+  const doc = editorStore.activeDocument
+  if (!doc) return
 
   editorStore.setPublishStatus('publishing')
   try {
@@ -109,6 +143,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
   <SettingsModal
     v-if="showSettings"
     @close="showSettings = false"
+  />
+  <PublishModal
+    v-if="showPublishModal"
+    @close="showPublishModal = false"
+    @publish="onPublishConfirm"
   />
 </template>
 
