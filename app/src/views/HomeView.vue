@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, computed, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -10,12 +10,18 @@ import { useSettingsStore, fontFamilyFor } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
-import { apiSaveDocument } from '../services/api'
+import { apiSaveDocument, apiUploadImage, type ImageAsset } from '../services/api'
 import { trackException, trackEvent } from '../services/appInsights'
 import { INTRO_HTML } from '../constants'
 import { TitleNode } from '../extensions/TitleNode'
 import { TitleDocument } from '../extensions/TitleDocument'
+import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
+import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
 import AppLogo from '../components/AppLogo.vue'
+import ImagePickerModal from '../components/ImagePickerModal.vue'
+import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
+import BlockPickerPopover from '../components/BlockPickerPopover.vue'
+import BlockSettingsPopover from '../components/BlockSettingsPopover.vue'
 
 const lowlight = createLowlight(common)
 
@@ -39,6 +45,54 @@ function checkContentLength() {
 // ── Autosave ──────────────────────────────────────────────────────────────────
 const AUTOSAVE_DELAY = 1500
 let saveTimer: ReturnType<typeof setTimeout> | null = null
+
+// ── Image picker ───────────────────────────────────────────────────────────────
+const showImagePicker = ref(false)
+const imageBubbleMenu = ref<InstanceType<typeof ImageBubbleMenu> | null>(null)
+/** When set, inserting an image replaces the current one rather than inserting */
+const replacingImage = ref(false)
+
+function openImagePicker(replacing = false) {
+  replacingImage.value = replacing
+  showImagePicker.value = true
+}
+
+function onImageInserted(asset: ImageAsset) {
+  if (!tiptap.value) return
+  if (replacingImage.value) {
+    imageBubbleMenu.value?.applyReplacement(asset)
+  } else {
+    tiptap.value.chain().focus().setImage({ src: asset.url }).run()
+  }
+}
+
+// ── Block picker popover ───────────────────────────────────────────────────────
+const showBlockPicker = ref(false)
+const blockPickerPos = ref({ x: 0, y: 0 })
+
+function onBlockInserterOpen(e: Event) {
+  const { x, y } = (e as CustomEvent<{ x: number; y: number }>).detail
+  blockPickerPos.value = { x, y }
+  showBlockPicker.value = true
+}
+
+// ── Block settings popover ─────────────────────────────────────────────────────
+const blockSettings = ref<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number } | null>(null)
+
+function onBlockSettingsOpen(e: Event) {
+  const { nodeType, pos, x, y } = (e as CustomEvent<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number }>).detail
+  blockSettings.value = { nodeType, pos, x, y }
+}
+
+onMounted(() => {
+  document.addEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
+  document.addEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
+  document.removeEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
+})
 
 async function doAutosave(json: TiptapNode) {
   const doc = editorStore.activeDocument
@@ -119,9 +173,30 @@ const tiptap = useEditor({
     }),
     Image.configure({ inline: false, allowBase64: false }),
     CodeBlockLowlight.configure({ lowlight }),
+    BlockInserter,
+    BlockSettings,
   ],
   content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
+  editorProps: {
+    handleDrop(_view, event, _slice, moved) {
+      if (moved) return false
+      const file = event.dataTransfer?.files[0]
+      if (!file?.type.startsWith('image/')) return false
+      event.preventDefault()
+      handleImageFile(file)
+      return true
+    },
+    handlePaste(_view, event) {
+      const file = Array.from(event.clipboardData?.files ?? []).find((f) =>
+        f.type.startsWith('image/'),
+      )
+      if (!file) return false
+      event.preventDefault()
+      handleImageFile(file)
+      return true
+    },
+  },
   onUpdate({ editor }) {
     if (isIntro.value) isIntro.value = false
     checkContentLength()
@@ -145,6 +220,22 @@ const tiptap = useEditor({
     requestAnimationFrame(scrollToCaret)
   },
 })
+
+// ── Drag & drop / paste upload ─────────────────────────────────────────────────
+const uploadingImage = ref(false)
+
+async function handleImageFile(file: File) {
+  if (!tiptap.value) return
+  uploadingImage.value = true
+  try {
+    const asset = await apiUploadImage(file)
+    tiptap.value.chain().focus().setImage({ src: asset.url }).run()
+  } catch (err) {
+    console.error('[image upload] failed:', err)
+  } finally {
+    uploadingImage.value = false
+  }
+}
 
 onBeforeUnmount(() => {
   tiptap.value?.destroy()
@@ -215,7 +306,54 @@ watch(
     <div :class="['editor__content', { 'editor__content--intro': isIntro }]">
       <EditorContent :editor="tiptap" />
     </div>
+
+    <!-- Image bubble menu — shown when an image node is selected -->
+    <ImageBubbleMenu
+      v-if="tiptap"
+      ref="imageBubbleMenu"
+      :editor="tiptap"
+      @replace="openImagePicker(true)"
+    />
   </main>
+
+  <!-- Block picker popover — shown when "+" inserter is clicked -->
+  <BlockPickerPopover
+    v-if="showBlockPicker"
+    :x="blockPickerPos.x"
+    :y="blockPickerPos.y"
+    @close="showBlockPicker = false"
+    @insert-image="openImagePicker(false)"
+    @insert-code-block="tiptap?.chain().focus().toggleCodeBlock().run()"
+  />
+
+  <!-- Block settings popover — shown when cogwheel is clicked on a block -->
+  <BlockSettingsPopover
+    v-if="blockSettings && tiptap"
+    :node-type="blockSettings.nodeType"
+    :pos="blockSettings.pos"
+    :x="blockSettings.x"
+    :y="blockSettings.y"
+    :editor="tiptap"
+    @close="blockSettings = null"
+  />
+
+  <!-- Image picker modal -->
+  <ImagePickerModal
+    v-if="showImagePicker"
+    @close="showImagePicker = false"
+    @insert="onImageInserted"
+  />
+
+  <!-- Upload-in-progress indicator (drag & drop / paste) -->
+  <Transition name="upload-toast">
+    <div
+      v-if="uploadingImage"
+      class="upload-toast"
+      aria-live="polite"
+    >
+      Uploading image…
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
@@ -283,6 +421,7 @@ watch(
   overflow-wrap: break-word;
   hyphens: auto;
   text-wrap: pretty;
+  position: relative;
 }
 
 .editor__content--intro :deep(.ProseMirror) {
@@ -481,5 +620,55 @@ watch(
 
 .focus-fade--active {
   opacity: 1;
+}
+
+/* ── Block inserter "+" button ────────────────────────────────────────────── */
+.editor__content :deep(.block-inserter-btn) {
+  position: absolute;
+  left: -2rem;
+  transform: translateX(-100%);
+  background: transparent;
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 4px;
+  color: var(--ctp-overlay1);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 1px 5px;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  user-select: none;
+}
+
+.editor__content :deep(.block-inserter-btn:hover) {
+  background: var(--ctp-surface0);
+  border-color: var(--ctp-surface2);
+  color: var(--ctp-text);
+}
+
+/* ── Upload toast ─────────────────────────────────────────────────────────── */
+.upload-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ctp-mantle);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 8px;
+  color: var(--ctp-subtext1);
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  z-index: 500;
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ctp-crust) 30%, transparent);
+}
+
+.upload-toast-enter-active,
+.upload-toast-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.upload-toast-enter-from,
+.upload-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
 }
 </style>

@@ -1,6 +1,13 @@
 import type { SanityBodyBlock, BlogDocument } from './sanity'
 import { trackException } from './appInsights'
 
+export interface ImageAsset {
+  assetRef: string
+  url: string
+  width: number | null
+  height: number | null
+}
+
 const LOGIN_PATH = '/.auth/login/aad'
 const REDIRECT_COOLDOWN_MS = 10_000
 const REDIRECT_TS_KEY = '__auth_redirect_ts'
@@ -22,6 +29,10 @@ function redirectToLogin(): never {
   throw new Error('Not authenticated')
 }
 
+function isMultipart(init?: RequestInit): boolean {
+  return init?.body instanceof FormData
+}
+
 async function apiFetch<T>(
   url: string,
   init?: RequestInit,
@@ -29,7 +40,7 @@ async function apiFetch<T>(
   const res = await fetch(url, {
     ...init,
     redirect: 'manual',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
+    headers: { ...(!isMultipart(init) && { 'Content-Type': 'application/json' }), ...init?.headers },
   })
 
   // Platform-level 401s (e.g. from responseOverrides) arrive as opaque redirects
@@ -88,6 +99,18 @@ export interface SwaUser {
   userId: string
   userDetails: string
   userRoles: string[]
+}
+
+/** Uploads an image file to Sanity via the API proxy. */
+export async function apiUploadImage(file: File): Promise<ImageAsset> {
+  const form = new FormData()
+  form.append('file', file)
+  return apiFetch<ImageAsset>('/api/sanity/images', { method: 'POST', body: form })
+}
+
+/** Fetches all image assets from Sanity via the API proxy. */
+export async function apiListImages(): Promise<ImageAsset[]> {
+  return apiFetch<ImageAsset[]>('/api/sanity/images')
 }
 
 /** Fetches the current user from the SWA auth endpoint. */

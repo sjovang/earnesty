@@ -60,6 +60,85 @@ function devAuthPlugin(): Plugin {
         res.end(JSON.stringify(mockPrincipal))
       })
 
+      // /api/sanity/images — upload and list image assets
+      server.middlewares.use('/api/sanity/images', async (req, res) => {
+        try {
+          const client = await getSanityClient()
+
+          if (req.method === 'POST') {
+            // Upload image via multipart/form-data
+            const busboy = (await import('busboy')).default
+            const contentType = req.headers['content-type'] ?? ''
+            const bb = busboy({ headers: { 'content-type': contentType }, limits: { files: 1, fileSize: 16 * 1024 * 1024 } })
+            let resolved = false
+
+            bb.on('file', (_field: string, file: import('stream').Readable & { resume(): void }, info: { filename: string; mimeType: string }) => {
+              const { filename, mimeType } = info
+              const chunks: Buffer[] = []
+              let truncated = false
+              file.on('data', (chunk: Buffer) => chunks.push(chunk))
+              file.on('limit', () => { truncated = true; file.resume() })
+              file.on('close', async () => {
+                if (resolved) return
+                if (truncated) {
+                  resolved = true
+                  res.writeHead(400, { 'Content-Type': 'application/json' })
+                  res.end(JSON.stringify({ error: 'File exceeds the 16 MB limit' }))
+                  return
+                }
+                resolved = true
+                const buffer = Buffer.concat(chunks)
+                const asset = await client.assets.upload('image', buffer, { filename, contentType: mimeType })
+                res.writeHead(200, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({
+                  assetRef: asset._id,
+                  url: asset.url,
+                  width: asset.metadata?.dimensions?.width ?? null,
+                  height: asset.metadata?.dimensions?.height ?? null,
+                }))
+              })
+            })
+
+            bb.on('error', (err: Error) => {
+              if (!resolved) {
+                resolved = true
+                res.writeHead(400, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ error: err.message }))
+              }
+            })
+
+            bb.on('close', () => {
+              if (!resolved) {
+                resolved = true
+                res.writeHead(400, { 'Content-Type': 'application/json' })
+                res.end(JSON.stringify({ error: 'No file found in request' }))
+              }
+            })
+
+            req.pipe(bb)
+          } else if (req.method === 'GET') {
+            const assets = await client.fetch<{ _id: string; url: string; width: number | null; height: number | null }[]>(
+              `*[_type == "sanity.imageAsset"] | order(_createdAt desc) {
+                _id,
+                url,
+                "width": metadata.dimensions.width,
+                "height": metadata.dimensions.height
+              }`,
+            )
+            const result = assets.map((a) => ({ assetRef: a._id, url: a.url, width: a.width, height: a.height }))
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify(result))
+          } else {
+            res.writeHead(405)
+            res.end()
+          }
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Unknown error'
+          res.writeHead(502, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: message }))
+        }
+      })
+
       // /api/sanity/documents/* — proxy document operations to Sanity
       server.middlewares.use('/api/sanity/documents', async (req, res) => {
         try {
