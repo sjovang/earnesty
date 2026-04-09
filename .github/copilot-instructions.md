@@ -12,7 +12,14 @@ User settings are stored in the browser's local storage, allowing for a personal
 
 All work is done in feature branches and merged into `main` through a pull request. Branch names should follow the pattern `feature/<short-description>`. Direct commits to `main` are not allowed.
 
-Pull requests must not be merged until all CI checks pass. Pull requests are always created as drafts and must be reviewed and approved by the repository owner before merging — Copilot will not approve or merge them.
+Pull requests must not be merged until all CI checks pass. Pull requests are always created as drafts.
+
+Copilot is allowed to:
+- Review pull requests and leave comments
+- Convert a pull request from draft to ready for review
+- Approve and merge pull requests when explicitly instructed to do so
+
+The repository owner must review and approve pull requests before merging unless Copilot is explicitly instructed to handle the approval and merge.
 
 ## Commits
 
