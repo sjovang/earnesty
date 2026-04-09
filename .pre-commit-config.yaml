@@ -14,3 +14,17 @@ repos:
         entry: bash -c 'cd app && npm run type-check'
         pass_filenames: false
         files: ^app/.*\.(vue|ts)$
+
+      - id: api-test
+        name: API Tests
+        language: system
+        entry: bash -c 'cd app/api && npm test'
+        pass_filenames: false
+        files: ^app/api/src/.*\.ts$
+
+      - id: app-test
+        name: Frontend Tests
+        language: system
+        entry: bash -c 'cd app && npm test'
+        pass_filenames: false
+        files: ^app/src/.*\.(ts|vue)$
