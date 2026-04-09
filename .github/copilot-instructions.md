@@ -48,6 +48,29 @@ Test files are excluded from the TypeScript build (`tsc`) via `tsconfig.json` an
 
 Each Azure Function handler is tested by mocking `@azure/functions` (to capture the registered handler) and `../shared.js` (to inject a mock Sanity client and principal). Frontend service tests mock `@sanity/client` directly. Use `vi.hoisted()` when a variable must be accessible inside a `vi.mock()` factory.
 
+### Integration tests
+
+Integration tests (files ending in `*.integration.test.ts`) run against the real Sanity development dataset — no mocks. They require environment variables to be set and skip gracefully when they are not:
+
+| Variable | Required by |
+|---|---|
+| `SANITY_PROJECT_ID` | API integration tests |
+| `SANITY_TOKEN` | API integration tests + frontend test setup/teardown |
+| `SANITY_DATASET` | API integration tests |
+| `VITE_SANITY_PROJECT_ID` | Frontend integration tests |
+| `VITE_SANITY_DATASET` | Frontend integration tests |
+
+Run with:
+
+```sh
+cd app/api && npm run test:integration
+cd app && npm run test:integration
+```
+
+Integration tests use a unique timestamp-based document ID per run and always clean up in `afterAll`, even on failure.
+
+In GitHub Actions, integration tests run in the `test-integration` job under the `dev` environment, which holds the Sanity development dataset credentials. The `build` job depends on this job passing.
+
 Run the full test suite before committing whenever business logic or Sanity interactions are changed:
 
 ```sh
