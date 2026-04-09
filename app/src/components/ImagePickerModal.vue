@@ -353,13 +353,13 @@ onMounted(() => {
 }
 
 .grid__item {
-  aspect-ratio: 1;
+  position: relative;
+  padding-top: 100%; /* aspect-ratio 1:1 — reliable across all browsers */
   background: var(--ctp-surface0);
   border: 2px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   overflow: hidden;
-  padding: 0;
   transition: border-color 0.15s ease;
 }
 
@@ -368,7 +368,8 @@ onMounted(() => {
 }
 
 .grid__thumb {
-  display: block;
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
