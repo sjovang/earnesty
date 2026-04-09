@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
+  },
   "dependencies": {
     "@sanity/client": "^7.0.0"
   },
