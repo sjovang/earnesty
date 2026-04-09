@@ -41,6 +41,7 @@ function slugify(text: string): string {
 }
 
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+export type PublishStatus = 'idle' | 'publishing' | 'published' | 'error'
 
 export const useEditorStore = defineStore('editor', () => {
   const saved = loadSession()
@@ -49,6 +50,7 @@ export const useEditorStore = defineStore('editor', () => {
   const currentContent = ref<string>('')
   const pendingHtml = ref<string | null>(null)
   const saveStatus = ref<SaveStatus>('idle')
+  const publishStatus = ref<PublishStatus>('idle')
   const meta = ref<DocumentMeta>(
     saved?.meta ?? { title: '', slug: '', publishedAt: '', tags: [] },
   )
@@ -98,6 +100,13 @@ export const useEditorStore = defineStore('editor', () => {
     }
   }
 
+  function setPublishStatus(status: PublishStatus) {
+    publishStatus.value = status
+    if (status === 'published') {
+      setTimeout(() => { if (publishStatus.value === 'published') publishStatus.value = 'idle' }, 2500)
+    }
+  }
+
   function consumePendingHtml(): string | null {
     const html = pendingHtml.value
     pendingHtml.value = null
@@ -109,6 +118,7 @@ export const useEditorStore = defineStore('editor', () => {
     currentContent,
     pendingHtml,
     saveStatus,
+    publishStatus,
     meta,
     openDocument,
     clearDocument,
@@ -116,6 +126,7 @@ export const useEditorStore = defineStore('editor', () => {
     setContent,
     updateMeta,
     setSaveStatus,
+    setPublishStatus,
     slugify,
     consumePendingHtml,
   }
