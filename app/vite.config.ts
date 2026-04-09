@@ -118,7 +118,7 @@ function devAuthPlugin(): Plugin {
             req.pipe(bb)
           } else if (req.method === 'GET') {
             const assets = await client.fetch<{ _id: string; url: string; width: number | null; height: number | null }[]>(
-              `*[_type == "sanity.imageAsset"] | order(_createdAt desc) {
+              `*[_type == "sanity.imageAsset"] | order(coalesce(metadata.exif.DateTimeOriginal, _createdAt) desc) {
                 _id,
                 url,
                 "width": metadata.dimensions.width,
@@ -201,6 +201,20 @@ function devAuthPlugin(): Plugin {
             await client.patch(id).set(fields).commit()
             res.writeHead(204)
             res.end()
+          } else if (req.method === 'GET' && !id) {
+            // List blog documents (authenticated — includes drafts)
+            const docs = await client.fetch(
+              `*[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+                _id,
+                _createdAt,
+                _updatedAt,
+                publishedAt,
+                title,
+                "body": body[_type == "block"][0..10]
+              }`,
+            )
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify(docs))
           } else {
             res.writeHead(404)
             res.end()
