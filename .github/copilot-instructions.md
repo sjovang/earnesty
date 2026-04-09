@@ -19,6 +19,8 @@ Copilot is allowed to:
 - Convert a pull request from draft to ready for review
 - Approve and merge pull requests when explicitly instructed to do so
 
+Release pull requests (created by release-please) must always be ignored — never review, modify, approve, or merge them.
+
 The repository owner must review and approve pull requests before merging unless Copilot is explicitly instructed to handle the approval and merge.
 
 ## Commits
