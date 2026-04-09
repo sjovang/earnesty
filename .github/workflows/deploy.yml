@@ -1,4 +1,4 @@
-name: Deploy to Azure Static Web Apps
+name: Deploy to Azure
 
 on:
   push:
@@ -6,14 +6,60 @@ on:
       - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-
+# Skip deployment when release-please merges its version-bump PR — those commits
+# contain only changelog/version changes and the app was already deployed when the
+# underlying feature PRs were merged. The commit format is:
+#   chore(main): release <package> <version>
+# The || '' guard handles workflow_dispatch where head_commit is absent (null).
 jobs:
-  build-and-deploy:
-    name: Build and Deploy
+  deploy-infra:
+    name: Deploy Infrastructure
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      !startsWith(github.event.head_commit.message || '', 'chore(main): release')
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy infrastructure
+        run: |
+          az stack sub create \
+            --name "earnesty" \
+            --location "${{ vars.AZURE_LOCATION || 'westeurope' }}" \
+            --template-file infra/main.bicep \
+            --parameters \
+              location="${{ vars.AZURE_LOCATION || 'westeurope' }}" \
+              staticWebAppSku="${{ vars.STATIC_WEB_APP_SKU || 'Standard' }}" \
+              entraClientId="${{ secrets.ENTRA_CLIENT_ID }}" \
+              entraClientSecret="${{ secrets.ENTRA_CLIENT_SECRET }}" \
+              entraTenantId="${{ secrets.ENTRA_TENANT_ID }}" \
+              sanityToken="${{ secrets.SANITY_TOKEN }}" \
+              sanityProjectId="${{ secrets.SANITY_PROJECT_ID }}" \
+              sanityDataset="${{ secrets.SANITY_DATASET }}" \
+            --deny-settings-mode none \
+            --action-on-unmanage detachAll \
+            --yes
+
+  deploy-app:
+    name: Build and Deploy App
+    needs: deploy-infra
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
