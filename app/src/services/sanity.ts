@@ -11,7 +11,11 @@ const devProxyConfig =
     : { useCdn: false }
 
 export const sanityClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
+  // Fall back to a placeholder so the module doesn't throw at import time when
+  // VITE_SANITY_PROJECT_ID is absent (e.g. CI jobs without dev-environment
+  // secrets). Integration tests guard themselves with describe.skipIf, but the
+  // skip check only runs after the import succeeds.
+  projectId: import.meta.env.VITE_SANITY_PROJECT_ID ?? 'unset',
   dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
   apiVersion: '2024-01-01',
   ...devProxyConfig,
