@@ -9,6 +9,7 @@ import { useEditorStore } from './stores/editor'
 import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
 import { apiPublishDocument } from './services/api'
+import { trackException, trackEvent } from './services/appInsights'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
@@ -46,8 +47,10 @@ async function publishDocument() {
       return
     }
     editorStore.openDocument(published)
+    trackEvent('document_published', { documentId: publishedId })
   } catch (err) {
     console.error('[publish] failed:', err)
+    trackException(err instanceof Error ? err : new Error(String(err)), { action: 'publish', documentId: doc._id })
   }
 }
 

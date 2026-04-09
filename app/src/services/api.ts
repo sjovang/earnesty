@@ -1,4 +1,5 @@
 import type { SanityBodyBlock, BlogDocument } from './sanity'
+import { trackException } from './appInsights'
 
 const LOGIN_PATH = '/.auth/login/aad'
 const REDIRECT_COOLDOWN_MS = 10_000
@@ -39,7 +40,10 @@ async function apiFetch<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({})) as { error?: string }
-    throw new Error(body.error ?? `API error ${res.status}`)
+    const message = body.error ?? `API error ${res.status}`
+    const error = new Error(message)
+    trackException(error, { url, status: String(res.status) })
+    throw error
   }
 
   if (res.status === 204) return undefined as T

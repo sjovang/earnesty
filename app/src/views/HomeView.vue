@@ -11,6 +11,7 @@ import { useEditorStore, CONTENT_KEY } from '../stores/editor'
 import { useAuthStore } from '../stores/auth'
 import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
 import { apiSaveDocument } from '../services/api'
+import { trackException, trackEvent } from '../services/appInsights'
 import { INTRO_HTML } from '../constants'
 import { TitleNode } from '../extensions/TitleNode'
 import { TitleDocument } from '../extensions/TitleDocument'
@@ -48,9 +49,11 @@ async function doAutosave(json: TiptapNode) {
     const bodyJson = { ...json, content: json.content?.slice(1) ?? [] }
     await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText)
     editorStore.setSaveStatus('saved')
+    trackEvent('document_saved', { documentId: doc._id })
   } catch (err) {
     console.error('[autosave] failed:', err)
     editorStore.setSaveStatus('error')
+    trackException(err instanceof Error ? err : new Error(String(err)), { action: 'autosave' })
   }
 }
 
