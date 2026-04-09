@@ -47,6 +47,27 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   }
 }
 
+// ── Observability ─────────────────────────────────────────────────────────────
+
+module logAnalytics 'modules/log-analytics.bicep' = {
+  name: 'log-analytics'
+  scope: rg
+  params: {
+    name: 'log-${appName}'
+    location: location
+  }
+}
+
+module appInsights 'modules/app-insights.bicep' = {
+  name: 'app-insights'
+  scope: rg
+  params: {
+    name: 'appi-${appName}'
+    location: location
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
+  }
+}
+
 // ── Static Web App ────────────────────────────────────────────────────────────
 
 module staticWebApp 'modules/static-web-app.bicep' = {
@@ -62,6 +83,7 @@ module staticWebApp 'modules/static-web-app.bicep' = {
     sanityToken: sanityToken
     sanityProjectId: sanityProjectId
     sanityDataset: sanityDataset
+    appInsightsConnectionString: appInsights.outputs.connectionString
   }
 }
 
@@ -69,6 +91,9 @@ module staticWebApp 'modules/static-web-app.bicep' = {
 
 @description('Default hostname of the Static Web App.')
 output staticWebAppUrl string = staticWebApp.outputs.url
+
+@description('Application Insights connection string (use as APPLICATIONINSIGHTS_CONNECTION_STRING secret).')
+output appInsightsConnectionString string = appInsights.outputs.connectionString
 
 @description('Name of the Static Web App resource.')
 output staticWebAppName string = staticWebApp.outputs.name

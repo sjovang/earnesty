@@ -5,6 +5,9 @@ import { createPinia } from 'pinia'
 
 import App from './App.vue'
 import router from './router'
+import { loadAppInsights } from './services/appInsights'
+
+loadAppInsights()
 
 if (import.meta.env.DEV) {
   try {

@@ -30,6 +30,9 @@ param sanityProjectId string
 @description('Sanity dataset name.')
 param sanityDataset string
 
+@description('Application Insights connection string.')
+param appInsightsConnectionString string
+
 // ── Resource ──────────────────────────────────────────────────────────────────
 
 resource staticWebApp 'Microsoft.Web/staticSites@2023-12-01' = {
@@ -55,6 +58,7 @@ resource appSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
     SANITY_TOKEN: sanityToken
     SANITY_PROJECT_ID: sanityProjectId
     SANITY_DATASET: sanityDataset
+    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
   }
 }
 

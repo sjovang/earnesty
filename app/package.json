@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@catppuccin/palette": "^1.8.0",
+    "@microsoft/applicationinsights-web": "^3.4.1",
     "@sanity/client": "^7.20.0",
     "@tiptap/extension-code-block-lowlight": "^3.21.0",
     "@tiptap/extension-image": "^3.21.0",
