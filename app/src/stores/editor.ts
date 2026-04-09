@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, shallowRef } from 'vue'
 import type { BlogDocument } from '../services/sanity'
 import { INTRO_HTML } from '../constants'
 
@@ -54,6 +54,9 @@ export const useEditorStore = defineStore('editor', () => {
   const meta = ref<DocumentMeta>(
     saved?.meta ?? { title: '', slug: '', publishedAt: '', tags: [] },
   )
+
+  /** Registered by HomeView to flush pending autosave before publish. */
+  const flushSave = shallowRef<(() => Promise<void>) | null>(null)
 
   function openDocument(doc: BlogDocument, html?: string) {
     activeDocument.value = doc
@@ -120,6 +123,7 @@ export const useEditorStore = defineStore('editor', () => {
     saveStatus,
     publishStatus,
     meta,
+    flushSave,
     openDocument,
     clearDocument,
     resetToPlaceholder,
