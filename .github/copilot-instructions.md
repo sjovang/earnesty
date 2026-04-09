@@ -37,6 +37,24 @@ cd app && npm run dev &
 
 The dev server runs at http://localhost:5173. `strictPort: false` means it may use a different port if 5173 is taken — check the output to confirm the URL.
 
+## Testing
+
+Tests are written with [Vitest](https://vitest.dev/) and live alongside the source they test in `__tests__/` subdirectories.
+
+- **API** (`app/api/`) — node environment; run with `npm test` inside `app/api/`
+- **Frontend** (`app/`) — jsdom environment; run with `npm test` inside `app/`
+
+Test files are excluded from the TypeScript build (`tsc`) via `tsconfig.json` and are never compiled to `dist/`.
+
+Each Azure Function handler is tested by mocking `@azure/functions` (to capture the registered handler) and `../shared.js` (to inject a mock Sanity client and principal). Frontend service tests mock `@sanity/client` directly. Use `vi.hoisted()` when a variable must be accessible inside a `vi.mock()` factory.
+
+Run the full test suite before committing whenever business logic or Sanity interactions are changed:
+
+```sh
+cd app/api && npm test
+cd app && npm test
+```
+
 ## Pre-commit checks
 
 Before every `git commit`, run pre-commit checks manually and fix any failures before proceeding:
