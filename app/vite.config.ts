@@ -201,6 +201,20 @@ function devAuthPlugin(): Plugin {
             await client.patch(id).set(fields).commit()
             res.writeHead(204)
             res.end()
+          } else if (req.method === 'GET' && !id) {
+            // List blog documents (authenticated — includes drafts)
+            const docs = await client.fetch(
+              `*[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+                _id,
+                _createdAt,
+                _updatedAt,
+                publishedAt,
+                title,
+                "body": body[_type == "block"][0..10]
+              }`,
+            )
+            res.writeHead(200, { 'Content-Type': 'application/json' })
+            res.end(JSON.stringify(docs))
           } else {
             res.writeHead(404)
             res.end()

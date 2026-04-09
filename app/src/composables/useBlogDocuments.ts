@@ -1,5 +1,6 @@
 import { ref, onMounted } from 'vue'
-import { fetchBlogDocuments, type BlogDocument } from '../services/sanity'
+import type { BlogDocument } from '../services/sanity'
+import { apiListDocuments } from '../services/api'
 
 export function useBlogDocuments() {
   const documents = ref<BlogDocument[]>([])
@@ -8,7 +9,7 @@ export function useBlogDocuments() {
 
   onMounted(async () => {
     try {
-      documents.value = await fetchBlogDocuments()
+      documents.value = await apiListDocuments()
     } catch (e) {
       console.error('[useBlogDocuments] fetch failed:', e)
       const msg = e instanceof Error ? e.message : String(e)

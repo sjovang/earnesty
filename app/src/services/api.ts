@@ -111,6 +111,11 @@ export async function apiUploadImage(file: File): Promise<ImageAsset> {
   return apiFetch<ImageAsset>('/api/sanity/images', { method: 'POST', body: form })
 }
 
+/** Fetches all blog documents (including drafts) via the API proxy. */
+export async function apiListDocuments(): Promise<BlogDocument[]> {
+  return apiFetch<BlogDocument[]>('/api/sanity/documents')
+}
+
 /** Fetches all image assets from Sanity via the API proxy. */
 export async function apiListImages(): Promise<ImageAsset[]> {
   return apiFetch<ImageAsset[]>('/api/sanity/images')
