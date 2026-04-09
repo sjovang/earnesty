@@ -47,8 +47,16 @@ const AUTOSAVE_DELAY = 1500
 let saveTimer: ReturnType<typeof setTimeout> | null = null
 let latestJson: TiptapNode | null = null
 let creatingDraft = false
+let currentSavePromise: Promise<void> | null = null
 
 const INTRO_TITLE = 'Earnesty is your space for focused writing'
+
+// Register flushSave so App.vue can drain pending saves before publish
+editorStore.flushSave = async () => {
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
+  if (latestJson) await doAutosave()
+  if (currentSavePromise) await currentSavePromise
+}
 
 // ── Image picker ───────────────────────────────────────────────────────────────
 const showImagePicker = ref(false)
@@ -103,55 +111,61 @@ async function doAutosave() {
   if (!json || !auth.isAuthenticated) return
   latestJson = null
 
-  // Auto-create a draft document on the first save
-  if (!editorStore.activeDocument) {
-    if (creatingDraft) {
-      // Re-queue so latest content isn't dropped
-      latestJson = json
-      return
+  const run = async () => {
+    // Auto-create a draft document on the first save
+    if (!editorStore.activeDocument) {
+      if (creatingDraft) {
+        // Re-queue so latest content isn't dropped
+        latestJson = json
+        return
+      }
+      creatingDraft = true
+      editorStore.setSaveStatus('saving')
+      try {
+        let titleText = extractTitleText(json)
+        if (!titleText || titleText === INTRO_TITLE) titleText = 'Untitled'
+        const slug = editorStore.slugify(titleText) || 'untitled'
+        const doc = await apiCreateDraft(titleText, slug)
+        // Guard against stale completion: user may have opened another doc
+        if (!editorStore.activeDocument) {
+          editorStore.openDocument(doc)
+          trackEvent('draft_created', { documentId: doc._id })
+        }
+      } catch (err) {
+        console.error('[autosave] draft creation failed:', err)
+        editorStore.setSaveStatus('error')
+        trackException(err instanceof Error ? err : new Error(String(err)), { action: 'create_draft' })
+        return
+      } finally {
+        creatingDraft = false
+        // If edits arrived during creation, re-trigger save
+        if (latestJson) setTimeout(() => doAutosave(), 0)
+      }
     }
-    creatingDraft = true
+
+    const doc = editorStore.activeDocument
+    if (!doc) return
+
     editorStore.setSaveStatus('saving')
     try {
-      let titleText = extractTitleText(json)
-      if (!titleText || titleText === INTRO_TITLE) titleText = 'Untitled'
-      const slug = editorStore.slugify(titleText) || 'untitled'
-      const doc = await apiCreateDraft(titleText, slug)
-      // Guard against stale completion: user may have opened another doc
-      if (!editorStore.activeDocument) {
-        editorStore.openDocument(doc)
-        trackEvent('draft_created', { documentId: doc._id })
-      }
+      const titleText = extractTitleText(json)
+      const bodyJson = { ...json, content: json.content?.slice(1) ?? [] }
+      await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText || undefined)
+      editorStore.setSaveStatus('saved')
+      trackEvent('document_saved', { documentId: doc._id })
     } catch (err) {
-      console.error('[autosave] draft creation failed:', err)
+      console.error('[autosave] failed:', err)
       editorStore.setSaveStatus('error')
-      trackException(err instanceof Error ? err : new Error(String(err)), { action: 'create_draft' })
-      return
+      trackException(err instanceof Error ? err : new Error(String(err)), { action: 'autosave' })
     } finally {
-      creatingDraft = false
-      // If edits arrived during creation, re-trigger save
+      // If edits arrived during save, re-trigger
       if (latestJson) setTimeout(() => doAutosave(), 0)
     }
   }
 
-  const doc = editorStore.activeDocument
-  if (!doc) return
-
-  editorStore.setSaveStatus('saving')
-  try {
-    const titleText = extractTitleText(json)
-    const bodyJson = { ...json, content: json.content?.slice(1) ?? [] }
-    await apiSaveDocument(doc._id, tiptapJsonToPortableText(bodyJson), titleText || undefined)
-    editorStore.setSaveStatus('saved')
-    trackEvent('document_saved', { documentId: doc._id })
-  } catch (err) {
-    console.error('[autosave] failed:', err)
-    editorStore.setSaveStatus('error')
-    trackException(err instanceof Error ? err : new Error(String(err)), { action: 'autosave' })
-  } finally {
-    // If edits arrived during save, re-trigger
-    if (latestJson) setTimeout(() => doAutosave(), 0)
-  }
+  currentSavePromise = run()
+  await currentSavePromise
+  currentSavePromise = null
 }
 
 function extractTitleText(doc: TiptapNode): string {
@@ -284,6 +298,7 @@ async function handleImageFile(file: File) {
 onBeforeUnmount(() => {
   tiptap.value?.destroy()
   if (saveTimer) clearTimeout(saveTimer)
+  editorStore.flushSave = null
 })
 
 // ── Load document from store ──────────────────────────────────────────────────

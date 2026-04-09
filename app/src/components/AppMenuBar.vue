@@ -16,6 +16,8 @@ const props = defineProps<{
   isAuthenticated?: boolean
   hasDocument?: boolean
   canPublish?: boolean
+  isDraft?: boolean
+  publishTooltip?: string
 }>()
 
 const statusLabel = computed(() => {
@@ -56,12 +58,16 @@ const shortcuts: Record<string, string> = {
 }
 
 function onEnter(key: string, e: MouseEvent) {
-  const label = shortcuts[key] ?? key
+  const label = key === 'publish' && props.publishTooltip
+    ? props.publishTooltip
+    : shortcuts[key] ?? key
   tooltip.value = { label, x: e.clientX, y: e.clientY }
 }
 function onMove(key: string, e: MouseEvent) {
   if (tooltip.value) {
-    const label = shortcuts[key] ?? key
+    const label = key === 'publish' && props.publishTooltip
+      ? props.publishTooltip
+      : shortcuts[key] ?? key
     tooltip.value = { label, x: e.clientX, y: e.clientY }
   }
 }
@@ -189,6 +195,11 @@ function onLeave() {
           @mouseleave="onLeave"
         >
           Publish
+          <span
+            v-if="isDraft && canPublish"
+            class="menubar__publish-dot"
+            aria-label="Unpublished changes"
+          />
         </button>
       </div>
 
@@ -373,6 +384,11 @@ function onLeave() {
           @click="canPublish && mobileEmit('publish')"
         >
           Publish
+          <span
+            v-if="isDraft && canPublish"
+            class="menubar__publish-dot"
+            aria-label="Unpublished changes"
+          />
         </button>
         <button
           role="menuitem"
@@ -545,6 +561,22 @@ function onLeave() {
 .menubar__item--publish:hover {
   background: color-mix(in srgb, var(--ctp-green) 15%, transparent);
   color: var(--ctp-green);
+}
+
+.menubar__publish-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ctp-green);
+  margin-left: var(--space-3xs);
+  vertical-align: middle;
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .menubar__item--disabled {

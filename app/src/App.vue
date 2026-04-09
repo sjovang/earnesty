@@ -39,9 +39,25 @@ const canPublish = computed(() =>
   auth.isAuthenticated
   && !!editorStore.activeDocument
   && editorStore.activeDocument._id.startsWith('drafts.')
-  && editorStore.saveStatus !== 'saving'
   && editorStore.publishStatus !== 'publishing',
 )
+
+const isDraft = computed(() =>
+  !!editorStore.activeDocument
+  && editorStore.activeDocument._id.startsWith('drafts.'),
+)
+
+const isMac = navigator.platform.toUpperCase().includes('MAC')
+const publishShortcut = isMac ? '⌘⇧P' : 'Ctrl+Shift+P'
+
+const publishTooltip = computed(() => {
+  if (!auth.isAuthenticated) return 'Sign in to publish'
+  if (!editorStore.activeDocument) return 'No document open'
+  if (!isDraft.value) return 'No new changes'
+  if (editorStore.publishStatus === 'publishing') return 'Publishing…'
+  if (editorStore.saveStatus === 'saving') return `Saving… (${publishShortcut})`
+  return publishShortcut
+})
 
 async function publishDocument() {
   if (!canPublish.value) return
@@ -78,6 +94,9 @@ async function onPublishConfirm(meta: DocumentMeta) {
 async function doPublish() {
   const doc = editorStore.activeDocument
   if (!doc) return
+
+  // Flush any pending autosave so we publish the latest content
+  if (editorStore.flushSave) await editorStore.flushSave()
 
   editorStore.setPublishStatus('publishing')
   try {
@@ -122,6 +141,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     :is-authenticated="auth.isAuthenticated"
     :has-document="!!editorStore.activeDocument"
     :can-publish="canPublish"
+    :is-draft="isDraft"
+    :publish-tooltip="publishTooltip"
     @new="editorStore.resetToPlaceholder()"
     @open="showOpen = true"
     @publish="publishDocument"
