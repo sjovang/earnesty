@@ -137,7 +137,7 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
 
     it('draft is gone after the publish transaction', async () => {
       const draft = await getSanityClient().getDocument(DRAFT_ID)
-      expect(draft).toBeNull()
+      expect(draft).toBeUndefined()
     })
   })
 })
