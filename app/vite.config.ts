@@ -118,7 +118,7 @@ function devAuthPlugin(): Plugin {
             req.pipe(bb)
           } else if (req.method === 'GET') {
             const assets = await client.fetch<{ _id: string; url: string; width: number | null; height: number | null }[]>(
-              `*[_type == "sanity.imageAsset"] | order(_createdAt desc) {
+              `*[_type == "sanity.imageAsset"] | order(coalesce(metadata.exif.DateTimeOriginal, _createdAt) desc) {
                 _id,
                 url,
                 "width": metadata.dimensions.width,
