@@ -1,18 +1,10 @@
 import { defineConfig } from 'vitest/config'
 
-// In integration tests, import.meta.env.DEV must be false so that
-// sanity.ts uses a direct Sanity connection instead of the Vite dev proxy
-// (which is not running during CI).
+// VITE_USE_PROXY is not set here, so sanity.ts uses a direct connection to
+// the real Sanity API (instead of routing through the Vite dev proxy).
 export default defineConfig({
-  define: {
-    'import.meta.env.DEV': JSON.stringify(false),
-    'import.meta.env.PROD': JSON.stringify(true),
-  },
   test: {
-    environment: 'jsdom',
-    environmentOptions: {
-      jsdom: { url: 'http://localhost:5173' },
-    },
+    environment: 'node',
     include: ['src/**/*.integration.test.ts'],
   },
 })
