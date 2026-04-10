@@ -34,12 +34,22 @@ const fontFamily = computed(() => fontFamilyFor(settings.font))
 const savedContent = localStorage.getItem(CONTENT_KEY)
 const isIntro = ref(!savedContent)
 const isLongContent = ref(false)
+const keyboardVisible = ref(false)
+
+function getViewportHeight(): number {
+  return window.visualViewport?.height ?? window.innerHeight
+}
+
+function updateKeyboardVisibility() {
+  if (!window.visualViewport) return
+  keyboardVisible.value = window.innerHeight - window.visualViewport.height > 150
+}
 
 function checkContentLength() {
   const proseMirror = document.querySelector('.ProseMirror')
   if (!proseMirror) return
   // Switch to long-content mode once text would require scrolling
-  isLongContent.value = proseMirror.scrollHeight > window.innerHeight * 0.65
+  isLongContent.value = proseMirror.scrollHeight > getViewportHeight() * 0.65
 }
 
 // ── Autosave ──────────────────────────────────────────────────────────────────
@@ -96,14 +106,22 @@ function onBlockSettingsOpen(e: Event) {
   blockSettings.value = { nodeType, pos, x, y }
 }
 
+function onVisualViewportResize() {
+  updateKeyboardVisibility()
+  checkContentLength()
+  requestAnimationFrame(scrollToCaret)
+}
+
 onMounted(() => {
   document.addEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
   document.addEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
+  window.visualViewport?.addEventListener('resize', onVisualViewportResize)
 })
 
 onBeforeUnmount(() => {
   document.removeEventListener(BLOCK_INSERTER_EVENT, onBlockInserterOpen)
   document.removeEventListener(BLOCK_SETTINGS_EVENT, onBlockSettingsOpen)
+  window.visualViewport?.removeEventListener('resize', onVisualViewportResize)
 })
 
 async function doAutosave() {
@@ -208,10 +226,10 @@ function getCaretTop(): number | null {
 }
 
 function scrollToCaret() {
-  if (!isLongContent.value) return
+  if (!isLongContent.value && !keyboardVisible.value) return
   const caretTop = getCaretTop()
   if (caretTop == null) return
-  const targetTop = window.innerHeight * CURSOR_RATIO
+  const targetTop = getViewportHeight() * CURSOR_RATIO
   const delta = caretTop - targetTop
   if (Math.abs(delta) > 4) {
     window.scrollBy({ top: delta, behavior: 'instant' })
