@@ -84,27 +84,33 @@ describe('saveDocument handler', () => {
   })
 
   it('returns 400 when request body is invalid JSON', async () => {
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, jsonThrows: true }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, jsonThrows: true }))
     expect(res.status).toBe(400)
     expect(res.jsonBody).toEqual({ error: 'Invalid JSON body' })
   })
 
   it('returns 400 when blocks is not an array', async () => {
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: 'not an array' } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: 'not an array' } }))
     expect(res.status).toBe(400)
     expect(res.jsonBody).toEqual({ error: '"blocks" must be an array of PortableText blocks' })
   })
 
   it('returns 400 when neither blocks nor title is provided', async () => {
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: {} }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: {} }))
     expect(res.status).toBe(400)
     expect(res.jsonBody).toEqual({ error: 'At least one of "blocks" or "title" must be provided' })
   })
 
   it('returns 400 when title is provided but not a string', async () => {
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: [], title: 42 } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [], title: 42 } }))
     expect(res.status).toBe(400)
     expect(res.jsonBody).toEqual({ error: '"title" must be a string when provided' })
+  })
+
+  it('returns 400 when document ID is not a valid draft ID', async () => {
+    const res = await getHandler()(makeRequest({ params: { id: 'published-doc-123' } }))
+    expect(res.status).toBe(400)
+    expect(res.jsonBody).toEqual({ error: 'Invalid document ID' })
   })
 
   it('saves blocks without title and returns 204', async () => {
@@ -112,9 +118,9 @@ describe('saveDocument handler', () => {
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks } }))
 
-    expect(patch).toHaveBeenCalledWith('doc-123')
+    expect(patch).toHaveBeenCalledWith('drafts.550e8400-e29b-41d4-a716-446655440000')
     expect(set).toHaveBeenCalledWith({ body: blocks })
     expect(commit).toHaveBeenCalled()
     expect(res.status).toBe(204)
@@ -125,7 +131,7 @@ describe('saveDocument handler', () => {
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks, title: 'My Post' } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks, title: 'My Post' } }))
 
     expect(set).toHaveBeenCalledWith({ body: blocks, title: 'My Post' })
     expect(commit).toHaveBeenCalled()
@@ -136,7 +142,7 @@ describe('saveDocument handler', () => {
     const { patch, set } = makePatchClient()
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
-    await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: [] } }))
+    await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
     const setArg = vi.mocked(set).mock.calls[0][0] as Record<string, unknown>
     expect(setArg).not.toHaveProperty('title')
@@ -146,9 +152,9 @@ describe('saveDocument handler', () => {
     const { patch, set, commit } = makePatchClient()
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { title: 'Updated Title' } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { title: 'Updated Title' } }))
 
-    expect(patch).toHaveBeenCalledWith('doc-123')
+    expect(patch).toHaveBeenCalledWith('drafts.550e8400-e29b-41d4-a716-446655440000')
     expect(set).toHaveBeenCalledWith({ title: 'Updated Title' })
     expect(commit).toHaveBeenCalled()
     expect(res.status).toBe(204)
@@ -158,7 +164,7 @@ describe('saveDocument handler', () => {
     const { patch, set } = makePatchClient()
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
-    await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { title: 'Only Title' } }))
+    await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { title: 'Only Title' } }))
 
     const setArg = vi.mocked(set).mock.calls[0][0] as Record<string, unknown>
     expect(setArg).not.toHaveProperty('body')
@@ -169,10 +175,10 @@ describe('saveDocument handler', () => {
     const { patch } = makePatchClient({ commitThrows: true })
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: [] } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Sanity write failed' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to save document' })
   })
 
   it('returns 502 with generic message for non-Error throws', async () => {
@@ -181,9 +187,9 @@ describe('saveDocument handler', () => {
     const patch = vi.fn().mockReturnValue({ set })
     vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
 
-    const res = await getHandler()(makeRequest({ params: { id: 'doc-123' }, body: { blocks: [] } }))
+    const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Unknown error' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to save document' })
   })
 })

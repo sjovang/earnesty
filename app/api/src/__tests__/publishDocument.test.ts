@@ -161,7 +161,7 @@ describe('publishDocument handler', () => {
 
     const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Transaction failed' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to publish document' })
   })
 
   it('returns 502 with generic message for non-Error throws', async () => {
@@ -174,6 +174,6 @@ describe('publishDocument handler', () => {
 
     const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Unknown error' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to publish document' })
   })
 })

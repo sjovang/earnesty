@@ -94,7 +94,7 @@ describe('listDocuments handler', () => {
 
     const res = await getHandler()(makeRequest())
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'GROQ error' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to list documents' })
   })
 
   it('passes a GROQ query that filters by blog type', async () => {

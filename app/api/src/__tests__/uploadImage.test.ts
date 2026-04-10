@@ -220,6 +220,6 @@ describe('uploadImage handler', () => {
 
     const res = await getUploadHandler()(makeRequest({}))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Upload failed' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to upload image' })
   })
 })

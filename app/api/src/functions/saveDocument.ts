@@ -24,6 +24,11 @@ app.http('saveDocument', {
       return { status: 400, jsonBody: { error: 'Missing document ID' } }
     }
 
+    const DRAFT_ID_RE = /^drafts\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!DRAFT_ID_RE.test(id)) {
+      return { status: 400, jsonBody: { error: 'Invalid document ID' } }
+    }
+
     let body: { blocks?: unknown; title?: unknown }
     try {
       body = (await request.json()) as { blocks?: unknown; title?: unknown }
@@ -63,8 +68,8 @@ app.http('saveDocument', {
       await getSanityClient().patch(id).set(fields).commit()
       return { status: 204 }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[saveDocument]', err)
+      return { status: 502, jsonBody: { error: 'Failed to save document' } }
     }
   },
 })

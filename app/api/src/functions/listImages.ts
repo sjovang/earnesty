@@ -47,8 +47,8 @@ app.http('listImages', {
 
       return { status: 200, jsonBody: result }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[listImages]', err)
+      return { status: 502, jsonBody: { error: 'Failed to list images' } }
     }
   },
 })

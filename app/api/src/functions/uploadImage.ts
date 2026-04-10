@@ -106,8 +106,8 @@ app.http('uploadImage', {
         },
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[uploadImage]', err)
+      return { status: 502, jsonBody: { error: 'Failed to upload image' } }
     }
   },
 })
