@@ -14,7 +14,8 @@
   "dependencies": {
     "@azure/functions": "^4.6.0",
     "@sanity/client": "^7.0.0",
-    "busboy": "^1.6.0"
+    "busboy": "^1.6.0",
+    "file-type": "^22.0.1"
   },
   "devDependencies": {
     "@types/busboy": "^1.5.4",

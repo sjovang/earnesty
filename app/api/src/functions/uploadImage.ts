@@ -4,6 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import busboy from 'busboy'
+import { fileTypeFromBuffer } from 'file-type'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024 // 16 MB
@@ -90,6 +91,13 @@ app.http('uploadImage', {
       return { status: 400, jsonBody: { error: 'Only image files are accepted' } }
     }
 
+    // Verify the file's actual content using magic-byte inspection, independent
+    // of the client-supplied Content-Type header.
+    const detected = await fileTypeFromBuffer(file.buffer)
+    if (!detected || !detected.mime.startsWith('image/')) {
+      return { status: 400, jsonBody: { error: 'Only image files are accepted' } }
+    }
+
     try {
       const asset = await getSanityClient().assets.upload(
         'image',
@@ -106,8 +114,8 @@ app.http('uploadImage', {
         },
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Upload failed'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[uploadImage]', err)
+      return { status: 502, jsonBody: { error: 'Failed to upload image' } }
     }
   },
 })

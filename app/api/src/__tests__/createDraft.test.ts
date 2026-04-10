@@ -158,7 +158,7 @@ describe('createDraft handler', () => {
 
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Sanity create failed' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to create draft' })
   })
 
   it('returns 502 with generic message for non-Error throws', async () => {
@@ -167,6 +167,6 @@ describe('createDraft handler', () => {
 
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Unknown error' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to create draft' })
   })
 })

@@ -32,8 +32,8 @@ app.http('listDocuments', {
       )
       return { status: 200, jsonBody: docs }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[listDocuments]', err)
+      return { status: 502, jsonBody: { error: 'Failed to list documents' } }
     }
   },
 })

@@ -112,6 +112,6 @@ describe('listImages handler', () => {
 
     const res = await getHandler()(makeRequest())
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'GROQ error' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to list images' })
   })
 })

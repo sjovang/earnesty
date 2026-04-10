@@ -228,6 +228,8 @@ const tiptap = useEditor({
       openOnClick: false,
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer' },
+      protocols: ['https', 'http', 'mailto'],
+      validate: (url) => /^https?:\/\/|^mailto:/.test(url),
     }),
     Image.configure({ inline: false, allowBase64: false }),
     CodeBlockLowlight.configure({ lowlight }),

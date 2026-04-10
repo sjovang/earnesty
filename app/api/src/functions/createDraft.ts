@@ -43,8 +43,8 @@ app.http('createDraft', {
       })
       return { status: 201, jsonBody: doc }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[createDraft]', err)
+      return { status: 502, jsonBody: { error: 'Failed to create draft' } }
     }
   },
 })

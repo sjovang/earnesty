@@ -53,8 +53,8 @@ app.http('publishDocument', {
         },
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error'
-      return { status: 502, jsonBody: { error: message } }
+      console.error('[publishDocument]', err)
+      return { status: 502, jsonBody: { error: 'Failed to publish document' } }
     }
   },
 })

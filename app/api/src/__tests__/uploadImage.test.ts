@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { fileTypeFromBuffer } from 'file-type'
 
 // vi.hoisted() ensures these helpers exist when the vi.mock() factory runs.
 const { getUploadHandler, setUploadHandler } = vi.hoisted(() => {
@@ -24,6 +25,11 @@ vi.mock('@azure/functions', () => ({
 vi.mock('../shared.js', () => ({
   getSanityClient: vi.fn(),
   parseClientPrincipal: vi.fn(),
+}))
+
+// Mock file-type to control magic-byte detection in unit tests
+vi.mock('file-type', () => ({
+  fileTypeFromBuffer: vi.fn().mockResolvedValue({ mime: 'image/jpeg', ext: 'jpg' }),
 }))
 
 // Mock busboy to avoid dealing with real multipart parsing in unit tests
@@ -156,6 +162,32 @@ describe('uploadImage handler', () => {
     expect(res.jsonBody).toEqual({ error: 'File exceeds the 16 MB limit' })
   })
 
+  it('returns 400 when file bytes do not match an image type (polyglot/spoofed MIME)', async () => {
+    const busboy = await import('busboy')
+    const { EventEmitter } = await import('events')
+    const bb = new EventEmitter() as any
+    bb.write = vi.fn()
+    bb.end = vi.fn(() => {
+      setImmediate(() => {
+        const fileStream = new EventEmitter() as any
+        fileStream.resume = vi.fn()
+        // Declared as image/jpeg but magic bytes reveal it is something else
+        bb.emit('file', 'file', fileStream, { filename: 'evil.jpg', mimeType: 'image/jpeg' })
+        setImmediate(() => {
+          fileStream.emit('data', Buffer.from('<html>not an image</html>'))
+          fileStream.emit('close')
+        })
+      })
+    })
+    vi.mocked(busboy.default).mockReturnValueOnce(bb)
+    // file-type cannot identify the content as an image
+    vi.mocked(fileTypeFromBuffer).mockResolvedValueOnce(undefined)
+
+    const res = await getUploadHandler()(makeRequest({}))
+    expect(res.status).toBe(400)
+    expect(res.jsonBody).toEqual({ error: 'Only image files are accepted' })
+  })
+
   it('uploads image and returns 200 with asset data', async () => {
     const busboy = await import('busboy')
     const { EventEmitter } = await import('events')
@@ -220,6 +252,6 @@ describe('uploadImage handler', () => {
 
     const res = await getUploadHandler()(makeRequest({}))
     expect(res.status).toBe(502)
-    expect(res.jsonBody).toEqual({ error: 'Upload failed' })
+    expect(res.jsonBody).toEqual({ error: 'Failed to upload image' })
   })
 })
