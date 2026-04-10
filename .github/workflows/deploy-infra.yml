@@ -1,6 +1,15 @@
 name: Deploy Infrastructure
 
 on:
+  # Automatically deploy when infra files change on main.
+  push:
+    branches:
+      - main
+    paths:
+      - 'infra/**'
+  # Manual trigger allows choosing a custom region or SKU (e.g. first-time
+  # provisioning or migrating to a different region). When triggered manually,
+  # inputs.location / inputs.sku override the repository variables.
   workflow_dispatch:
     inputs:
       location:
