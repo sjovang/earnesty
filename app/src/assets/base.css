@@ -100,6 +100,8 @@
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
+  /* Reserve scrollbar gutter to prevent layout shift when scrollbar appears */
+  scrollbar-gutter: stable;
 }
 
 body {
