@@ -214,7 +214,7 @@ function scrollToCaret() {
   const targetTop = window.innerHeight * CURSOR_RATIO
   const delta = caretTop - targetTop
   if (Math.abs(delta) > 4) {
-    window.scrollBy({ top: delta, behavior: 'smooth' })
+    window.scrollBy({ top: delta, behavior: 'instant' })
   }
 }
 
