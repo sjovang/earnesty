@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.5.0](https://github.com/sjovang/earnesty/compare/frontend-v1.4.0...frontend-v1.5.0) (2026-04-10)
+
+
+### Features
+
+* image thumbnail fixes, EXIF date sorting, and authenticated document fetching ([#98](https://github.com/sjovang/earnesty/issues/98)) ([edd68fa](https://github.com/sjovang/earnesty/commit/edd68faa389db7ca40478fa5a30a86b9f4e42fdd))
+* improve publish button with flush mechanism, tooltip, and indicator dot ([#95](https://github.com/sjovang/earnesty/issues/95)) ([a73d2f5](https://github.com/sjovang/earnesty/commit/a73d2f5f3fb1e78bb3062a3c8ab5d2e10baed7b5))
+
+
+### Bug Fixes
+
+* convert markdown link syntax on paste to proper links ([#92](https://github.com/sjovang/earnesty/issues/92)) ([1cb7db4](https://github.com/sjovang/earnesty/commit/1cb7db41caf05178521b00842beabbafd7aa00ed))
+* prevent image thumbnails from overlapping in library grid ([#93](https://github.com/sjovang/earnesty/issues/93)) ([9e39903](https://github.com/sjovang/earnesty/commit/9e399032850c783c4c110f7f2e85ac0988c7c4f2))
+* prevent text bouncing and layout shift when typing in Chromium browsers ([#100](https://github.com/sjovang/earnesty/issues/100)) ([9075842](https://github.com/sjovang/earnesty/commit/9075842498c4295e3311bb15a2eb4399238e1233))
+* scroll caret above virtual keyboard on mobile ([#104](https://github.com/sjovang/earnesty/issues/104)) ([7afa900](https://github.com/sjovang/earnesty/commit/7afa900c2290b97d3ae3eeb816f991f51e0080f8))
+
 ## [1.4.0](https://github.com/sjovang/earnesty/compare/frontend-v1.3.0...frontend-v1.4.0) (2026-04-09)
 
 
