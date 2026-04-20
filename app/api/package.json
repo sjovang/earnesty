@@ -13,13 +13,13 @@
   },
   "dependencies": {
     "@azure/functions": "^4.6.0",
-    "@sanity/client": "^7.0.0",
+    "@sanity/client": "^7.21.0",
     "busboy": "^1.6.0",
     "file-type": "^22.0.1"
   },
   "devDependencies": {
     "@types/busboy": "^1.5.4",
-    "typescript": "~6.0.2",
+    "typescript": "~6.0.3",
     "vitest": "^4.1.4"
   },
   "engines": {
