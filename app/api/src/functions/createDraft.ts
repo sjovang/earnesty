@@ -33,11 +33,13 @@ app.http('createDraft', {
       return { status: 400, jsonBody: { error: '"slug" is required' } }
     }
 
+    const docType = process.env['SANITY_DOCUMENT_TYPE'] ?? 'blog'
+
     try {
       const id = `drafts.${crypto.randomUUID()}`
       const doc = await getSanityClient().create({
         _id: id,
-        _type: 'blog',
+        _type: docType,
         title: body.title.trim(),
         slug: { _type: 'slug', current: body.slug.trim() },
       })

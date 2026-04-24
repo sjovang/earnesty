@@ -8,7 +8,7 @@ export interface ImageAsset {
   height: number | null
 }
 
-const LOGIN_PATH = '/.auth/login/aad'
+const LOGIN_PATH = import.meta.env.VITE_AUTH_LOGIN_URL ?? '/.auth/login/aad'
 const REDIRECT_COOLDOWN_MS = 10_000
 const REDIRECT_TS_KEY = '__auth_redirect_ts'
 
@@ -124,7 +124,7 @@ export async function apiListImages(): Promise<ImageAsset[]> {
 /** Fetches the current user from the SWA auth endpoint. */
 export async function apiGetUser(): Promise<SwaUser | null> {
   try {
-    const res = await fetch('/.auth/me')
+    const res = await fetch(import.meta.env.VITE_AUTH_ME_URL ?? '/.auth/me')
     if (!res.ok) return null
     const data = (await res.json()) as { clientPrincipal: SwaUser | null }
     return data.clientPrincipal

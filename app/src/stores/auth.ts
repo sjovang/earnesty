@@ -17,11 +17,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function login() {
-    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'
+    const base = import.meta.env.VITE_AUTH_LOGIN_URL ?? '/.auth/login/aad'
+    window.location.href = `${base}?post_login_redirect_uri=/`
   }
 
   function logout() {
-    window.location.href = '/.auth/logout'
+    window.location.href = import.meta.env.VITE_AUTH_LOGOUT_URL ?? '/.auth/logout'
   }
 
   return { user, loading, isAuthenticated, initialize, login, logout }
