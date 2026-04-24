@@ -455,8 +455,10 @@ describe('fetchBlogDocuments', () => {
     await fetchBlogDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
+    const params = mockClientFetch.mock.calls[0][1] as Record<string, unknown>
     expect(query).toMatch(/^\s*\*\[/)
-    expect(query).toContain('_type == "blog"')
+    expect(query).toContain('_type == $docType')
+    expect(params).toMatchObject({ docType: 'blog' })
   })
 
   it('orders results by published date descending', async () => {

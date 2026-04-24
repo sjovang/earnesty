@@ -97,14 +97,16 @@ describe('listDocuments handler', () => {
     expect(res.jsonBody).toEqual({ error: 'Failed to list documents' })
   })
 
-  it('passes a GROQ query that filters by blog type', async () => {
+  it('passes a GROQ query that filters by document type', async () => {
     const mockFetch = vi.fn().mockResolvedValue([])
     vi.mocked(getSanityClient).mockReturnValue({ fetch: mockFetch } as any)
 
     await getHandler()(makeRequest())
 
     const query = mockFetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "blog"')
+    const params = mockFetch.mock.calls[0][1] as Record<string, unknown>
+    expect(query).toContain('_type == $docType')
+    expect(params).toMatchObject({ docType: 'blog' })
     expect(query).toContain('order(')
   })
 })

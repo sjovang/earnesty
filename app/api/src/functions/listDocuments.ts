@@ -19,9 +19,11 @@ app.http('listDocuments', {
       return { status: 401, jsonBody: { error: 'Not authenticated' } }
     }
 
+    const docType = process.env['SANITY_DOCUMENT_TYPE'] ?? 'blog'
+
     try {
       const docs = await getSanityClient().fetch(
-        `*[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+        `*[_type == $docType] | order(coalesce(publishedAt, _createdAt) desc) {
           _id,
           _createdAt,
           _updatedAt,
@@ -29,6 +31,7 @@ app.http('listDocuments', {
           title,
           "body": body[_type == "block"][0..10]
         }`,
+        { docType },
       )
       return { status: 200, jsonBody: docs }
     } catch (err) {

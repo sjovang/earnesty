@@ -324,24 +324,27 @@ function key() {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
+const DOCUMENT_TYPE = import.meta.env.VITE_SANITY_DOCUMENT_TYPE ?? 'blog'
+
 /** Fetch list of blog documents (title + enough body blocks for 50-word preview). */
 export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
-  return sanityClient.fetch(`
-    *[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+  return sanityClient.fetch(
+    `*[_type == $docType] | order(coalesce(publishedAt, _createdAt) desc) {
       _id,
       _createdAt,
       _updatedAt,
       publishedAt,
       title,
       "body": body[_type == "block"][0..10]
-    }
-  `)
+    }`,
+    { docType: DOCUMENT_TYPE },
+  )
 }
 
 /** Fetch the full body of a single document for editing. */
 export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
   return sanityClient.fetch(
-    `*[_type == "blog" && _id == $id][0]{ _id, _createdAt, _updatedAt, publishedAt, title, body }`,
-    { id },
+    `*[_type == $docType && _id == $id][0]{ _id, _createdAt, _updatedAt, publishedAt, title, body }`,
+    { id, docType: DOCUMENT_TYPE },
   )
 }

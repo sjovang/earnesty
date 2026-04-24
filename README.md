@@ -24,13 +24,18 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    cp app/.env.example app/.env
    ```
 
-   Edit `app/.env`:
+   Edit `app/.env` and fill in your Sanity project details:
 
    ```env
    VITE_SANITY_PROJECT_ID=your_project_id
-   VITE_SANITY_DATASET=dev
-   VITE_SANITY_TOKEN=your_sanity_token
+   VITE_SANITY_DATASET=production
    ```
+
+   The Sanity write token (`SANITY_TOKEN`) is consumed server-side by the API
+   functions and must **not** be set as a `VITE_` variable — doing so would
+   expose it in the browser bundle. For local development with the SWA CLI,
+   configure it in `app/api/local.settings.json` or as an environment variable
+   in your shell before starting the SWA CLI.
 
 3. **Start the dev server**
 
@@ -56,6 +61,73 @@ cd app && npm run build
 
 Output is written to `app/dist/`.
 
+## Self-hosting
+
+These are the minimum steps to run Earnesty against your own Sanity project.
+
+### 1 — Create a Sanity project
+
+1. Go to <https://sanity.io/manage> and create a new project (the free tier is sufficient)
+2. Note your **project ID** and create a dataset (e.g. `production`)
+3. Create an API token with **Editor** permissions — this is `SANITY_TOKEN`
+
+### 2 — Apply the schema
+
+Copy `docs/sanity-schema.ts` into your Sanity Studio's `schemaTypes/` directory and register it:
+
+```ts
+// schemaTypes/index.ts
+import { blogType } from './earnesty-schema'
+export const schemaTypes = [blogType]
+```
+
+The schema requires the `@sanity/code-input` plugin for code block support:
+
+```sh
+npm install @sanity/code-input
+```
+
+```ts
+// sanity.config.ts
+import { codeInput } from '@sanity/code-input'
+export default defineConfig({ plugins: [codeInput()] })
+```
+
+If you prefer a different document type name than `blog`, rename `blogType`'s `name` field and set the `VITE_SANITY_DOCUMENT_TYPE` / `SANITY_DOCUMENT_TYPE` environment variables to match.
+
+### 3 — Environment variables
+
+All environment variables with their defaults:
+
+| Variable | Where consumed | Required | Default | Description |
+|----------|---------------|----------|---------|-------------|
+| `VITE_SANITY_PROJECT_ID` | Frontend (build-time) | ✅ | — | Sanity project ID |
+| `VITE_SANITY_DATASET` | Frontend (build-time) | ✅ | — | Sanity dataset name |
+| `VITE_SANITY_DOCUMENT_TYPE` | Frontend (build-time) | | `blog` | Document type to read and write |
+| `VITE_AUTH_LOGIN_URL` | Frontend (build-time) | | `/.auth/login/aad` | SWA login redirect URL |
+| `VITE_AUTH_LOGOUT_URL` | Frontend (build-time) | | `/.auth/logout` | SWA logout redirect URL |
+| `VITE_AUTH_ME_URL` | Frontend (build-time) | | `/.auth/me` | SWA current-user endpoint |
+| `VITE_APPLICATIONINSIGHTS_CONNECTION_STRING` | Frontend (build-time) | | — | Azure Application Insights (omit to disable) |
+| `SANITY_TOKEN` | API (runtime) | ✅ | — | Sanity write token — **never** set as a `VITE_` variable |
+| `SANITY_PROJECT_ID` | API (runtime) | ✅ | — | Sanity project ID (server-side copy) |
+| `SANITY_DATASET` | API (runtime) | ✅ | — | Sanity dataset name (server-side copy) |
+| `SANITY_DOCUMENT_TYPE` | API (runtime) | | `blog` | Document type — must match `VITE_SANITY_DOCUMENT_TYPE` |
+
+### 4 — Authentication
+
+The app uses [Azure Static Web Apps built-in authentication](https://learn.microsoft.com/azure/static-web-apps/authentication-authorization). By default it is configured for **Azure Active Directory** (`aad`). To switch provider, change `VITE_AUTH_LOGIN_URL`:
+
+| Provider | `VITE_AUTH_LOGIN_URL` |
+|----------|----------------------|
+| Microsoft Entra ID (default) | `/.auth/login/aad` |
+| GitHub | `/.auth/login/github` |
+| Google | `/.auth/login/google` |
+| X / Twitter | `/.auth/login/twitter` |
+
+See the [Entra ID App Registration](#entra-id-app-registration) section below for the Azure-specific setup.
+
+---
+
 ## GitHub environments
 
 The CI/CD pipelines use two GitHub environments to keep dev and production configuration separate.
@@ -79,7 +151,7 @@ Configure the following secrets on **each environment** (not at repository level
 |--------|-------------|
 | `VITE_SANITY_PROJECT_ID` | Sanity project ID |
 | `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `dev`) |
-| `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
+| `VITE_SANITY_TOKEN` | Sanity API token — used by integration tests as `SANITY_TOKEN` (the `VITE_` prefix is just a historical secret name; this value is never exposed to the browser) |
 
 #### `production` environment
 
