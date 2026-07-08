@@ -1,5 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiSaveDocument, apiPublishDocument, apiCreateDraft, AuthError, clearRedirectTimestamp, AUTH_REDIRECT_TS_KEY } from '../api.js'
+import {
+  apiSaveDocument,
+  apiPublishDocument,
+  apiCreateDraft,
+  apiGetDocument,
+  AuthError,
+  clearRedirectTimestamp,
+  AUTH_REDIRECT_TS_KEY,
+} from '../api.js'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -238,5 +246,37 @@ describe('apiCreateDraft', () => {
   it('throws on a non-2xx response', async () => {
     mockFetch.mockResolvedValue(makeResponse(400, { error: '"slug" is required' }))
     await expect(apiCreateDraft('Post', '')).rejects.toThrow('"slug" is required')
+  })
+})
+
+// ── apiGetDocument ─────────────────────────────────────────────────────────────
+
+describe('apiGetDocument', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  it('sends a GET request to the document endpoint', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, { _id: 'drafts.doc-123' }))
+    await apiGetDocument('drafts.doc-123')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/sanity/documents/drafts.doc-123',
+      expect.objectContaining({ redirect: 'manual' }),
+    )
+  })
+
+  it('encodes special characters in the document ID', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, { _id: 'drafts.some/id' }))
+    await apiGetDocument('drafts.some/id')
+
+    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain(encodeURIComponent('drafts.some/id'))
+  })
+
+  it('returns null when API returns null', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, null))
+    const result = await apiGetDocument('missing-id')
+    expect(result).toBeNull()
   })
 })

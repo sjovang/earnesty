@@ -9,7 +9,7 @@ import PublishModal from './components/PublishModal.vue'
 import { useEditorStore, type DocumentMeta } from './stores/editor'
 import { useAuthStore } from './stores/auth'
 import { fetchDocument, portableTextToHtml, type ContentDocument } from './services/sanity'
-import { apiPublishDocument, apiSaveDocument } from './services/api'
+import { apiGetDocument, apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
 import { runtimeConfig } from './config/runtime'
 
@@ -22,16 +22,24 @@ const auth = useAuthStore()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 async function onDocumentSelected(doc: ContentDocument) {
-  const full = await fetchDocument(doc._id)
-  if (!full) {
-    console.error('[open] could not fetch selected document', doc._id)
-    trackEvent('document_open_failed_not_found', { documentId: doc._id })
-    return
+  try {
+    const full = await apiGetDocument(doc._id)
+    if (!full) {
+      console.error('[open] could not fetch selected document', doc._id)
+      trackEvent('document_open_failed_not_found', { documentId: doc._id })
+      return
+    }
+    const bodyHtml = portableTextToHtml(full.body)
+    const titleHtml = `<h1 data-type="title">${escapeHtml(full.title ?? '')}</h1>`
+    editorStore.openDocument(full, titleHtml + bodyHtml)
+    showOpen.value = false
+  } catch (err) {
+    console.error('[open] failed to fetch selected document', doc._id, err)
+    trackException(err instanceof Error ? err : new Error(String(err)), {
+      action: 'open_document',
+      documentId: doc._id,
+    })
   }
-  const bodyHtml = portableTextToHtml(full.body)
-  const titleHtml = `<h1 data-type="title">${escapeHtml(full.title ?? '')}</h1>`
-  editorStore.openDocument(full, titleHtml + bodyHtml)
-  showOpen.value = false
 }
 
 function escapeHtml(str: string): string {
