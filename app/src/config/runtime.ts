@@ -1,6 +1,7 @@
 export interface FrontendRuntimeConfig {
   app: {
     name: string
+    storageNamespace: string
     introTitle: string
     introLead: string
     introHint: string
@@ -69,8 +70,20 @@ function readAuthProvider(value: string | undefined): FrontendRuntimeConfig['aut
   }
 }
 
+function readStorageNamespace(value: string | undefined, fallback: string): string {
+  const ns = value ?? fallback.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(ns)) {
+    throw new Error(
+      'Invalid runtime configuration: VITE_APP_STORAGE_NAMESPACE must start with a letter or digit and contain only lowercase letters, digits, and hyphens',
+    )
+  }
+  return ns
+}
+
+
 export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
   const appName = envString(env.VITE_APP_NAME) ?? 'Earnesty'
+  const storageNamespace = readStorageNamespace(envString(env.VITE_APP_STORAGE_NAMESPACE), appName)
   const introTitle = envString(env.VITE_APP_INTRO_TITLE) ?? `${appName} is your space for focused writing`
   const introLead = envString(env.VITE_APP_INTRO_LEAD)
     ?? 'No distractions. No formatting toolbars. Just you and the blank page. All vibes. No QA.'
@@ -96,6 +109,7 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
   return {
     app: {
       name: appName,
+      storageNamespace,
       introTitle,
       introLead,
       introHint,

@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
 import type { ContentDocument } from '../services/sanity'
 import { INTRO_HTML } from '../constants'
+import { runtimeConfig } from '../config/runtime'
 
 export interface DocumentMeta {
   title: string
@@ -10,8 +11,9 @@ export interface DocumentMeta {
   tags: string[]
 }
 
-const SESSION_KEY = 'earnesty-session'
-export const CONTENT_KEY = 'earnesty-content'
+const ns = runtimeConfig.app.storageNamespace
+const SESSION_KEY = `${ns}-session`
+export const CONTENT_KEY = `${ns}-content`
 
 interface PersistedSession {
   activeDocument: ContentDocument | null
