@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import AppLogo from './AppLogo.vue'
 import UserModal from './UserModal.vue'
 import type { SaveStatus, PublishStatus } from '../stores/editor'
-import type { SwaUser } from '../stores/auth'
+import type { AuthUser } from '../stores/auth'
 import { runtimeConfig } from '../config/runtime'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
@@ -13,7 +13,7 @@ const props = defineProps<{
   documentTitle?: string
   saveStatus?: SaveStatus
   publishStatus?: PublishStatus
-  user?: SwaUser
+  user?: AuthUser
   isAuthenticated?: boolean
   hasDocument?: boolean
   canPublish?: boolean

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import type { HttpRequest, HttpResponseInit } from '@azure/functions'
-import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 
 // vi.hoisted() ensures these helpers exist when the vi.mock() factory runs.
 const { getHandler, setHandler } = vi.hoisted(() => {
@@ -23,7 +23,7 @@ vi.mock('@azure/functions', () => ({
 
 vi.mock('../shared.js', () => ({
   getSanityClient: vi.fn(),
-  parseClientPrincipal: vi.fn(),
+  requireAuthenticatedPrincipal: vi.fn(),
 }))
 
 beforeAll(async () => {
@@ -67,11 +67,13 @@ const VALID_PRINCIPAL = {
 
 describe('saveDocument handler', () => {
   beforeEach(() => {
-    vi.mocked(parseClientPrincipal).mockReturnValue(VALID_PRINCIPAL)
+    vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
   })
 
   it('returns 401 when not authenticated', async () => {
-    vi.mocked(parseClientPrincipal).mockReturnValue(null)
+    vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({
+      response: { status: 401, jsonBody: { error: 'Not authenticated' } },
+    })
     const res = await getHandler()(makeRequest({ params: { id: 'doc-123' } }))
     expect(res.status).toBe(401)
     expect(res.jsonBody).toEqual({ error: 'Not authenticated' })
