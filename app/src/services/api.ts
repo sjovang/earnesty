@@ -56,9 +56,15 @@ async function apiFetch<T>(
   })
 
   // Platform-level 401s (e.g. from responseOverrides) arrive as opaque redirects
-  // when redirect: 'manual' is set. Function-level 401s arrive with status 401.
-  if (res.type === 'opaqueredirect' || res.status === 401) {
+  // when redirect: 'manual' is set — the SWA platform wants a fresh login so we redirect.
+  // Function-level 401s arrive with status 401 directly. In that case the frontend
+  // session (/.auth/me) is still valid, so silently redirecting to the login page
+  // would just loop; instead we throw so the UI can show an actionable sign-in prompt.
+  if (res.type === 'opaqueredirect') {
     redirectToLogin()
+  }
+  if (res.status === 401) {
+    throw new AuthError('Not authenticated', false)
   }
 
   if (!res.ok) {

@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { authProvider, type AuthUser } from '../services/authProvider'
-import { AUTH_REDIRECT_TS_KEY } from '../services/api'
 
 export type { AuthUser }
 
@@ -14,9 +13,6 @@ export const useAuthStore = defineStore('auth', () => {
   async function initialize() {
     loading.value = true
     user.value = await authProvider.getCurrentUser()
-    if (user.value !== null) {
-      sessionStorage.removeItem(AUTH_REDIRECT_TS_KEY)
-    }
     loading.value = false
   }
 
