@@ -1,12 +1,14 @@
 import { ref, onMounted } from 'vue'
 import type { ContentDocument } from '../services/sanity'
 import { apiListDocuments, AuthError } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 export function useDocuments() {
   const documents = ref<ContentDocument[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
   const isAuthError = ref(false)
+  const auth = useAuthStore()
 
   onMounted(async () => {
     try {
@@ -16,6 +18,7 @@ export function useDocuments() {
       if (e instanceof AuthError) {
         isAuthError.value = true
         error.value = 'Your session has expired. Please sign in again.'
+        auth.invalidateSession()
       } else {
         const msg = e instanceof Error ? e.message : String(e)
         error.value = `Could not load documents: ${msg}`

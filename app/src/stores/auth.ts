@@ -20,6 +20,10 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = false
   }
 
+  function invalidateSession() {
+    user.value = null
+  }
+
   function login() {
     window.location.href = authProvider.getLoginUrl('/')
   }
@@ -28,5 +32,5 @@ export const useAuthStore = defineStore('auth', () => {
     window.location.href = authProvider.getLogoutUrl()
   }
 
-  return { user, loading, isAuthenticated, initialize, login, logout }
+  return { user, loading, isAuthenticated, initialize, invalidateSession, login, logout }
 })

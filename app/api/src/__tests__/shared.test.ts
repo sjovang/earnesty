@@ -16,13 +16,48 @@ describe('parseSwaClientPrincipal', () => {
     expect(parseSwaClientPrincipal(invalid)).toBeNull()
   })
 
-  it('parses a valid base64-encoded principal', () => {
+  it('parses a valid base64-encoded principal with claims', () => {
     const principal = {
       identityProvider: 'aad',
       userId: 'user-123',
       userDetails: 'test@example.com',
       userRoles: ['authenticated', 'anonymous'],
       claims: [{ typ: 'name', val: 'Test User' }],
+    }
+    const encoded = Buffer.from(JSON.stringify(principal)).toString('base64')
+    expect(parseSwaClientPrincipal(encoded)).toEqual(principal)
+  })
+
+  it('parses a valid base64-encoded principal without claims', () => {
+    const principal = {
+      identityProvider: 'aad',
+      userId: 'user-123',
+      userDetails: 'test@example.com',
+      userRoles: ['authenticated', 'anonymous'],
+    }
+    const encoded = Buffer.from(JSON.stringify(principal)).toString('base64')
+    expect(parseSwaClientPrincipal(encoded)).toEqual(principal)
+  })
+
+  it('parses a valid base64-encoded principal with null claims', () => {
+    const raw = {
+      identityProvider: 'aad',
+      userId: 'user-123',
+      userDetails: 'test@example.com',
+      userRoles: ['authenticated', 'anonymous'],
+      claims: null,
+    }
+    const encoded = Buffer.from(JSON.stringify(raw)).toString('base64')
+    expect(parseSwaClientPrincipal(encoded)).toEqual(raw)
+  })
+
+  it('parses a valid base64-encoded principal with empty claims array', () => {
+    const principal = {
+      identityProvider: 'aad',
+      userId: 'user-123',
+      userDetails: 'test@example.com',
+      userRoles: ['authenticated', 'anonymous'],
+      claims: [],
     }
     const encoded = Buffer.from(JSON.stringify(principal)).toString('base64')
     expect(parseSwaClientPrincipal(encoded)).toEqual(principal)
