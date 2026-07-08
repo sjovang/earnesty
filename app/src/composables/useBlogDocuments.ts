@@ -15,9 +15,7 @@ export function useDocuments() {
       console.error('[useDocuments] fetch failed:', e)
       if (e instanceof AuthError) {
         isAuthError.value = true
-        error.value = e.isRedirectSuppressed
-          ? 'Your session has expired. Please sign in again.'
-          : 'Not authenticated'
+        error.value = 'Your session has expired. Please sign in again.'
       } else {
         const msg = e instanceof Error ? e.message : String(e)
         error.value = `Could not load documents: ${msg}`

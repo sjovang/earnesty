@@ -67,11 +67,13 @@ describe('apiFetch — auth redirect', () => {
     mockSessionStorage.setItem.mockClear()
   })
 
-  it('throws AuthError (not suppressed) on 401 when no recent redirect', async () => {
+  it('throws AuthError (not suppressed) on direct 401 without redirecting', async () => {
     mockFetch.mockResolvedValue(makeResponse(401))
     await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
       (e: unknown) => e instanceof AuthError && !e.isRedirectSuppressed,
     )
+    // Direct 401 must NOT set the redirect timestamp
+    expect(mockSessionStorage.setItem).not.toHaveBeenCalled()
   })
 
   it('throws AuthError (not suppressed) on opaqueredirect when no recent redirect', async () => {
@@ -79,11 +81,12 @@ describe('apiFetch — auth redirect', () => {
     await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
       (e: unknown) => e instanceof AuthError && !e.isRedirectSuppressed,
     )
+    expect(mockSessionStorage.setItem).toHaveBeenCalledWith(AUTH_REDIRECT_TS_KEY, expect.any(String))
   })
 
-  it('throws AuthError (suppressed) on 401 when redirect was recent', async () => {
+  it('throws AuthError (suppressed) on opaqueredirect when redirect was recent', async () => {
     mockSessionStorage.getItem.mockReturnValue(String(Date.now() - 1000))
-    mockFetch.mockResolvedValue(makeResponse(401))
+    mockFetch.mockResolvedValue(makeResponse(0, undefined, 'opaqueredirect'))
     await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
       (e: unknown) => e instanceof AuthError && e.isRedirectSuppressed,
     )
