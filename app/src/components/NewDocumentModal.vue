@@ -16,19 +16,22 @@ const title = ref('')
 const selectedType = ref(editorStore.meta.documentType || runtimeConfig.content.defaultType)
 const creating = ref(false)
 const error = ref<string | null>(null)
+const NEW_DRAFT_START_PLACEHOLDER = 'Start writing here…'
 
 // ── Slug derivation ───────────────────────────────────────────────────────────
 const slug = computed(() => editorStore.slugify(title.value))
 
 // ── Create ────────────────────────────────────────────────────────────────────
 async function create() {
-  if (!title.value.trim()) return
+  const trimmedTitle = title.value.trim()
+  if (!trimmedTitle) return
 
   creating.value = true
   error.value = null
   try {
-    const doc = await apiCreateDraft(title.value.trim(), slug.value, selectedType.value)
-    editorStore.openDocument(doc, '<p></p>')
+    const doc = await apiCreateDraft(trimmedTitle, slug.value, selectedType.value)
+    const initialHtml = `<h1 data-type="title">${escapeHtml(trimmedTitle)}</h1><p data-start-placeholder="${escapeHtml(NEW_DRAFT_START_PLACEHOLDER)}"></p>`
+    editorStore.openDocument(doc, initialHtml)
     emit('created')
     emit('close')
   } catch (e: unknown) {
@@ -43,6 +46,14 @@ function onKeydown(e: KeyboardEvent) {
     e.preventDefault()
     create()
   }
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
 }
 </script>
 
