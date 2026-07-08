@@ -17,6 +17,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient } from '@sanity/client'
 import { fetchDocuments, fetchDocument } from '../sanity.js'
+import { runtimeConfig } from '../../config/runtime.js'
 
 const projectId = import.meta.env.VITE_SANITY_PROJECT_ID as string | undefined
 const dataset = (import.meta.env.VITE_SANITY_DATASET as string | undefined) ?? 'production'
@@ -25,6 +26,7 @@ const dataset = (import.meta.env.VITE_SANITY_DATASET as string | undefined) ?? '
 const adminToken = process.env['SANITY_TOKEN']
 
 const hasCredentials = Boolean(projectId && adminToken)
+const contentConfig = runtimeConfig.content
 
 const RUN_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
 // Use a published (non-draft) ID so the GROQ query in fetchDocuments finds it.
@@ -32,21 +34,24 @@ const TEST_DOC_ID = `integration-fe-${RUN_ID}`
 
 describe.skipIf(!hasCredentials)('Integration: Sanity fetch functions', () => {
   // Admin client used only for test fixture setup and teardown.
-  const adminClient = createClient({
-    projectId,
-    dataset,
-    apiVersion: '2024-01-01',
-    token: adminToken,
-    useCdn: false,
-  })
+  const adminClient = hasCredentials
+    ? createClient({
+      projectId: projectId!,
+      dataset,
+      apiVersion: '2024-01-01',
+      token: adminToken,
+      useCdn: false,
+    })
+    : null
 
   beforeAll(async () => {
+    if (!adminClient) return
     await adminClient.create({
       _id: TEST_DOC_ID,
-      _type: 'blog',
-      title: 'Integration Fetch Test',
-      slug: { _type: 'slug', current: `integration-fe-${RUN_ID}` },
-      body: [
+      _type: contentConfig.documentType,
+      [contentConfig.titleField]: 'Integration Fetch Test',
+      [contentConfig.slugField]: { _type: 'slug', current: `integration-fe-${RUN_ID}` },
+      [contentConfig.bodyField]: [
         {
           _key: 'b1',
           _type: 'block',
@@ -59,6 +64,7 @@ describe.skipIf(!hasCredentials)('Integration: Sanity fetch functions', () => {
   })
 
   afterAll(async () => {
+    if (!adminClient) return
     await adminClient.delete(TEST_DOC_ID).catch(() => {})
   })
 

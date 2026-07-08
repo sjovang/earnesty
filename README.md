@@ -35,6 +35,8 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    VITE_SANITY_SLUG_FIELD=slug
    VITE_SANITY_PUBLISHED_AT_FIELD=publishedAt
    VITE_SANITY_DRAFT_PREFIX=drafts.
+   VITE_AUTH_PROVIDER=swa
+   VITE_AUTH_CURRENT_USER_PATH=/.auth/me
    VITE_AUTH_LOGIN_PATH=/.auth/login/aad
    VITE_AUTH_LOGOUT_PATH=/.auth/logout
    VITE_AUTH_POST_LOGIN_REDIRECT_PARAM=post_login_redirect_uri
@@ -160,8 +162,26 @@ Configure the following secrets on **each environment** (not at repository level
 | `SANITY_PROJECT_ID` | Sanity project ID (server-side, for API functions) |
 | `SANITY_DATASET` | Sanity dataset name (server-side, for API functions) |
 
+Optional runtime overrides are supported for reusable deployments. Configure these as **Azure Static Web App application settings** if you need non-default schema/auth mapping:
+
+| Optional SWA App Setting | Default |
+|---|---|
+| `SANITY_DOCUMENT_TYPE` | `blog` |
+| `SANITY_TITLE_FIELD` | `title` |
+| `SANITY_BODY_FIELD` | `body` |
+| `SANITY_SLUG_FIELD` | `slug` |
+| `SANITY_PUBLISHED_AT_FIELD` | `publishedAt` |
+| `SANITY_DRAFT_PREFIX` | `drafts.` |
+| `AUTH_PROVIDER` | `swa` |
+| `AUTH_PRINCIPAL_HEADER` | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
+| `AUTH_PRINCIPAL_ENCODING` | `base64-json` for `swa`, `json` for `header` |
+
 > [!TIP]
 > `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
+
+## Migration checklist
+
+Migration guidance for moving from hardcoded schema/auth assumptions to runtime-config values is maintained in issue **#147** so operators can track checklist updates in one place.
 
 ## Entra ID App Registration
 

@@ -138,7 +138,7 @@ describe('apiCreateDraft', () => {
   })
 
   it('sends a POST request to the documents endpoint', async () => {
-    const newDoc = { _id: 'drafts.uuid', _type: 'blog', title: 'New Post', _createdAt: '', _updatedAt: '' }
+    const newDoc = { _id: 'drafts.uuid', _type: 'article', title: 'New Post', _createdAt: '', _updatedAt: '' }
     mockFetch.mockResolvedValue(makeResponse(201, newDoc))
     await apiCreateDraft('New Post', 'new-post')
 
@@ -149,7 +149,7 @@ describe('apiCreateDraft', () => {
   })
 
   it('sends title and slug in the request body', async () => {
-    const newDoc = { _id: 'drafts.uuid', _type: 'blog', title: 'New Post', _createdAt: '', _updatedAt: '' }
+    const newDoc = { _id: 'drafts.uuid', _type: 'article', title: 'New Post', _createdAt: '', _updatedAt: '' }
     mockFetch.mockResolvedValue(makeResponse(201, newDoc))
     await apiCreateDraft('New Post', 'new-post')
 
@@ -159,7 +159,7 @@ describe('apiCreateDraft', () => {
   })
 
   it('returns the created document', async () => {
-    const newDoc = { _id: 'drafts.uuid', _type: 'blog', title: 'New Post', _createdAt: '', _updatedAt: '' }
+    const newDoc = { _id: 'drafts.uuid', _type: 'article', title: 'New Post', _createdAt: '', _updatedAt: '' }
     mockFetch.mockResolvedValue(makeResponse(201, newDoc))
 
     const result = await apiCreateDraft('New Post', 'new-post')

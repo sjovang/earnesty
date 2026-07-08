@@ -69,6 +69,8 @@ cd app && npm run test:integration
 
 Integration tests use a unique timestamp-based document ID per run and always clean up in `afterAll`, even on failure.
 
+When creating or updating test fixtures, prefer deriving document type, field names, and draft prefix from runtime configuration helpers instead of hardcoding `blog`, `title`, `body`, or `drafts.`. Keep hardcoded values only in tests that explicitly validate default fallback behavior.
+
 In GitHub Actions, integration tests run in the `test-integration` job under the `dev` environment, which holds the Sanity development dataset credentials. The `build` job depends on this job passing.
 
 Run the full test suite before committing whenever business logic or Sanity interactions are changed:
