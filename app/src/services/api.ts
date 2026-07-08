@@ -84,12 +84,14 @@ export async function apiSaveDocument(
   id: string,
   blocks?: SanityBodyBlock[],
   title?: string,
+  metadata?: Record<string, unknown>,
 ): Promise<void> {
   await apiFetch<void>(`/api/sanity/documents/${encodeURIComponent(id)}`, {
     method: 'PATCH',
     body: JSON.stringify({
       ...(blocks !== undefined && { blocks }),
       ...(title !== undefined && { title }),
+      ...(metadata !== undefined && { metadata }),
     }),
   })
 }
@@ -98,10 +100,11 @@ export async function apiSaveDocument(
 export async function apiCreateDraft(
   title: string,
   slug: string,
+  documentType?: string,
 ): Promise<ContentDocument> {
   return apiFetch<ContentDocument>('/api/sanity/documents', {
     method: 'POST',
-    body: JSON.stringify({ title, slug }),
+    body: JSON.stringify({ title, slug, ...(documentType ? { documentType } : {}) }),
   })
 }
 

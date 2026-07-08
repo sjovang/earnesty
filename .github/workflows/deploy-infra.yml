@@ -67,6 +67,7 @@ jobs:
               sanityToken="${{ secrets.SANITY_TOKEN }}" \
               sanityProjectId="${{ secrets.SANITY_PROJECT_ID }}" \
               sanityDataset="${{ secrets.SANITY_DATASET }}" \
+              sanityDocumentType="${{ vars.SANITY_DOCUMENT_TYPE || '' }}" \
             --deny-settings-mode none \
             --action-on-unmanage detachAll \
             --yes

@@ -34,6 +34,8 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    VITE_SANITY_BODY_FIELD=body
    VITE_SANITY_SLUG_FIELD=slug
    VITE_SANITY_PUBLISHED_AT_FIELD=publishedAt
+   # Optional: JSON multi-type schema config (overrides the single-type vars above)
+   # VITE_SANITY_SCHEMA_CONFIG={"defaultType":"blog","types":[{"name":"blog","label":"Blog","titleField":"title","bodyField":"body","slugField":"slug","publishedAtField":"publishedAt","metadataFields":[{"key":"title","label":"Title","field":"title","type":"string","required":true},{"key":"slug","label":"Slug","field":"slug","type":"slug","required":true},{"key":"publishedAt","label":"Published at","field":"publishedAt","type":"datetime"},{"key":"tags","label":"Tags","field":"tags","type":"stringArray"}]}]}
    VITE_SANITY_DRAFT_PREFIX=drafts.
    VITE_AUTH_PROVIDER=swa
    VITE_AUTH_CURRENT_USER_PATH=/.auth/me
@@ -77,6 +79,7 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `VITE_SANITY_BODY_FIELD` | No | `body` |
 | `VITE_SANITY_SLUG_FIELD` | No | `slug` |
 | `VITE_SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
+| `VITE_SANITY_SCHEMA_CONFIG` | No | unset (falls back to single-type mapping variables) |
 | `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` |
 | `VITE_AUTH_PROVIDER` | No | `swa` |
 | `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
@@ -100,6 +103,7 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `SANITY_BODY_FIELD` | No | `body` |
 | `SANITY_SLUG_FIELD` | No | `slug` |
 | `SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
+| `SANITY_SCHEMA_CONFIG` | No | unset (falls back to single-type mapping variables) |
 | `SANITY_DRAFT_PREFIX` | No | `drafts.` |
 | `AUTH_PROVIDER` | No | `swa` |
 | `AUTH_PRINCIPAL_HEADER` | No | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
@@ -171,6 +175,7 @@ Optional runtime overrides are supported for reusable deployments. Configure the
 | `SANITY_BODY_FIELD` | `body` |
 | `SANITY_SLUG_FIELD` | `slug` |
 | `SANITY_PUBLISHED_AT_FIELD` | `publishedAt` |
+| `SANITY_SCHEMA_CONFIG` | unset (falls back to single-type mapping variables) |
 | `SANITY_DRAFT_PREFIX` | `drafts.` |
 | `AUTH_PROVIDER` | `swa` |
 | `AUTH_PRINCIPAL_HEADER` | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |

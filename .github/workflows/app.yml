@@ -121,6 +121,7 @@ jobs:
           SANITY_PROJECT_ID: ${{ secrets.VITE_SANITY_PROJECT_ID }}
           SANITY_TOKEN: ${{ secrets.VITE_SANITY_TOKEN }}
           SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
+          SANITY_DOCUMENT_TYPE: ${{ vars.SANITY_DOCUMENT_TYPE }}
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
@@ -138,6 +139,7 @@ jobs:
         env:
           VITE_SANITY_PROJECT_ID: ${{ secrets.VITE_SANITY_PROJECT_ID }}
           VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
+          VITE_SANITY_DOCUMENT_TYPE: ${{ vars.SANITY_DOCUMENT_TYPE }}
           SANITY_TOKEN: ${{ secrets.VITE_SANITY_TOKEN }}
 
   build:
@@ -166,4 +168,5 @@ jobs:
         env:
           VITE_SANITY_PROJECT_ID: ${{ secrets.VITE_SANITY_PROJECT_ID }}
           VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
+          VITE_SANITY_DOCUMENT_TYPE: ${{ vars.SANITY_DOCUMENT_TYPE }}
           VITE_APPLICATIONINSIGHTS_CONNECTION_STRING: ${{ secrets.APPLICATIONINSIGHTS_CONNECTION_STRING }}

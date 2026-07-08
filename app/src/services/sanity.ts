@@ -1,7 +1,24 @@
 import { createClient } from '@sanity/client'
-import { runtimeConfig } from '../config/runtime'
+import { runtimeConfig, getContentTypeConfig, type MetadataFieldConfig } from '../config/runtime'
 
 const contentConfig = runtimeConfig.content
+
+function quote(value: string): string {
+  return JSON.stringify(value)
+}
+
+function selectByType(
+  typeNames: string[],
+  expressionForType: (typeName: string) => string,
+  fallbackExpression: string,
+): string {
+  const cases = typeNames.map((typeName) => `_type == ${quote(typeName)} => ${expressionForType(typeName)}`)
+  return `select(${cases.join(', ')}, ${fallbackExpression})`
+}
+
+function metadataExpression(field: MetadataFieldConfig): string {
+  return field.type === 'slug' ? `${field.field}.current` : field.field
+}
 
 // In development the Vite server proxies Sanity API paths through localhost to
 // avoid CORS restrictions. In production and in tests the client talks directly
@@ -61,11 +78,13 @@ export type SanityBodyBlock = SanityBlock | SanityImageBlock | SanityCodeBlock
 
 export interface ContentDocument {
   _id: string
+  _type: string
   _createdAt: string
   _updatedAt: string
   publishedAt?: string
   title: string
   body?: SanityBodyBlock[]
+  metadata?: Record<string, unknown>
 }
 
 /** @deprecated Use {@link ContentDocument} instead. */
@@ -325,14 +344,37 @@ function key() {
 
 /** Fetch list of content documents (title + enough body blocks for 50-word preview). */
 export async function fetchDocuments(): Promise<ContentDocument[]> {
+  const typeNames = contentConfig.typeOrder
+  const typeFilter = typeNames.map((typeName) => quote(typeName)).join(', ')
+  const titleSelect = selectByType(
+    typeNames,
+    (typeName) => getContentTypeConfig(typeName).titleField,
+    "''",
+  )
+  const publishedAtSelect = selectByType(
+    typeNames,
+    (typeName) => getContentTypeConfig(typeName).publishedAtField,
+    'null',
+  )
+  const bodySelect = selectByType(
+    typeNames,
+    (typeName) => `${getContentTypeConfig(typeName).bodyField}[_type == "block"][0..10]`,
+    '[]',
+  )
+  const sortDateSelect = selectByType(
+    typeNames,
+    (typeName) => `coalesce(${getContentTypeConfig(typeName).publishedAtField}, _createdAt)`,
+    '_createdAt',
+  )
   return sanityClient.fetch(`
-    *[_type == "${contentConfig.documentType}"] | order(coalesce(${contentConfig.publishedAtField}, _createdAt) desc) {
+    *[_type in [${typeFilter}]] | order(${sortDateSelect} desc) {
       _id,
+      _type,
       _createdAt,
       _updatedAt,
-      "publishedAt": ${contentConfig.publishedAtField},
-      "title": ${contentConfig.titleField},
-      "body": ${contentConfig.bodyField}[_type == "block"][0..10]
+      "publishedAt": ${publishedAtSelect},
+      "title": ${titleSelect},
+      "body": ${bodySelect}
     }
   `)
 }
@@ -342,14 +384,52 @@ export const fetchBlogDocuments = fetchDocuments
 
 /** Fetch the full body of a single document for editing. */
 export async function fetchDocument(id: string): Promise<ContentDocument | null> {
+  const typeNames = contentConfig.typeOrder
+  const typeFilter = typeNames.map((typeName) => quote(typeName)).join(', ')
+  const titleSelect = selectByType(
+    typeNames,
+    (typeName) => getContentTypeConfig(typeName).titleField,
+    "''",
+  )
+  const publishedAtSelect = selectByType(
+    typeNames,
+    (typeName) => getContentTypeConfig(typeName).publishedAtField,
+    'null',
+  )
+  const bodySelect = selectByType(
+    typeNames,
+    (typeName) => getContentTypeConfig(typeName).bodyField,
+    '[]',
+  )
+  const metadataKeys = Array.from(
+    new Set(typeNames.flatMap((typeName) => getContentTypeConfig(typeName).metadataFields.map((field) => field.key))),
+  )
+  const metadataProjection = metadataKeys.length
+    ? metadataKeys
+      .map((key) => {
+        const valueSelect = selectByType(
+          typeNames,
+          (typeName) => {
+            const field = getContentTypeConfig(typeName).metadataFields.find((item) => item.key === key)
+            return field ? metadataExpression(field) : 'null'
+          },
+          'null',
+        )
+        return `"${key}": ${valueSelect}`
+      })
+      .join(',\n      ')
+    : ''
+
   return sanityClient.fetch(
-    `*[_type == "${contentConfig.documentType}" && _id == $id][0]{
+    `*[_type in [${typeFilter}] && _id == $id][0]{
       _id,
+      _type,
       _createdAt,
       _updatedAt,
-      "publishedAt": ${contentConfig.publishedAtField},
-      "title": ${contentConfig.titleField},
-      "body": ${contentConfig.bodyField}
+      "publishedAt": ${publishedAtSelect},
+      "title": ${titleSelect},
+      "body": ${bodySelect},
+      "metadata": {${metadataProjection}}
     }`,
     { id },
   )

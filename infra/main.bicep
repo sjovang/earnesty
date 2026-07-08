@@ -36,6 +36,9 @@ param sanityProjectId string
 @description('Sanity dataset name.')
 param sanityDataset string
 
+@description('Sanity document type used by the app and API.')
+param sanityDocumentType string = ''
+
 // ── Resource group ────────────────────────────────────────────────────────────
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
@@ -83,6 +86,7 @@ module staticWebApp 'modules/static-web-app.bicep' = {
     sanityToken: sanityToken
     sanityProjectId: sanityProjectId
     sanityDataset: sanityDataset
+    sanityDocumentType: sanityDocumentType
     appInsightsConnectionString: appInsights.outputs.connectionString
   }
 }

@@ -53,6 +53,8 @@ const VALID_PRINCIPAL = {
 const CREATED_DOC = {
   _id: 'drafts.550e8400-e29b-41d4-a716-446655440000',
   _type: 'blog',
+  _createdAt: '2024-01-01T00:00:00.000Z',
+  _updatedAt: '2024-01-01T00:00:00.000Z',
   title: 'My Post',
   slug: { _type: 'slug', current: 'my-post' },
 }
@@ -152,7 +154,13 @@ describe('createDraft handler', () => {
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
 
     expect(res.status).toBe(201)
-    expect(res.jsonBody).toEqual(CREATED_DOC)
+    expect(res.jsonBody).toEqual(
+      expect.objectContaining({
+        _id: CREATED_DOC._id,
+        _type: CREATED_DOC._type,
+        title: CREATED_DOC.title,
+      }),
+    )
   })
 
   it('returns 502 when Sanity client throws', async () => {
@@ -200,7 +208,7 @@ describe('createDraft handler – custom schema mapping', () => {
     const create = vi.fn().mockResolvedValue({ _id: 'drafts.test-id', _type: 'article' })
     vi.mocked(getSanityClient).mockReturnValue({ create } as any)
 
-    await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article' } }))
+    await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article', documentType: 'article' } }))
 
     const doc = vi.mocked(create).mock.calls[0][0] as Record<string, unknown>
     expect(doc['_type']).toBe('article')

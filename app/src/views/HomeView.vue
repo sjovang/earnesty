@@ -144,7 +144,11 @@ async function doAutosave() {
         let titleText = extractTitleText(json)
         if (!titleText || titleText === INTRO_TITLE) titleText = 'Untitled'
         const slug = editorStore.slugify(titleText) || 'untitled'
-        const doc = await apiCreateDraft(titleText, slug)
+        const doc = await apiCreateDraft(
+          titleText,
+          slug,
+          editorStore.meta.documentType || runtimeConfig.content.defaultType,
+        )
         // Guard against stale completion: user may have opened another doc
         if (!editorStore.activeDocument) {
           editorStore.openDocument(doc)
