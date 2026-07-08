@@ -4,14 +4,28 @@ import BaseModal from './BaseModal.vue'
 import { useEditorStore, type DocumentMeta } from '../stores/editor'
 import { getContentTypeConfig } from '../config/runtime'
 
+const props = withDefaults(defineProps<{
+  mode: 'edit' | 'publish'
+  isSubmitting?: boolean
+  errorMessage?: string
+}>(), {
+  isSubmitting: false,
+  errorMessage: '',
+})
+
 const emit = defineEmits<{
   close: []
-  publish: [meta: DocumentMeta]
+  submit: [meta: DocumentMeta]
 }>()
 
 const store = useEditorStore()
 const typeConfig = computed(() => getContentTypeConfig(store.meta.documentType))
 const fields = computed(() => typeConfig.value.metadataFields)
+const isPublishMode = computed(() => props.mode === 'publish')
+const actionLabel = computed(() => (isPublishMode.value ? 'Publish' : 'Save metadata'))
+const modalTitle = computed(() => (isPublishMode.value
+  ? `Publish — ${typeConfig.value.label}`
+  : `Metadata — ${typeConfig.value.label}`))
 
 const values = reactive<Record<string, unknown>>({})
 for (const field of fields.value) {
@@ -31,6 +45,13 @@ watch(
 )
 
 function onSlugInput() {
+  slugManuallyEdited.value = true
+}
+
+function generateSlug() {
+  const title = values['title']
+  if (typeof title !== 'string') return
+  values['slug'] = store.slugify(title)
   slugManuallyEdited.value = true
 }
 
@@ -114,15 +135,15 @@ function formatDateTimeValue(value: unknown): string {
   return value.slice(0, 16)
 }
 
-function saveAndPublish() {
+function submit() {
   if (!canPublish.value) return
-  emit('publish', buildMeta())
+  emit('submit', buildMeta())
 }
 </script>
 
 <template>
   <BaseModal
-    :title="`Metadata — ${typeConfig.label}`"
+    :title="modalTitle"
     @close="emit('close')"
   >
     <div class="publish-modal">
@@ -137,16 +158,29 @@ function saveAndPublish() {
         >
           {{ field.label }}<span v-if="field.required"> *</span>
         </label>
-        <input
+        <div
           v-if="field.type === 'string' || field.type === 'slug'"
-          :id="`meta-${field.key}`"
-          v-model="values[field.key]"
-          class="field__input"
-          :class="{ 'field__input--mono': field.type === 'slug' }"
-          type="text"
-          :placeholder="field.type === 'slug' ? 'auto-generated-from-title' : ''"
-          @input="field.type === 'slug' && onSlugInput()"
+          class="field__input-row"
         >
+          <input
+            :id="`meta-${field.key}`"
+            v-model="values[field.key]"
+            class="field__input"
+            :class="{ 'field__input--mono': field.type === 'slug' }"
+            type="text"
+            :placeholder="field.type === 'slug' ? 'auto-generated-from-title' : ''"
+            @input="field.type === 'slug' && onSlugInput()"
+          >
+          <button
+            v-if="field.type === 'slug'"
+            type="button"
+            class="btn btn--ghost btn--compact"
+            :disabled="isSubmitting"
+            @click="generateSlug"
+          >
+            Generate slug
+          </button>
+        </div>
         <input
           v-else-if="field.type === 'datetime'"
           :id="`meta-${field.key}`"
@@ -176,20 +210,27 @@ function saveAndPublish() {
           <span>Enabled</span>
         </label>
       </div>
+      <p
+        v-if="errorMessage"
+        class="error"
+      >
+        {{ errorMessage }}
+      </p>
 
       <div class="actions">
         <button
           class="btn btn--ghost"
+          :disabled="isSubmitting"
           @click="emit('close')"
         >
           Cancel
         </button>
         <button
           class="btn btn--primary"
-          :disabled="!canPublish"
-          @click="saveAndPublish"
+          :disabled="!canPublish || isSubmitting"
+          @click="submit"
         >
-          Publish
+          {{ isSubmitting ? 'Saving…' : actionLabel }}
         </button>
       </div>
     </div>
@@ -207,6 +248,12 @@ function saveAndPublish() {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.field__input-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .field__label {
@@ -229,6 +276,10 @@ function saveAndPublish() {
   width: 100%;
   box-sizing: border-box;
   color-scheme: dark;
+}
+
+.field__input-row .field__input {
+  flex: 1;
 }
 
 .field__input:focus {
@@ -255,6 +306,12 @@ function saveAndPublish() {
   margin-top: 0.25rem;
 }
 
+.error {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ctp-red);
+}
+
 .btn {
   padding: 0.4rem 0.9rem;
   border-radius: 6px;
@@ -262,6 +319,12 @@ function saveAndPublish() {
   cursor: pointer;
   border: 1px solid transparent;
   transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn--compact {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.65rem;
+  white-space: nowrap;
 }
 
 .btn:disabled {

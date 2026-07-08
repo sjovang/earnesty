@@ -5,6 +5,7 @@ import {
 } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 import { getApiRuntimeConfig, getContentTypeConfig } from '../config/runtime.js'
+import { findSlugConflictId } from '../slugUniqueness.js'
 
 app.http('createDraft', {
   methods: ['POST'],
@@ -40,12 +41,21 @@ app.http('createDraft', {
       }
       const typeConfig = getContentTypeConfig(requestedType)
       const client = getSanityClient()
+      const normalizedSlug = body.slug.trim()
+      const existingSlugId = await findSlugConflictId(client, {
+        documentType: typeConfig.name,
+        slugField: typeConfig.slugField,
+        slug: normalizedSlug,
+      })
+      if (existingSlugId) {
+        return { status: 409, jsonBody: { error: '"slug" must be unique for this content type' } }
+      }
       const id = `${config.content.draftPrefix}${crypto.randomUUID()}`
       const createPayload: Record<string, unknown> = {
         _id: id,
         _type: typeConfig.name,
         [typeConfig.titleField]: body.title.trim(),
-        [typeConfig.slugField]: { _type: 'slug', current: body.slug.trim() },
+        [typeConfig.slugField]: { _type: 'slug', current: normalizedSlug },
       }
       const doc = await client.create(createPayload as Parameters<typeof client.create>[0])
       return {

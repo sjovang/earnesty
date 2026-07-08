@@ -13,6 +13,7 @@ const props = defineProps<{
   user?: AuthUser
   isAuthenticated?: boolean
   hasDocument?: boolean
+  canEditMetadata?: boolean
   canPublish?: boolean
   isDraft?: boolean
 }>()
@@ -28,7 +29,16 @@ const statusLabel = computed(() => {
   if (ss === 'error') return { text: 'Save failed', style: 'error' as const }
   return null
 })
-const emit = defineEmits<{ new: []; open: []; publish: []; help: []; settings: []; signin: []; logout: [] }>()
+const emit = defineEmits<{
+  new: []
+  open: []
+  metadata: []
+  publish: []
+  help: []
+  settings: []
+  signin: []
+  logout: []
+}>()
 
 const mobileMenuOpen = ref(false)
 const showUserModal = ref(false)
@@ -38,7 +48,7 @@ function openUserModal() {
   showUserModal.value = true
 }
 
-function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 'signin' | 'logout') {
+function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 'settings' | 'signin' | 'logout') {
   mobileMenuOpen.value = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event as any)
@@ -142,6 +152,19 @@ function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 's
           @click="isAuthenticated && $emit('open')"
         >
           Open
+        </button>
+        <span
+          class="menubar__sep"
+          aria-hidden="true"
+        />
+        <button
+          role="menuitem"
+          class="menubar__item"
+          :class="{ 'menubar__item--disabled': !canEditMetadata }"
+          :disabled="!canEditMetadata"
+          @click="canEditMetadata && $emit('metadata')"
+        >
+          Metadata
         </button>
         <span
           class="menubar__sep"
@@ -328,6 +351,15 @@ function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 's
           @click="isAuthenticated && mobileEmit('open')"
         >
           Open
+        </button>
+        <button
+          role="menuitem"
+          class="menubar__mobile-item"
+          :class="{ 'menubar__item--disabled': !canEditMetadata }"
+          :disabled="!canEditMetadata"
+          @click="canEditMetadata && mobileEmit('metadata')"
+        >
+          Metadata
         </button>
         <button
           role="menuitem"
