@@ -3,5 +3,5 @@ export interface AuthenticatedPrincipal {
   userId: string
   userDetails: string
   userRoles: string[]
-  claims: { typ: string; val: string }[]
+  claims?: { typ: string; val: string }[]
 }

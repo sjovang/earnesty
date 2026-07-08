@@ -4,7 +4,7 @@ import type { ApiAuthProvider } from './swa.js'
 
 export type PrincipalEncoding = 'base64-json' | 'json'
 
-function isClaimsArray(value: unknown): value is AuthenticatedPrincipal['claims'] {
+function isClaimsArray(value: unknown): value is NonNullable<AuthenticatedPrincipal['claims']> {
   return Array.isArray(value)
     && value.every(
       (claim) => typeof claim === 'object'
@@ -23,7 +23,7 @@ function isAuthenticatedPrincipal(value: unknown): value is AuthenticatedPrincip
     && typeof principal['userDetails'] === 'string'
     && Array.isArray(principal['userRoles'])
     && principal['userRoles'].every((role) => typeof role === 'string')
-    && isClaimsArray(principal['claims'])
+    && (principal['claims'] == null || isClaimsArray(principal['claims']))
 }
 
 export function parseHeaderPrincipal(
