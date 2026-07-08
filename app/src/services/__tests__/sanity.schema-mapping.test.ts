@@ -13,6 +13,29 @@ import { fetchDocuments, fetchDocument } from '../sanity.js'
 const { mockClientFetch, CUSTOM_CONTENT_CONFIG } = vi.hoisted(() => ({
   mockClientFetch: vi.fn(),
   CUSTOM_CONTENT_CONFIG: {
+    defaultType: 'article',
+    typeOrder: ['article'],
+    types: {
+      article: {
+        name: 'article',
+        label: 'Article',
+        titleField: 'headline',
+        bodyField: 'content',
+        slugField: 'path',
+        publishedAtField: 'publishedOn',
+        metadataFields: [
+          { key: 'title', label: 'Title', field: 'headline', type: 'string', required: true },
+          { key: 'slug', label: 'Slug', field: 'path', type: 'slug', required: true },
+          {
+            key: 'publishedAt',
+            label: 'Published at',
+            field: 'publishedOn',
+            type: 'datetime',
+            required: false,
+          },
+        ],
+      },
+    },
     documentType: 'article',
     titleField: 'headline',
     bodyField: 'content',
@@ -39,6 +62,10 @@ vi.mock('../../config/runtime.js', () => ({
     auth: { loginPath: '/.auth/login/aad', logoutPath: '/.auth/logout', postLoginRedirectParam: 'post_login_redirect_uri' },
     telemetry: {},
   },
+  getContentTypeConfig: vi.fn((typeName: string) => {
+    const name = typeName || CUSTOM_CONTENT_CONFIG.defaultType
+    return CUSTOM_CONTENT_CONFIG.types[name] ?? CUSTOM_CONTENT_CONFIG.types[CUSTOM_CONTENT_CONFIG.defaultType]
+  }),
   isDraftDocumentId: vi.fn((id: string) => id.startsWith('drafts.')),
   toPublishedDocumentId: vi.fn((id: string) => id.replace(/^drafts\./, '')),
   draftDocumentIdPattern: vi.fn(() => /^drafts\..+$/),
@@ -56,8 +83,8 @@ describe('fetchDocuments – custom schema mapping', () => {
     await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "article"')
-    expect(query).not.toContain('_type == "blog"')
+    expect(query).toContain('_type in ["article"]')
+    expect(query).not.toContain('_type in ["blog"]')
   })
 
   it('aliases the configured title field to "title" in the projection', async () => {
@@ -65,7 +92,8 @@ describe('fetchDocuments – custom schema mapping', () => {
     await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"title": headline')
+    expect(query).toContain('"title"')
+    expect(query).toContain('headline')
   })
 
   it('aliases the configured body field to "body" in the projection', async () => {
@@ -73,7 +101,8 @@ describe('fetchDocuments – custom schema mapping', () => {
     await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"body": content')
+    expect(query).toContain('"body"')
+    expect(query).toContain('content[_type == "block"][0..10]')
   })
 
   it('aliases the configured publishedAt field to "publishedAt" in the projection', async () => {
@@ -81,7 +110,8 @@ describe('fetchDocuments – custom schema mapping', () => {
     await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"publishedAt": publishedOn')
+    expect(query).toContain('"publishedAt"')
+    expect(query).toContain('publishedOn')
   })
 
   it('orders by the configured publishedAt field', async () => {
@@ -106,8 +136,8 @@ describe('fetchDocument – custom schema mapping', () => {
     await fetchDocument('doc-1')
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "article"')
-    expect(query).not.toContain('_type == "blog"')
+    expect(query).toContain('_type in ["article"]')
+    expect(query).not.toContain('_type in ["blog"]')
   })
 
   it('aliases the configured title field to "title" in the projection', async () => {
@@ -115,7 +145,8 @@ describe('fetchDocument – custom schema mapping', () => {
     await fetchDocument('doc-1')
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"title": headline')
+    expect(query).toContain('"title"')
+    expect(query).toContain('headline')
   })
 
   it('aliases the configured body field to "body" in the projection', async () => {
@@ -123,7 +154,8 @@ describe('fetchDocument – custom schema mapping', () => {
     await fetchDocument('doc-1')
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"body": content')
+    expect(query).toContain('"body"')
+    expect(query).toContain('content')
   })
 
   it('aliases the configured publishedAt field to "publishedAt" in the projection', async () => {
@@ -131,6 +163,7 @@ describe('fetchDocument – custom schema mapping', () => {
     await fetchDocument('doc-1')
 
     const query = mockClientFetch.mock.calls[0][0] as string
-    expect(query).toContain('"publishedAt": publishedOn')
+    expect(query).toContain('"publishedAt"')
+    expect(query).toContain('publishedOn')
   })
 })

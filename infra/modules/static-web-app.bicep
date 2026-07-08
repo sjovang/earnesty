@@ -30,6 +30,9 @@ param sanityProjectId string
 @description('Sanity dataset name.')
 param sanityDataset string
 
+@description('Sanity document type used by the app and API.')
+param sanityDocumentType string = ''
+
 @description('Application Insights connection string.')
 param appInsightsConnectionString string
 
@@ -52,13 +55,18 @@ resource appSettings 'Microsoft.Web/staticSites/config@2023-12-01' = {
   parent: staticWebApp
   name: 'appsettings'
   properties: {
-    AZURE_CLIENT_ID: entraClientId
-    AZURE_CLIENT_SECRET: entraClientSecret
-    AZURE_TENANT_ID: entraTenantId
-    SANITY_TOKEN: sanityToken
-    SANITY_PROJECT_ID: sanityProjectId
-    SANITY_DATASET: sanityDataset
-    APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
+    ...union(
+      {
+        AZURE_CLIENT_ID: entraClientId
+        AZURE_CLIENT_SECRET: entraClientSecret
+        AZURE_TENANT_ID: entraTenantId
+        SANITY_TOKEN: sanityToken
+        SANITY_PROJECT_ID: sanityProjectId
+        SANITY_DATASET: sanityDataset
+        APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
+      },
+      empty(sanityDocumentType) ? {} : { SANITY_DOCUMENT_TYPE: sanityDocumentType },
+    )
   }
 }
 

@@ -4,7 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
-import { getApiRuntimeConfig } from '../config/runtime.js'
+import { getApiRuntimeConfig, getContentTypeConfig } from '../config/runtime.js'
 
 app.http('createDraft', {
   methods: ['POST'],
@@ -16,9 +16,9 @@ app.http('createDraft', {
     const auth = requireAuthenticatedPrincipal(request)
     if ('response' in auth) return auth.response
 
-    let body: { title: unknown; slug: unknown }
+    let body: { title: unknown; slug: unknown; documentType?: unknown }
     try {
-      body = (await request.json()) as { title: unknown; slug: unknown }
+      body = (await request.json()) as { title: unknown; slug: unknown; documentType?: unknown }
     } catch {
       return { status: 400, jsonBody: { error: 'Invalid JSON body' } }
     }
@@ -32,16 +32,34 @@ app.http('createDraft', {
 
     try {
       const config = getApiRuntimeConfig()
+      const requestedType = typeof body.documentType === 'string' && body.documentType.trim()
+        ? body.documentType.trim()
+        : config.content.defaultType
+      if (!config.content.types[requestedType]) {
+        return { status: 400, jsonBody: { error: '"documentType" is invalid' } }
+      }
+      const typeConfig = getContentTypeConfig(requestedType)
       const client = getSanityClient()
       const id = `${config.content.draftPrefix}${crypto.randomUUID()}`
       const createPayload: Record<string, unknown> = {
         _id: id,
-        _type: config.content.documentType,
-        [config.content.titleField]: body.title.trim(),
-        [config.content.slugField]: { _type: 'slug', current: body.slug.trim() },
+        _type: typeConfig.name,
+        [typeConfig.titleField]: body.title.trim(),
+        [typeConfig.slugField]: { _type: 'slug', current: body.slug.trim() },
       }
       const doc = await client.create(createPayload as Parameters<typeof client.create>[0])
-      return { status: 201, jsonBody: doc }
+      return {
+        status: 201,
+        jsonBody: {
+          _id: doc._id,
+          _type: typeConfig.name,
+          _createdAt: doc._createdAt,
+          _updatedAt: doc._updatedAt,
+          title: doc[typeConfig.titleField as keyof typeof doc] ?? body.title.trim(),
+          publishedAt: doc[typeConfig.publishedAtField as keyof typeof doc] ?? null,
+          body: doc[typeConfig.bodyField as keyof typeof doc] ?? [],
+        },
+      }
     } catch (err) {
       console.error('[createDraft]', err)
       return { status: 502, jsonBody: { error: 'Failed to create draft' } }

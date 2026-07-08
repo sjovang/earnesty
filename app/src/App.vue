@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
+import NewDocumentModal from './components/NewDocumentModal.vue'
 import HelpModal from './components/HelpModal.vue'
 import SettingsModal from './components/SettingsModal.vue'
 import PublishModal from './components/PublishModal.vue'
@@ -14,6 +15,7 @@ import { trackException, trackEvent } from './services/appInsights'
 import { runtimeConfig } from './config/runtime'
 
 const showOpen = ref(false)
+const showNew = ref(false)
 const showHelp = ref(false)
 const showSettings = ref(false)
 const showPublishModal = ref(false)
@@ -66,17 +68,17 @@ const publishTooltip = computed(() => {
   return publishShortcut
 })
 
-async function publishDocument() {
-  if (!canPublish.value) return
-
-  // Check required fields — show modal if any are missing
-  const { title, slug } = editorStore.meta
-  if (!title.trim() || !slug.trim()) {
-    showPublishModal.value = true
+function onNewDocument() {
+  if (!auth.isAuthenticated) {
+    editorStore.resetToPlaceholder()
     return
   }
+  showNew.value = true
+}
 
-  await doPublish()
+async function publishDocument() {
+  if (!canPublish.value) return
+  showPublishModal.value = true
 }
 
 async function onPublishConfirm(meta: DocumentMeta) {
@@ -87,8 +89,8 @@ async function onPublishConfirm(meta: DocumentMeta) {
   editorStore.updateMeta(meta)
 
   try {
-    // Save the updated title to Sanity before publishing
-    await apiSaveDocument(doc._id, undefined, meta.title)
+    // Save metadata updates to Sanity before publishing
+    await apiSaveDocument(doc._id, undefined, meta.title, editorStore.metadataPayload())
   } catch (err) {
     console.error('[publish] pre-publish save failed:', err)
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'pre_publish_save' })
@@ -150,7 +152,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     :can-publish="canPublish"
     :is-draft="isDraft"
     :publish-tooltip="publishTooltip"
-    @new="editorStore.resetToPlaceholder()"
+    @new="onNewDocument"
     @open="showOpen = true"
     @publish="publishDocument"
     @help="showHelp = true"
@@ -163,6 +165,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     v-if="showOpen"
     @close="showOpen = false"
     @select="onDocumentSelected"
+  />
+  <NewDocumentModal
+    v-if="showNew"
+    @close="showNew = false"
+    @created="showNew = false"
   />
   <HelpModal
     v-if="showHelp"

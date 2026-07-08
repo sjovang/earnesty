@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { reactive, ref, computed, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { useEditorStore, type DocumentMeta } from '../stores/editor'
+import { getContentTypeConfig } from '../config/runtime'
 
 const emit = defineEmits<{
   close: []
@@ -9,27 +10,22 @@ const emit = defineEmits<{
 }>()
 
 const store = useEditorStore()
+const typeConfig = computed(() => getContentTypeConfig(store.meta.documentType))
+const fields = computed(() => typeConfig.value.metadataFields)
 
-const activeTab = ref<'required' | 'optional'>('required')
+const values = reactive<Record<string, unknown>>({})
+for (const field of fields.value) {
+  values[field.key] = store.getMetaFieldValue(field.key)
+}
 
-const form = reactive({
-  title: store.meta.title,
-  slug: store.meta.slug,
-  publishedAt: store.meta.publishedAt
-    ? store.meta.publishedAt.slice(0, 16)
-    : '',
-  tags: [...store.meta.tags],
-})
+const slugManuallyEdited = ref(!!String(values['slug'] ?? '').trim())
 
-const slugManuallyEdited = ref(!!store.meta.slug)
-const tagInput = ref('')
-
-// Auto-generate slug from title unless manually edited
 watch(
-  () => form.title,
-  (val) => {
-    if (!slugManuallyEdited.value) {
-      form.slug = store.slugify(val)
+  () => values['title'],
+  (title) => {
+    if (slugManuallyEdited.value || !fields.value.some((field) => field.key === 'slug')) return
+    if (typeof title === 'string') {
+      values['slug'] = store.slugify(title)
     }
   },
 )
@@ -38,144 +34,149 @@ function onSlugInput() {
   slugManuallyEdited.value = true
 }
 
-const canPublish = computed(() => !!form.title.trim() && !!form.slug.trim())
-
-// ── Tags ──────────────────────────────────────────────────────────────────────
-function addTag() {
-  const tag = tagInput.value.trim().replace(/,+$/, '')
-  if (tag && !form.tags.includes(tag)) {
-    form.tags.push(tag)
+function parseStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string')
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
   }
-  tagInput.value = ''
+  return []
 }
 
-function removeTag(tag: string) {
-  form.tags = form.tags.filter((t) => t !== tag)
-}
-
-function onTagKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' || e.key === ',') {
-    e.preventDefault()
-    addTag()
-  } else if (e.key === 'Backspace' && tagInput.value === '' && form.tags.length) {
-    form.tags.pop()
+function readFieldValue(key: string, type: string): unknown {
+  const value = values[key]
+  switch (type) {
+    case 'string':
+    case 'slug':
+    case 'datetime':
+      return typeof value === 'string' ? value.trim() : ''
+    case 'stringArray':
+      return parseStringArray(value)
+    case 'boolean':
+      return value === true
+    default:
+      return value
   }
 }
 
-// ── Publish ───────────────────────────────────────────────────────────────────
-function onPublish() {
+const canPublish = computed(() =>
+  fields.value.every((field) => {
+    if (!field.required) return true
+    const value = readFieldValue(field.key, field.type)
+    if (typeof value === 'string') return value.trim().length > 0
+    if (Array.isArray(value)) return value.length > 0
+    if (typeof value === 'boolean') return value
+    return value !== null && value !== undefined
+  }))
+
+function buildMeta(): DocumentMeta {
+  const custom = { ...store.meta.custom }
+  let title = store.meta.title
+  let slug = store.meta.slug
+  let publishedAt = store.meta.publishedAt
+  let tags = [...store.meta.tags]
+
+  for (const field of fields.value) {
+    const value = readFieldValue(field.key, field.type)
+    if (field.key === 'title' && typeof value === 'string') {
+      title = value
+      continue
+    }
+    if (field.key === 'slug' && typeof value === 'string') {
+      slug = value
+      continue
+    }
+    if (field.key === 'publishedAt' && typeof value === 'string') {
+      publishedAt = value ? new Date(value).toISOString() : ''
+      continue
+    }
+    if (field.key === 'tags' && Array.isArray(value)) {
+      tags = value.filter((item): item is string => typeof item === 'string')
+      continue
+    }
+    custom[field.key] = value
+  }
+
+  return {
+    documentType: store.meta.documentType,
+    title,
+    slug,
+    publishedAt,
+    tags,
+    custom,
+  }
+}
+
+function formatDateTimeValue(value: unknown): string {
+  if (typeof value !== 'string' || !value) return ''
+  return value.slice(0, 16)
+}
+
+function saveAndPublish() {
   if (!canPublish.value) return
-  emit('publish', {
-    title: form.title.trim(),
-    slug: form.slug.trim(),
-    publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : '',
-    tags: form.tags,
-  })
+  emit('publish', buildMeta())
 }
 </script>
 
 <template>
   <BaseModal
-    title="Publish document"
+    :title="`Metadata — ${typeConfig.label}`"
     @close="emit('close')"
   >
     <div class="publish-modal">
-      <!-- Tabs -->
       <div
-        class="tabs"
-        role="tablist"
+        v-for="field in fields"
+        :key="field.key"
+        class="field"
       >
-        <button
-          role="tab"
-          :class="['tabs__tab', { 'tabs__tab--active': activeTab === 'required' }]"
-          :aria-selected="activeTab === 'required'"
-          @click="activeTab = 'required'"
+        <label
+          class="field__label"
+          :for="`meta-${field.key}`"
         >
-          Required
-        </button>
-        <button
-          role="tab"
-          :class="['tabs__tab', { 'tabs__tab--active': activeTab === 'optional' }]"
-          :aria-selected="activeTab === 'optional'"
-          @click="activeTab = 'optional'"
+          {{ field.label }}<span v-if="field.required"> *</span>
+        </label>
+        <input
+          v-if="field.type === 'string' || field.type === 'slug'"
+          :id="`meta-${field.key}`"
+          v-model="values[field.key]"
+          class="field__input"
+          :class="{ 'field__input--mono': field.type === 'slug' }"
+          type="text"
+          :placeholder="field.type === 'slug' ? 'auto-generated-from-title' : ''"
+          @input="field.type === 'slug' && onSlugInput()"
         >
-          Optional
-        </button>
-      </div>
-
-      <!-- Required tab -->
-      <div
-        v-show="activeTab === 'required'"
-        role="tabpanel"
-        class="tab-panel"
-      >
-        <label class="field">
-          <span class="field__label">Title</span>
+        <input
+          v-else-if="field.type === 'datetime'"
+          :id="`meta-${field.key}`"
+          :value="formatDateTimeValue(values[field.key])"
+          class="field__input"
+          type="datetime-local"
+          @input="values[field.key] = ($event.target as HTMLInputElement).value"
+        >
+        <input
+          v-else-if="field.type === 'stringArray'"
+          :id="`meta-${field.key}`"
+          :value="Array.isArray(values[field.key]) ? (values[field.key] as string[]).join(', ') : String(values[field.key] ?? '')"
+          class="field__input"
+          type="text"
+          placeholder="comma,separated,values"
+          @input="values[field.key] = ($event.target as HTMLInputElement).value"
+        >
+        <label
+          v-else-if="field.type === 'boolean'"
+          class="field__toggle"
+        >
           <input
-            v-model="form.title"
-            class="field__input"
-            type="text"
-            placeholder="Give your document a title"
-            autofocus
+            :id="`meta-${field.key}`"
+            v-model="values[field.key]"
+            type="checkbox"
           >
-        </label>
-
-        <label class="field">
-          <span class="field__label">Slug</span>
-          <input
-            v-model="form.slug"
-            class="field__input field__input--mono"
-            type="text"
-            placeholder="auto-generated-from-title"
-            @input="onSlugInput"
-          >
+          <span>Enabled</span>
         </label>
       </div>
 
-      <!-- Optional tab -->
-      <div
-        v-show="activeTab === 'optional'"
-        role="tabpanel"
-        class="tab-panel"
-      >
-        <label class="field">
-          <span class="field__label">Published at</span>
-          <input
-            v-model="form.publishedAt"
-            class="field__input"
-            type="datetime-local"
-          >
-        </label>
-
-        <div class="field">
-          <span class="field__label">Tags</span>
-          <div class="tag-input">
-            <span
-              v-for="tag in form.tags"
-              :key="tag"
-              class="tag"
-            >
-              {{ tag }}
-              <button
-                type="button"
-                class="tag__remove"
-                @click="removeTag(tag)"
-              >✕</button>
-            </span>
-            <input
-              v-model="tagInput"
-              class="tag-input__field"
-              type="text"
-              placeholder="Add tag…"
-              @keydown="onTagKeydown"
-              @blur="addTag"
-            >
-          </div>
-          <span class="field__hint">Press Enter or comma to add a tag</span>
-        </div>
-      </div>
-
-      <!-- Actions -->
       <div class="actions">
         <button
           class="btn btn--ghost"
@@ -186,7 +187,7 @@ function onPublish() {
         <button
           class="btn btn--primary"
           :disabled="!canPublish"
-          @click="onPublish"
+          @click="saveAndPublish"
         >
           Publish
         </button>
@@ -199,46 +200,9 @@ function onPublish() {
 .publish-modal {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.9rem;
 }
 
-/* ── Tabs ──────────────────────────────────────────────────────────────────── */
-.tabs {
-  display: flex;
-  gap: 0;
-  border-bottom: 1px solid var(--ctp-surface0);
-}
-
-.tabs__tab {
-  flex: 1;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--ctp-subtext0);
-  font-size: 0.85rem;
-  font-weight: 500;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
-}
-
-.tabs__tab:hover {
-  color: var(--ctp-text);
-}
-
-.tabs__tab--active {
-  color: var(--ctp-mauve);
-  border-bottom-color: var(--ctp-mauve);
-}
-
-/* ── Tab panels ────────────────────────────────────────────────────────────── */
-.tab-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-/* ── Fields ────────────────────────────────────────────────────────────────── */
 .field {
   display: flex;
   flex-direction: column;
@@ -273,70 +237,17 @@ function onPublish() {
 
 .field__input--mono {
   font-family: ui-monospace, 'Cascadia Code', monospace;
-  font-size: 0.82rem;
   color: var(--ctp-sapphire);
 }
 
-.field__hint {
-  font-size: 0.72rem;
-  color: var(--ctp-overlay1);
-}
-
-/* ── Tag input ─────────────────────────────────────────────────────────────── */
-.tag-input {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.35rem 0.5rem;
-  background: var(--ctp-surface0);
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 6px;
-  min-height: 2.4rem;
-  align-items: center;
-  transition: border-color 0.15s ease;
-}
-
-.tag-input:focus-within {
-  border-color: var(--ctp-mauve);
-}
-
-.tag {
+.field__toggle {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.15rem 0.45rem;
-  background: var(--ctp-surface1);
-  border-radius: 4px;
-  font-size: 0.8rem;
-  color: var(--ctp-lavender);
-}
-
-.tag__remove {
-  background: none;
-  border: none;
-  color: var(--ctp-overlay1);
-  font-size: 0.65rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  transition: color 0.1s ease;
-}
-
-.tag__remove:hover {
-  color: var(--ctp-red);
-}
-
-.tag-input__field {
-  flex: 1;
-  min-width: 6rem;
-  background: none;
-  border: none;
-  outline: none;
+  gap: 0.5rem;
   color: var(--ctp-text);
   font-size: 0.9rem;
 }
 
-/* ── Actions ───────────────────────────────────────────────────────────────── */
 .actions {
   display: flex;
   justify-content: flex-end;

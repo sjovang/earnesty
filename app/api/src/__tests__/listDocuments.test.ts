@@ -100,14 +100,14 @@ describe('listDocuments handler', () => {
     expect(res.jsonBody).toEqual({ error: 'Failed to list documents' })
   })
 
-  it('passes a GROQ query that filters by blog type', async () => {
+  it('passes a GROQ query that filters by configured type list', async () => {
     const mockFetch = vi.fn().mockResolvedValue([])
     vi.mocked(getSanityClient).mockReturnValue({ fetch: mockFetch } as any)
 
     await getHandler()(makeRequest())
 
     const query = mockFetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "blog"')
+    expect(query).toContain('_type in ["blog"]')
     expect(query).toContain('order(')
   })
 })
@@ -142,8 +142,8 @@ describe('listDocuments handler – custom schema mapping', () => {
     await getHandler()(makeRequest())
 
     const query = mockFetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "article"')
-    expect(query).not.toContain('_type == "blog"')
+    expect(query).toContain('_type in ["article"]')
+    expect(query).not.toContain('_type in ["blog"]')
   })
 
   it('uses configured field names in the projection', async () => {
@@ -153,8 +153,11 @@ describe('listDocuments handler – custom schema mapping', () => {
     await getHandler()(makeRequest())
 
     const query = mockFetch.mock.calls[0][0] as string
-    expect(query).toContain('"title": headline')
-    expect(query).toContain('"publishedAt": publishedOn')
-    expect(query).toContain('"body": content')
+    expect(query).toContain('"title"')
+    expect(query).toContain('headline')
+    expect(query).toContain('"publishedAt"')
+    expect(query).toContain('publishedOn')
+    expect(query).toContain('"body"')
+    expect(query).toContain('content[_type == "block"][0..10]')
   })
 })

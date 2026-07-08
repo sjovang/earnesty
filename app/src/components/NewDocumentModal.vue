@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { apiCreateDraft } from '../services/api'
 import { useEditorStore } from '../stores/editor'
+import { runtimeConfig } from '../config/runtime'
 
 const emit = defineEmits<{
   close: []
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 const editorStore = useEditorStore()
 
 const title = ref('')
+const selectedType = ref(editorStore.meta.documentType || runtimeConfig.content.defaultType)
 const creating = ref(false)
 const error = ref<string | null>(null)
 
@@ -25,7 +27,7 @@ async function create() {
   creating.value = true
   error.value = null
   try {
-    const doc = await apiCreateDraft(title.value.trim(), slug.value)
+    const doc = await apiCreateDraft(title.value.trim(), slug.value, selectedType.value)
     editorStore.openDocument(doc, '<p></p>')
     emit('created')
     emit('close')
@@ -50,6 +52,23 @@ function onKeydown(e: KeyboardEvent) {
     @close="$emit('close')"
   >
     <div class="new-doc">
+      <label class="field">
+        <span class="field__label">Type</span>
+        <select
+          v-model="selectedType"
+          class="field__input"
+          :disabled="creating"
+        >
+          <option
+            v-for="typeName in runtimeConfig.content.typeOrder"
+            :key="typeName"
+            :value="typeName"
+          >
+            {{ runtimeConfig.content.types[typeName]?.label ?? typeName }}
+          </option>
+        </select>
+      </label>
+
       <label class="field">
         <span class="field__label">Title</span>
         <input

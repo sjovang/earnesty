@@ -53,7 +53,8 @@ function makePatchClient(opts?: { commitThrows?: boolean }) {
     : vi.fn().mockResolvedValue({ transactionId: 'tx-123' })
   const set = vi.fn().mockReturnValue({ commit })
   const patch = vi.fn().mockReturnValue({ set })
-  return { patch, set, commit }
+  const getDocument = vi.fn().mockResolvedValue({ _id: 'drafts.550e8400-e29b-41d4-a716-446655440000', _type: 'blog' })
+  return { patch, set, commit, getDocument }
 }
 
 const VALID_PRINCIPAL = {
@@ -101,7 +102,7 @@ describe('saveDocument handler', () => {
   it('returns 400 when neither blocks nor title is provided', async () => {
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: {} }))
     expect(res.status).toBe(400)
-    expect(res.jsonBody).toEqual({ error: 'At least one of "blocks" or "title" must be provided' })
+    expect(res.jsonBody).toEqual({ error: 'At least one of "blocks", "title", or "metadata" must be provided' })
   })
 
   it('returns 400 when title is provided but not a string', async () => {
@@ -117,8 +118,8 @@ describe('saveDocument handler', () => {
   })
 
   it('saves blocks without title and returns 204', async () => {
-    const { patch, set, commit } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, commit, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks } }))
@@ -130,8 +131,8 @@ describe('saveDocument handler', () => {
   })
 
   it('saves blocks with title and returns 204', async () => {
-    const { patch, set, commit } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, commit, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks, title: 'My Post' } }))
@@ -142,8 +143,8 @@ describe('saveDocument handler', () => {
   })
 
   it('does not include title field when title is undefined', async () => {
-    const { patch, set } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
@@ -152,8 +153,8 @@ describe('saveDocument handler', () => {
   })
 
   it('saves title without blocks and returns 204', async () => {
-    const { patch, set, commit } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, commit, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { title: 'Updated Title' } }))
 
@@ -164,8 +165,8 @@ describe('saveDocument handler', () => {
   })
 
   it('does not include body field when blocks is undefined', async () => {
-    const { patch, set } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { title: 'Only Title' } }))
 
@@ -175,8 +176,8 @@ describe('saveDocument handler', () => {
   })
 
   it('returns 502 when Sanity client throws', async () => {
-    const { patch } = makePatchClient({ commitThrows: true })
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, getDocument } = makePatchClient({ commitThrows: true })
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
@@ -188,7 +189,10 @@ describe('saveDocument handler', () => {
     const commit = vi.fn().mockRejectedValue('string error')
     const set = vi.fn().mockReturnValue({ commit })
     const patch = vi.fn().mockReturnValue({ set })
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    vi.mocked(getSanityClient).mockReturnValue({
+      patch,
+      getDocument: vi.fn().mockResolvedValue({ _id: 'drafts.550e8400-e29b-41d4-a716-446655440000', _type: 'blog' }),
+    } as any)
 
     const res = await getHandler()(makeRequest({ params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' }, body: { blocks: [] } }))
 
@@ -219,8 +223,8 @@ describe('saveDocument handler – custom schema mapping', () => {
   })
 
   it('uses the configured body field name when saving blocks', async () => {
-    const { patch, set } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
     await getHandler()(makeRequest({
@@ -232,8 +236,8 @@ describe('saveDocument handler – custom schema mapping', () => {
   })
 
   it('uses the configured title field name when saving title', async () => {
-    const { patch, set } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     await getHandler()(makeRequest({
       params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' },
@@ -244,8 +248,8 @@ describe('saveDocument handler – custom schema mapping', () => {
   })
 
   it('uses both configured field names when saving blocks and title together', async () => {
-    const { patch, set } = makePatchClient()
-    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+    const { patch, set, getDocument } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch, getDocument } as any)
 
     const blocks = [{ _type: 'block', children: [] }]
     await getHandler()(makeRequest({

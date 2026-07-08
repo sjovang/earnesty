@@ -25,6 +25,22 @@ function makeConfig(
       ...overrides,
     },
     content: {
+      defaultType: 'blog',
+      typeOrder: ['blog'],
+      types: {
+        blog: {
+          name: 'blog',
+          label: 'Blog',
+          titleField: 'title',
+          bodyField: 'body',
+          slugField: 'slug',
+          publishedAtField: 'publishedAt',
+          metadataFields: [
+            { key: 'title', label: 'Title', field: 'title', type: 'string', required: true },
+            { key: 'slug', label: 'Slug', field: 'slug', type: 'slug', required: true },
+          ],
+        },
+      },
       documentType: 'blog',
       draftPrefix: 'drafts.',
       titleField: 'title',
