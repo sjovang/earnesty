@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
-import type { SwaUser } from '../stores/auth'
+import type { AuthUser } from '../stores/auth'
 
-defineProps<{ user: SwaUser }>()
+defineProps<{ user: AuthUser }>()
 
 const emit = defineEmits<{ close: []; logout: [] }>()
 

@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 import { isDraftDocumentId, toPublishedDocumentId } from '../config/runtime.js'
 
 app.http('publishDocument', {
@@ -13,12 +13,8 @@ app.http('publishDocument', {
   handler: async (
     request: HttpRequest,
   ): Promise<HttpResponseInit> => {
-    const principal = parseClientPrincipal(
-      request.headers.get('x-ms-client-principal'),
-    )
-    if (!principal) {
-      return { status: 401, jsonBody: { error: 'Not authenticated' } }
-    }
+    const auth = requireAuthenticatedPrincipal(request)
+    if ('response' in auth) return auth.response
 
     const id = request.params['id']
     if (!id) {

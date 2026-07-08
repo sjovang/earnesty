@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { parseClientPrincipal } from '../shared.js'
+import { requireAuthenticatedPrincipal } from '../shared.js'
 
 app.http('getUser', {
   methods: ['GET'],
@@ -12,20 +12,16 @@ app.http('getUser', {
   handler: async (
     request: HttpRequest,
   ): Promise<HttpResponseInit> => {
-    const principal = parseClientPrincipal(
-      request.headers.get('x-ms-client-principal'),
-    )
-    if (!principal) {
-      return { status: 401, jsonBody: { error: 'Not authenticated' } }
-    }
+    const auth = requireAuthenticatedPrincipal(request)
+    if ('response' in auth) return auth.response
 
     return {
       status: 200,
       jsonBody: {
-        identityProvider: principal.identityProvider,
-        userId: principal.userId,
-        userDetails: principal.userDetails,
-        userRoles: principal.userRoles,
+        identityProvider: auth.principal.identityProvider,
+        userId: auth.principal.userId,
+        userDetails: auth.principal.userDetails,
+        userRoles: auth.principal.userRoles,
       },
     }
   },

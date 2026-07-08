@@ -5,7 +5,7 @@ import {
 } from '@azure/functions'
 import busboy from 'busboy'
 import { fileTypeFromBuffer } from 'file-type'
-import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 
 const MAX_FILE_SIZE = 16 * 1024 * 1024 // 16 MB
 
@@ -64,12 +64,8 @@ app.http('uploadImage', {
   handler: async (
     request: HttpRequest,
   ): Promise<HttpResponseInit> => {
-    const principal = parseClientPrincipal(
-      request.headers.get('x-ms-client-principal'),
-    )
-    if (!principal) {
-      return { status: 401, jsonBody: { error: 'Not authenticated' } }
-    }
+    const auth = requireAuthenticatedPrincipal(request)
+    if ('response' in auth) return auth.response
 
     const contentType = request.headers.get('content-type') ?? ''
     if (!contentType.includes('multipart/form-data')) {

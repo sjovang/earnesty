@@ -1,18 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { parseClientPrincipal } from '../shared.js'
+import { parseSwaClientPrincipal } from '../auth/providers/swa.js'
 
-describe('parseClientPrincipal', () => {
+describe('parseSwaClientPrincipal', () => {
   it('returns null when header is null', () => {
-    expect(parseClientPrincipal(null)).toBeNull()
+    expect(parseSwaClientPrincipal(null)).toBeNull()
   })
 
   it('returns null for invalid base64', () => {
-    expect(parseClientPrincipal('not valid base64!!!')).toBeNull()
+    expect(parseSwaClientPrincipal('not valid base64!!!')).toBeNull()
   })
 
   it('returns null for valid base64 but invalid JSON', () => {
     const invalid = Buffer.from('not json at all').toString('base64')
-    expect(parseClientPrincipal(invalid)).toBeNull()
+    expect(parseSwaClientPrincipal(invalid)).toBeNull()
   })
 
   it('parses a valid base64-encoded principal', () => {
@@ -24,7 +24,7 @@ describe('parseClientPrincipal', () => {
       claims: [{ typ: 'name', val: 'Test User' }],
     }
     const encoded = Buffer.from(JSON.stringify(principal)).toString('base64')
-    expect(parseClientPrincipal(encoded)).toEqual(principal)
+    expect(parseSwaClientPrincipal(encoded)).toEqual(principal)
   })
 })
 

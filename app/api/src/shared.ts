@@ -1,5 +1,8 @@
 import { createClient, type SanityClient } from '@sanity/client'
+import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { getApiRuntimeConfig } from './config/runtime.js'
+import { getApiAuthBoundary } from './auth/provider.js'
+import type { AuthenticatedPrincipal } from './auth/types.js'
 
 let _client: SanityClient | null = null
 
@@ -21,23 +24,12 @@ export function getSanityClient(): SanityClient {
   return _client
 }
 
-export interface ClientPrincipal {
-  identityProvider: string
-  userId: string
-  userDetails: string
-  userRoles: string[]
-  claims: { typ: string; val: string }[]
-}
-
-/** Parses the SWA client principal from the request header. */
-export function parseClientPrincipal(
-  header: string | null,
-): ClientPrincipal | null {
-  if (!header) return null
-  try {
-    const decoded = Buffer.from(header, 'base64').toString('utf-8')
-    return JSON.parse(decoded) as ClientPrincipal
-  } catch {
-    return null
+export function requireAuthenticatedPrincipal(
+  request: HttpRequest,
+): { principal: AuthenticatedPrincipal } | { response: HttpResponseInit } {
+  const principal = getApiAuthBoundary().getPrincipal(request)
+  if (!principal) {
+    return { response: { status: 401, jsonBody: { error: 'Not authenticated' } } }
   }
+  return { principal }
 }

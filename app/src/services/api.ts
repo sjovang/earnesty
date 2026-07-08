@@ -1,6 +1,6 @@
 import type { SanityBodyBlock, BlogDocument } from './sanity'
 import { trackException } from './appInsights'
-import { runtimeConfig } from '../config/runtime'
+import { authProvider } from './authProvider'
 
 export interface ImageAsset {
   assetRef: string
@@ -9,8 +9,6 @@ export interface ImageAsset {
   height: number | null
 }
 
-const LOGIN_PATH = runtimeConfig.auth.loginPath
-const POST_LOGIN_REDIRECT_PARAM = runtimeConfig.auth.postLoginRedirectParam
 const REDIRECT_COOLDOWN_MS = 10_000
 const REDIRECT_TS_KEY = '__auth_redirect_ts'
 
@@ -22,12 +20,8 @@ function redirectToLogin(): never {
   }
   sessionStorage.setItem(REDIRECT_TS_KEY, String(now))
 
-  let redirectUri = window.location.pathname + window.location.search + window.location.hash
-  // Ensure the URI is a safe relative path (defence-in-depth against open redirects)
-  if (!redirectUri.startsWith('/') || redirectUri.startsWith('//')) {
-    redirectUri = '/'
-  }
-  window.location.href = `${LOGIN_PATH}?${POST_LOGIN_REDIRECT_PARAM}=${encodeURIComponent(redirectUri)}`
+  const redirectUri = window.location.pathname + window.location.search + window.location.hash
+  window.location.href = authProvider.getLoginUrl(redirectUri)
   throw new Error('Not authenticated')
 }
 
@@ -99,13 +93,6 @@ export async function apiPublishDocument(
   )
 }
 
-export interface SwaUser {
-  identityProvider: string
-  userId: string
-  userDetails: string
-  userRoles: string[]
-}
-
 /** Uploads an image file to Sanity via the API proxy. */
 export async function apiUploadImage(file: File): Promise<ImageAsset> {
   const form = new FormData()
@@ -121,16 +108,4 @@ export async function apiListDocuments(): Promise<BlogDocument[]> {
 /** Fetches all image assets from Sanity via the API proxy. */
 export async function apiListImages(): Promise<ImageAsset[]> {
   return apiFetch<ImageAsset[]>('/api/sanity/images')
-}
-
-/** Fetches the current user from the SWA auth endpoint. */
-export async function apiGetUser(): Promise<SwaUser | null> {
-  try {
-    const res = await fetch('/.auth/me')
-    if (!res.ok) return null
-    const data = (await res.json()) as { clientPrincipal: SwaUser | null }
-    return data.clientPrincipal
-  } catch {
-    return null
-  }
 }

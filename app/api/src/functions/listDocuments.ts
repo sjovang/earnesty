@@ -3,7 +3,7 @@ import {
   type HttpRequest,
   type HttpResponseInit,
 } from '@azure/functions'
-import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 import { getApiRuntimeConfig } from '../config/runtime.js'
 
 app.http('listDocuments', {
@@ -13,12 +13,8 @@ app.http('listDocuments', {
   handler: async (
     request: HttpRequest,
   ): Promise<HttpResponseInit> => {
-    const principal = parseClientPrincipal(
-      request.headers.get('x-ms-client-principal'),
-    )
-    if (!principal) {
-      return { status: 401, jsonBody: { error: 'Not authenticated' } }
-    }
+    const auth = requireAuthenticatedPrincipal(request)
+    if ('response' in auth) return auth.response
 
     try {
       const config = getApiRuntimeConfig()
