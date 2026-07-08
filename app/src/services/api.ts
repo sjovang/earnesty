@@ -127,6 +127,11 @@ export async function apiListDocuments(): Promise<ContentDocument[]> {
   return apiFetch<ContentDocument[]>('/api/sanity/documents')
 }
 
+/** Fetches a single content document (draft or published) via the API proxy. */
+export async function apiGetDocument(id: string): Promise<ContentDocument | null> {
+  return apiFetch<ContentDocument | null>(`/api/sanity/documents/${encodeURIComponent(id)}`)
+}
+
 /** Fetches all image assets from Sanity via the API proxy. */
 export async function apiListImages(): Promise<ImageAsset[]> {
   return apiFetch<ImageAsset[]>('/api/sanity/images')
