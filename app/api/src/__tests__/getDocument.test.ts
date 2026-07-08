@@ -71,11 +71,13 @@ describe('getDocument handler', () => {
   it('returns 200 with the fetched document', async () => {
     const doc = {
       _id: 'drafts.abc',
+      _type: 'blog',
       _createdAt: '2024-01-01',
       _updatedAt: '2024-01-02',
       publishedAt: null,
       title: 'Draft',
       body: [],
+      metadata: { title: 'Draft', slug: 'draft', publishedAt: null, tags: [] },
     }
     const fetch = vi.fn().mockResolvedValue(doc)
     vi.mocked(getSanityClient).mockReturnValue({ fetch } as any)
@@ -112,10 +114,8 @@ describe('getDocument handler – custom schema mapping', () => {
     process.env = {
       ...originalEnv,
       NODE_ENV: 'test',
-      SANITY_DOCUMENT_TYPE: 'article',
-      SANITY_TITLE_FIELD: 'headline',
-      SANITY_BODY_FIELD: 'content',
-      SANITY_PUBLISHED_AT_FIELD: 'publishedOn',
+      SANITY_SCHEMA_CONFIG:
+        '{"defaultType":"article","types":[{"name":"article","titleField":"headline","bodyField":"content","slugField":"slug","publishedAtField":"publishedOn"},{"name":"note","titleField":"name","bodyField":"blocks","slugField":"path","publishedAtField":"updatedAt"}]}',
     }
     clearApiRuntimeConfigCache()
     vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
@@ -132,9 +132,13 @@ describe('getDocument handler – custom schema mapping', () => {
 
     await getHandler()(makeRequest({ id: 'drafts.abc' }))
     const query = fetch.mock.calls[0][0] as string
-    expect(query).toContain('_type == "article"')
-    expect(query).toContain('"title": headline')
-    expect(query).toContain('"publishedAt": publishedOn')
-    expect(query).toContain('"body": content')
+    expect(query).toContain('_type in ["article", "note"]')
+    expect(query).toContain('_type == "article" => headline')
+    expect(query).toContain('_type == "note" => name')
+    expect(query).toContain('_type == "article" => publishedOn')
+    expect(query).toContain('_type == "note" => updatedAt')
+    expect(query).toContain('_type == "article" => content')
+    expect(query).toContain('_type == "note" => blocks')
+    expect(query).toContain('"metadata":')
   })
 })

@@ -9,7 +9,7 @@ import SettingsModal from './components/SettingsModal.vue'
 import PublishModal from './components/PublishModal.vue'
 import { useEditorStore, type DocumentMeta } from './stores/editor'
 import { useAuthStore } from './stores/auth'
-import { fetchDocument, portableTextToHtml, type ContentDocument } from './services/sanity'
+import { portableTextToHtml, type ContentDocument } from './services/sanity'
 import { apiGetDocument, apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
 import { runtimeConfig } from './config/runtime'
@@ -118,7 +118,7 @@ async function doPublish() {
   editorStore.setPublishStatus('publishing')
   try {
     const { _id: publishedId } = await apiPublishDocument(doc._id)
-    const published = await fetchDocument(publishedId)
+    const published = await apiGetDocument(publishedId)
     if (!published) {
       console.error('[publish] could not fetch published document', publishedId)
       editorStore.setPublishStatus('error')
