@@ -19,6 +19,8 @@ describe('createRuntimeConfig', () => {
 
     expect(config.content.documentType).toBe('blog')
     expect(config.content.draftPrefix).toBe('drafts.')
+    expect(config.auth.provider).toBe('swa')
+    expect(config.auth.currentUserPath).toBe('/.auth/me')
     expect(config.auth.loginPath).toBe('/.auth/login/aad')
     expect(config.app.name).toBe('Earnesty')
   })
@@ -58,5 +60,16 @@ describe('createRuntimeConfig', () => {
       slugField: 'path',
       publishedAtField: 'publishedOn',
     })
+  })
+
+  it('switches the default current-user path for api auth provider', () => {
+    const config = createRuntimeConfig(makeEnv({ VITE_AUTH_PROVIDER: 'api' }))
+    expect(config.auth.currentUserPath).toBe('/api/me')
+  })
+
+  it('throws on invalid auth provider', () => {
+    expect(() => createRuntimeConfig(makeEnv({ VITE_AUTH_PROVIDER: 'custom' }))).toThrow(
+      'VITE_AUTH_PROVIDER must be "swa" or "api"',
+    )
   })
 })

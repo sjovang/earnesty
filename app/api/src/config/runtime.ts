@@ -13,6 +13,11 @@ export interface ApiRuntimeConfig {
     slugField: string
     publishedAtField: string
   }
+  auth: {
+    provider: 'swa' | 'header'
+    principalHeader: string
+    principalEncoding: 'base64-json' | 'json'
+  }
 }
 
 let cachedConfig: ApiRuntimeConfig | null = null
@@ -27,6 +32,38 @@ function readFieldName(value: string | undefined, fallback: string, key: string)
     throw new Error(`Invalid runtime configuration: ${key} must match /^[A-Za-z_][A-Za-z0-9_]*$/`)
   }
   return field
+}
+
+function readAuthProvider(value: string | undefined): ApiRuntimeConfig['auth']['provider'] {
+  const provider = value ?? 'swa'
+  switch (provider) {
+    case 'swa':
+    case 'header':
+      return provider
+    default:
+      throw new Error('Invalid runtime configuration: AUTH_PROVIDER must be "swa" or "header"')
+  }
+}
+
+function readPrincipalEncoding(value: string | undefined): ApiRuntimeConfig['auth']['principalEncoding'] {
+  const encoding = value ?? 'base64-json'
+  switch (encoding) {
+    case 'base64-json':
+    case 'json':
+      return encoding
+    default:
+      throw new Error(
+        'Invalid runtime configuration: AUTH_PRINCIPAL_ENCODING must be "base64-json" or "json"',
+      )
+  }
+}
+
+function readHeaderName(value: string | undefined, fallback: string, key: string): string {
+  const header = envString(value) ?? fallback
+  if (!/^[A-Za-z0-9-]+$/.test(header)) {
+    throw new Error(`Invalid runtime configuration: ${key} must contain only letters, digits, and hyphens`)
+  }
+  return header.toLowerCase()
 }
 
 export function getApiRuntimeConfig(): ApiRuntimeConfig {
@@ -48,6 +85,12 @@ export function getApiRuntimeConfig(): ApiRuntimeConfig {
     throw new Error('Invalid runtime configuration: SANITY_DRAFT_PREFIX must end with "."')
   }
 
+  const authProvider = readAuthProvider(process.env['AUTH_PROVIDER'])
+  const defaultPrincipalHeader = authProvider === 'swa'
+    ? 'x-ms-client-principal'
+    : 'x-authenticated-principal'
+  const defaultPrincipalEncoding = authProvider === 'swa' ? 'base64-json' : 'json'
+
   cachedConfig = {
     sanity: {
       projectId: projectId ?? 'unset',
@@ -66,6 +109,15 @@ export function getApiRuntimeConfig(): ApiRuntimeConfig {
         'publishedAt',
         'SANITY_PUBLISHED_AT_FIELD',
       ),
+    },
+    auth: {
+      provider: authProvider,
+      principalHeader: readHeaderName(
+        process.env['AUTH_PRINCIPAL_HEADER'],
+        defaultPrincipalHeader,
+        'AUTH_PRINCIPAL_HEADER',
+      ),
+      principalEncoding: readPrincipalEncoding(process.env['AUTH_PRINCIPAL_ENCODING'] ?? defaultPrincipalEncoding),
     },
   }
 

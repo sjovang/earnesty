@@ -7,6 +7,8 @@ export interface FrontendRuntimeConfig {
     aboutSummary: string
   }
   auth: {
+    provider: 'swa' | 'api'
+    currentUserPath: string
     loginPath: string
     logoutPath: string
     postLoginRedirectParam: string
@@ -56,6 +58,17 @@ function readFieldName(value: string | undefined, fallback: string, key: string)
   return field
 }
 
+function readAuthProvider(value: string | undefined): FrontendRuntimeConfig['auth']['provider'] {
+  const provider = value ?? 'swa'
+  switch (provider) {
+    case 'swa':
+    case 'api':
+      return provider
+    default:
+      throw new Error('Invalid runtime configuration: VITE_AUTH_PROVIDER must be "swa" or "api"')
+  }
+}
+
 export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
   const appName = envString(env.VITE_APP_NAME) ?? 'Earnesty'
   const introTitle = envString(env.VITE_APP_INTRO_TITLE) ?? `${appName} is your space for focused writing`
@@ -77,6 +90,9 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
     throw new Error('Invalid runtime configuration: VITE_SANITY_DRAFT_PREFIX must end with "."')
   }
 
+  const authProvider = readAuthProvider(envString(env.VITE_AUTH_PROVIDER))
+  const defaultCurrentUserPath = authProvider === 'api' ? '/api/me' : '/.auth/me'
+
   return {
     app: {
       name: appName,
@@ -86,6 +102,12 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
       aboutSummary,
     },
     auth: {
+      provider: authProvider,
+      currentUserPath: readPath(
+        envString(env.VITE_AUTH_CURRENT_USER_PATH),
+        defaultCurrentUserPath,
+        'VITE_AUTH_CURRENT_USER_PATH',
+      ),
       loginPath: readPath(envString(env.VITE_AUTH_LOGIN_PATH), '/.auth/login/aad', 'VITE_AUTH_LOGIN_PATH'),
       logoutPath: readPath(envString(env.VITE_AUTH_LOGOUT_PATH), '/.auth/logout', 'VITE_AUTH_LOGOUT_PATH'),
       postLoginRedirectParam: envString(env.VITE_AUTH_POST_LOGIN_REDIRECT_PARAM) ?? 'post_login_redirect_uri',

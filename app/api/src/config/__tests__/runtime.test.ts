@@ -26,6 +26,11 @@ describe('getApiRuntimeConfig', () => {
     expect(config.sanity.dataset).toBe('production')
     expect(config.content.documentType).toBe('blog')
     expect(config.content.draftPrefix).toBe('drafts.')
+    expect(config.auth).toEqual({
+      provider: 'swa',
+      principalHeader: 'x-ms-client-principal',
+      principalEncoding: 'base64-json',
+    })
   })
 
   it('throws when SANITY_DRAFT_PREFIX does not end with a dot', () => {
@@ -45,5 +50,34 @@ describe('getApiRuntimeConfig', () => {
     const config = getApiRuntimeConfig()
     expect(config.content.documentType).toBe('article')
     expect(config.content.titleField).toBe('headline')
+  })
+
+  it('switches auth defaults for generic header provider', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['AUTH_PROVIDER'] = 'header'
+
+    const config = getApiRuntimeConfig()
+    expect(config.auth).toEqual({
+      provider: 'header',
+      principalHeader: 'x-authenticated-principal',
+      principalEncoding: 'json',
+    })
+  })
+
+  it('throws on invalid auth provider', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['AUTH_PROVIDER'] = 'custom'
+
+    expect(() => getApiRuntimeConfig()).toThrow('AUTH_PROVIDER must be "swa" or "header"')
+  })
+
+  it('throws on invalid principal header name', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['AUTH_PRINCIPAL_HEADER'] = 'x principal'
+
+    expect(() => getApiRuntimeConfig()).toThrow('AUTH_PRINCIPAL_HEADER must contain only letters, digits, and hyphens')
   })
 })

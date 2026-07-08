@@ -76,6 +76,8 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `VITE_SANITY_SLUG_FIELD` | No | `slug` |
 | `VITE_SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
 | `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` |
+| `VITE_AUTH_PROVIDER` | No | `swa` |
+| `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
 | `VITE_AUTH_LOGIN_PATH` | No | `/.auth/login/aad` |
 | `VITE_AUTH_LOGOUT_PATH` | No | `/.auth/logout` |
 | `VITE_AUTH_POST_LOGIN_REDIRECT_PARAM` | No | `post_login_redirect_uri` |
@@ -83,7 +85,7 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `VITE_APP_INTRO_TITLE` | No | `${VITE_APP_NAME} is your space for focused writing` |
 | `VITE_APPLICATIONINSIGHTS_CONNECTION_STRING` | No | unset |
 
-### API / SWA app settings
+### API runtime settings
 
 | Variable | Required | Default |
 |---|---|---|
@@ -97,8 +99,19 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `SANITY_SLUG_FIELD` | No | `slug` |
 | `SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
 | `SANITY_DRAFT_PREFIX` | No | `drafts.` |
+| `AUTH_PROVIDER` | No | `swa` |
+| `AUTH_PRINCIPAL_HEADER` | No | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
+| `AUTH_PRINCIPAL_ENCODING` | No | `base64-json` for `swa`, `json` for `header` |
 
 Validation is fail-fast: missing required variables or invalid values (for example malformed field names or draft prefix without a trailing dot) throw explicit startup/runtime errors.
+
+### Portability boundary
+
+The core app now treats authentication and current-user discovery as part of an explicit runtime contract instead of assuming Azure Static Web Apps everywhere:
+
+- **Frontend contract:** the app only requires a current-user endpoint, login path, logout path, and redirect parameter. Azure Static Web Apps remains the default through `VITE_AUTH_PROVIDER=swa`, but alternative hosts can point the app at their own endpoints without changing core UI code.
+- **API contract:** the server only requires an authenticated principal header that can be parsed as either SWA's `x-ms-client-principal` envelope or a plain JSON header, depending on `AUTH_PROVIDER`.
+- **Azure-only adapter surfaces:** `app/public/staticwebapp.config.json`, `app/api/`'s Azure Functions host, `infra/**`, and `.github/workflows/deploy*.yml` remain the Azure deployment path. Alternative hosting targets should preserve the documented runtime contract or replace these adapters explicitly.
 
 ## Building for production
 

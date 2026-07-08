@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { parseHeaderPrincipal } from '../auth/providers/header.js'
 import { parseSwaClientPrincipal } from '../auth/providers/swa.js'
 
 describe('parseSwaClientPrincipal', () => {
@@ -25,6 +26,24 @@ describe('parseSwaClientPrincipal', () => {
     }
     const encoded = Buffer.from(JSON.stringify(principal)).toString('base64')
     expect(parseSwaClientPrincipal(encoded)).toEqual(principal)
+  })
+})
+
+describe('parseHeaderPrincipal', () => {
+  it('parses a valid JSON principal from a plain header', () => {
+    const principal = {
+      identityProvider: 'proxy',
+      userId: 'user-456',
+      userDetails: 'proxy@example.com',
+      userRoles: ['authenticated'],
+      claims: [{ typ: 'name', val: 'Proxy User' }],
+    }
+
+    expect(parseHeaderPrincipal(JSON.stringify(principal), 'json')).toEqual(principal)
+  })
+
+  it('returns null for JSON payloads that do not match the principal contract', () => {
+    expect(parseHeaderPrincipal(JSON.stringify({ userId: 'missing-fields' }), 'json')).toBeNull()
   })
 })
 
