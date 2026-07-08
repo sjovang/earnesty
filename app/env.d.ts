@@ -9,11 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_SANITY_PROJECT_ID?: string
   readonly VITE_SANITY_DATASET?: string
   readonly VITE_SANITY_API_VERSION?: string
-  readonly VITE_SANITY_DOCUMENT_TYPE?: string
-  readonly VITE_SANITY_TITLE_FIELD?: string
-  readonly VITE_SANITY_BODY_FIELD?: string
-  readonly VITE_SANITY_SLUG_FIELD?: string
-  readonly VITE_SANITY_PUBLISHED_AT_FIELD?: string
+  readonly VITE_SANITY_SCHEMA_CONFIG?: string
   readonly VITE_SANITY_DRAFT_PREFIX?: string
   readonly VITE_AUTH_PROVIDER?: string
   readonly VITE_AUTH_CURRENT_USER_PATH?: string

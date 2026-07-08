@@ -210,8 +210,18 @@ describe('saveDocument handler – custom schema mapping', () => {
     process.env = {
       ...originalEnv,
       NODE_ENV: 'test',
-      SANITY_TITLE_FIELD: 'headline',
-      SANITY_BODY_FIELD: 'content',
+      SANITY_SCHEMA_CONFIG: JSON.stringify({
+        defaultType: 'article',
+        types: [
+          {
+            name: 'article',
+            titleField: 'headline',
+            bodyField: 'content',
+            slugField: 'path',
+            publishedAtField: 'publishedOn',
+          },
+        ],
+      }),
     }
     clearApiRuntimeConfigCache()
     vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })

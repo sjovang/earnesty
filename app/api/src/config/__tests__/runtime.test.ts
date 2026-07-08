@@ -44,12 +44,39 @@ describe('getApiRuntimeConfig', () => {
   it('accepts schema overrides', () => {
     process.env['SANITY_PROJECT_ID'] = 'project'
     process.env['SANITY_TOKEN'] = 'token'
-    process.env['SANITY_DOCUMENT_TYPE'] = 'article'
-    process.env['SANITY_TITLE_FIELD'] = 'headline'
+    process.env['SANITY_SCHEMA_CONFIG'] = JSON.stringify({
+      defaultType: 'article',
+      types: [
+        {
+          name: 'article',
+          titleField: 'headline',
+          bodyField: 'content',
+          slugField: 'path',
+          publishedAtField: 'publishedOn',
+        },
+      ],
+    })
 
     const config = getApiRuntimeConfig()
     expect(config.content.documentType).toBe('article')
     expect(config.content.titleField).toBe('headline')
+  })
+
+  it('throws when a schema type omits a required field mapping', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['SANITY_SCHEMA_CONFIG'] = JSON.stringify({
+      types: [
+        {
+          name: 'article',
+          bodyField: 'content',
+          slugField: 'path',
+          publishedAtField: 'publishedOn',
+        },
+      ],
+    })
+
+    expect(() => getApiRuntimeConfig()).toThrow('SANITY_SCHEMA_CONFIG.types[0].titleField is required')
   })
 
   it('switches auth defaults for generic header provider', () => {

@@ -46,11 +46,18 @@ describe('createRuntimeConfig', () => {
   it('uses custom schema mapping when provided', () => {
     const config = createRuntimeConfig(
       makeEnv({
-        VITE_SANITY_DOCUMENT_TYPE: 'article',
-        VITE_SANITY_TITLE_FIELD: 'headline',
-        VITE_SANITY_BODY_FIELD: 'content',
-        VITE_SANITY_SLUG_FIELD: 'path',
-        VITE_SANITY_PUBLISHED_AT_FIELD: 'publishedOn',
+        VITE_SANITY_SCHEMA_CONFIG: JSON.stringify({
+          defaultType: 'article',
+          types: [
+            {
+              name: 'article',
+              titleField: 'headline',
+              bodyField: 'content',
+              slugField: 'path',
+              publishedAtField: 'publishedOn',
+            },
+          ],
+        }),
       }),
     )
 
@@ -61,6 +68,21 @@ describe('createRuntimeConfig', () => {
       slugField: 'path',
       publishedAtField: 'publishedOn',
     })
+  })
+
+  it('throws when a schema type omits a required field mapping', () => {
+    expect(() => createRuntimeConfig(makeEnv({
+      VITE_SANITY_SCHEMA_CONFIG: JSON.stringify({
+        types: [
+          {
+            name: 'article',
+            bodyField: 'content',
+            slugField: 'path',
+            publishedAtField: 'publishedOn',
+          },
+        ],
+      }),
+    }))).toThrow('VITE_SANITY_SCHEMA_CONFIG.types[0].titleField is required')
   })
 
   it('switches the default current-user path for api auth provider', () => {

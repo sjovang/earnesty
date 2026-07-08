@@ -3,14 +3,127 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+interface SchemaTypeInput {
+  name: unknown
+  titleField?: unknown
+  bodyField?: unknown
+  slugField?: unknown
+  publishedAtField?: unknown
+}
+
+interface SchemaConfigInput {
+  defaultType?: unknown
+  types?: unknown
+}
+
+interface ContentTypeConfig {
+  name: string
+  titleField: string
+  bodyField: string
+  slugField: string
+  publishedAtField: string
+}
+
+const BUILTIN_CONTENT_TYPE: ContentTypeConfig = {
+  name: 'blog',
+  titleField: 'title',
+  bodyField: 'body',
+  slugField: 'slug',
+  publishedAtField: 'publishedAt',
+}
+
+function envString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+function readFieldName(value: string | undefined, key: string): string {
+  if (!value) {
+    throw new Error(`Invalid runtime configuration: ${key} is required`)
+  }
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) {
+    throw new Error(`Invalid runtime configuration: ${key} must match /^[A-Za-z_][A-Za-z0-9_]*$/`)
+  }
+  return value
+}
+
+function readSchemaType(input: SchemaTypeInput, index: number): ContentTypeConfig {
+  return {
+    name: readFieldName(envString(input.name), `VITE_SANITY_SCHEMA_CONFIG.types[${index}].name`),
+    titleField: readFieldName(
+      envString(input.titleField),
+      `VITE_SANITY_SCHEMA_CONFIG.types[${index}].titleField`,
+    ),
+    bodyField: readFieldName(
+      envString(input.bodyField),
+      `VITE_SANITY_SCHEMA_CONFIG.types[${index}].bodyField`,
+    ),
+    slugField: readFieldName(
+      envString(input.slugField),
+      `VITE_SANITY_SCHEMA_CONFIG.types[${index}].slugField`,
+    ),
+    publishedAtField: readFieldName(
+      envString(input.publishedAtField),
+      `VITE_SANITY_SCHEMA_CONFIG.types[${index}].publishedAtField`,
+    ),
+  }
+}
+
+function readSchemaConfig(value: string | undefined): { defaultType: string; types: Record<string, ContentTypeConfig> } {
+  if (!value) {
+    return {
+      defaultType: BUILTIN_CONTENT_TYPE.name,
+      types: { [BUILTIN_CONTENT_TYPE.name]: BUILTIN_CONTENT_TYPE },
+    }
+  }
+
+  let parsed: SchemaConfigInput
+  try {
+    parsed = JSON.parse(value) as SchemaConfigInput
+  } catch (error) {
+    throw new Error('Invalid runtime configuration: VITE_SANITY_SCHEMA_CONFIG must be valid JSON', {
+      cause: error,
+    })
+  }
+
+  if (!Array.isArray(parsed.types) || parsed.types.length === 0) {
+    throw new Error('Invalid runtime configuration: VITE_SANITY_SCHEMA_CONFIG.types must be a non-empty array')
+  }
+
+  const types: Record<string, ContentTypeConfig> = {}
+  const typeOrder: string[] = []
+  for (const [index, raw] of parsed.types.entries()) {
+    const config = readSchemaType((raw ?? {}) as SchemaTypeInput, index)
+    if (types[config.name]) {
+      throw new Error(
+        `Invalid runtime configuration: duplicate type "${config.name}" in VITE_SANITY_SCHEMA_CONFIG.types`,
+      )
+    }
+    types[config.name] = config
+    typeOrder.push(config.name)
+  }
+
+  const defaultType = envString(parsed.defaultType)
+    ? readFieldName(envString(parsed.defaultType), 'VITE_SANITY_SCHEMA_CONFIG.defaultType')
+    : (typeOrder[0] ?? BUILTIN_CONTENT_TYPE.name)
+  if (!types[defaultType]) {
+    throw new Error(
+      `Invalid runtime configuration: defaultType "${defaultType}" is not defined in VITE_SANITY_SCHEMA_CONFIG.types`,
+    )
+  }
+
+  return { defaultType, types }
+}
+
 const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID']
 const SANITY_TOKEN = process.env['SANITY_TOKEN'] ?? ''
 const SANITY_DATASET = process.env['VITE_SANITY_DATASET'] ?? 'production'
-const SANITY_DOCUMENT_TYPE = process.env['VITE_SANITY_DOCUMENT_TYPE'] ?? 'blog'
-const SANITY_TITLE_FIELD = process.env['VITE_SANITY_TITLE_FIELD'] ?? 'title'
-const SANITY_BODY_FIELD = process.env['VITE_SANITY_BODY_FIELD'] ?? 'body'
-const SANITY_SLUG_FIELD = process.env['VITE_SANITY_SLUG_FIELD'] ?? 'slug'
-const SANITY_PUBLISHED_AT_FIELD = process.env['VITE_SANITY_PUBLISHED_AT_FIELD'] ?? 'publishedAt'
+const SANITY_SCHEMA = readSchemaConfig(envString(process.env['VITE_SANITY_SCHEMA_CONFIG']))
+const SANITY_DEFAULT_TYPE = SANITY_SCHEMA.types[SANITY_SCHEMA.defaultType]
+const SANITY_DOCUMENT_TYPE = SANITY_DEFAULT_TYPE.name
+const SANITY_TITLE_FIELD = SANITY_DEFAULT_TYPE.titleField
+const SANITY_BODY_FIELD = SANITY_DEFAULT_TYPE.bodyField
+const SANITY_SLUG_FIELD = SANITY_DEFAULT_TYPE.slugField
+const SANITY_PUBLISHED_AT_FIELD = SANITY_DEFAULT_TYPE.publishedAtField
 const SANITY_DRAFT_PREFIX = process.env['VITE_SANITY_DRAFT_PREFIX'] ?? 'drafts.'
 const AUTH_LOGIN_PATH = process.env['VITE_AUTH_LOGIN_PATH'] ?? '/.auth/login/aad'
 const AUTH_LOGOUT_PATH = process.env['VITE_AUTH_LOGOUT_PATH'] ?? '/.auth/logout'

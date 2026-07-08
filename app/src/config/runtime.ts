@@ -56,6 +56,14 @@ export interface ContentTypeConfig {
   metadataFields: MetadataFieldConfig[]
 }
 
+const DEFAULT_CONTENT_FIELDS = {
+  documentType: 'blog',
+  titleField: 'title',
+  bodyField: 'body',
+  slugField: 'slug',
+  publishedAtField: 'publishedAt',
+} as const
+
 function envString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
@@ -80,6 +88,13 @@ function readFieldName(value: string | undefined, fallback: string, key: string)
     )
   }
   return field
+}
+
+function readRequiredFieldName(value: string | undefined, key: string): string {
+  if (!value) {
+    throw new Error(`Invalid runtime configuration: ${key} is required`)
+  }
+  return readFieldName(value, value, key)
 }
 
 function readMetadataFieldType(
@@ -154,41 +169,45 @@ function defaultMetadataFields(type: {
   ]
 }
 
+function defaultContentTypeConfig(): ContentTypeConfig {
+  return {
+    name: DEFAULT_CONTENT_FIELDS.documentType,
+    label: DEFAULT_CONTENT_FIELDS.documentType,
+    titleField: DEFAULT_CONTENT_FIELDS.titleField,
+    bodyField: DEFAULT_CONTENT_FIELDS.bodyField,
+    slugField: DEFAULT_CONTENT_FIELDS.slugField,
+    publishedAtField: DEFAULT_CONTENT_FIELDS.publishedAtField,
+    metadataFields: defaultMetadataFields({
+      titleField: DEFAULT_CONTENT_FIELDS.titleField,
+      slugField: DEFAULT_CONTENT_FIELDS.slugField,
+      publishedAtField: DEFAULT_CONTENT_FIELDS.publishedAtField,
+    }),
+  }
+}
+
 function readSchemaType(
   input: SchemaTypeInput,
   index: number,
-  fallback: {
-    documentType: string
-    titleField: string
-    bodyField: string
-    slugField: string
-    publishedAtField: string
-  },
 ): ContentTypeConfig {
-  const name = readFieldName(
+  const name = readRequiredFieldName(
     typeof input.name === 'string' ? input.name : undefined,
-    fallback.documentType,
     `VITE_SANITY_SCHEMA_CONFIG.types[${index}].name`,
   )
   const label = typeof input.label === 'string' && input.label.trim() ? input.label.trim() : name
-  const titleField = readFieldName(
+  const titleField = readRequiredFieldName(
     typeof input.titleField === 'string' ? input.titleField : undefined,
-    fallback.titleField,
     `VITE_SANITY_SCHEMA_CONFIG.types[${index}].titleField`,
   )
-  const bodyField = readFieldName(
+  const bodyField = readRequiredFieldName(
     typeof input.bodyField === 'string' ? input.bodyField : undefined,
-    fallback.bodyField,
     `VITE_SANITY_SCHEMA_CONFIG.types[${index}].bodyField`,
   )
-  const slugField = readFieldName(
+  const slugField = readRequiredFieldName(
     typeof input.slugField === 'string' ? input.slugField : undefined,
-    fallback.slugField,
     `VITE_SANITY_SCHEMA_CONFIG.types[${index}].slugField`,
   )
-  const publishedAtField = readFieldName(
+  const publishedAtField = readRequiredFieldName(
     typeof input.publishedAtField === 'string' ? input.publishedAtField : undefined,
-    fallback.publishedAtField,
     `VITE_SANITY_SCHEMA_CONFIG.types[${index}].publishedAtField`,
   )
 
@@ -237,33 +256,14 @@ function readSchemaType(
 
 function readSchemaConfig(
   value: string | undefined,
-  fallback: {
-    documentType: string
-    titleField: string
-    bodyField: string
-    slugField: string
-    publishedAtField: string
-  },
 ): { defaultType: string; typeOrder: string[]; types: Record<string, ContentTypeConfig> } {
-  const fallbackType: ContentTypeConfig = {
-    name: fallback.documentType,
-    label: fallback.documentType,
-    titleField: fallback.titleField,
-    bodyField: fallback.bodyField,
-    slugField: fallback.slugField,
-    publishedAtField: fallback.publishedAtField,
-    metadataFields: defaultMetadataFields({
-      titleField: fallback.titleField,
-      slugField: fallback.slugField,
-      publishedAtField: fallback.publishedAtField,
-    }),
-  }
+  const fallbackType = defaultContentTypeConfig()
 
   if (!value) {
     return {
-      defaultType: fallback.documentType,
-      typeOrder: [fallback.documentType],
-      types: { [fallback.documentType]: fallbackType },
+      defaultType: fallbackType.name,
+      typeOrder: [fallbackType.name],
+      types: { [fallbackType.name]: fallbackType },
     }
   }
 
@@ -286,13 +286,7 @@ function readSchemaConfig(
   const types: Record<string, ContentTypeConfig> = {}
 
   parsed.types.forEach((raw, index) => {
-    const config = readSchemaType((raw ?? {}) as SchemaTypeInput, index, {
-      documentType: fallback.documentType,
-      titleField: fallback.titleField,
-      bodyField: fallback.bodyField,
-      slugField: fallback.slugField,
-      publishedAtField: fallback.publishedAtField,
-    })
+    const config = readSchemaType((raw ?? {}) as SchemaTypeInput, index)
     if (types[config.name]) {
       throw new Error(
         `Invalid runtime configuration: duplicate type "${config.name}" in VITE_SANITY_SCHEMA_CONFIG.types`,
@@ -304,7 +298,7 @@ function readSchemaConfig(
 
   const defaultType = readFieldName(
     typeof parsed.defaultType === 'string' ? parsed.defaultType : undefined,
-    typeOrder[0] ?? fallback.documentType,
+    typeOrder[0] ?? fallbackType.name,
     'VITE_SANITY_SCHEMA_CONFIG.defaultType',
   )
 
@@ -363,24 +357,7 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
 
   const authProvider = readAuthProvider(envString(env.VITE_AUTH_PROVIDER))
   const defaultCurrentUserPath = authProvider === 'api' ? '/api/me' : '/.auth/me'
-
-  const fallbackContent = {
-    documentType: readFieldName(
-      envString(env.VITE_SANITY_DOCUMENT_TYPE),
-      'blog',
-      'VITE_SANITY_DOCUMENT_TYPE',
-    ),
-    titleField: readFieldName(envString(env.VITE_SANITY_TITLE_FIELD), 'title', 'VITE_SANITY_TITLE_FIELD'),
-    bodyField: readFieldName(envString(env.VITE_SANITY_BODY_FIELD), 'body', 'VITE_SANITY_BODY_FIELD'),
-    slugField: readFieldName(envString(env.VITE_SANITY_SLUG_FIELD), 'slug', 'VITE_SANITY_SLUG_FIELD'),
-    publishedAtField: readFieldName(
-      envString(env.VITE_SANITY_PUBLISHED_AT_FIELD),
-      'publishedAt',
-      'VITE_SANITY_PUBLISHED_AT_FIELD',
-    ),
-  }
-
-  const schemaConfig = readSchemaConfig(envString(env.VITE_SANITY_SCHEMA_CONFIG), fallbackContent)
+  const schemaConfig = readSchemaConfig(envString(env.VITE_SANITY_SCHEMA_CONFIG))
   const defaultTypeConfig = schemaConfig.types[schemaConfig.defaultType]
   if (!defaultTypeConfig) {
     throw new Error(`Invalid runtime configuration: unknown default type ${schemaConfig.defaultType}`)
