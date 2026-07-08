@@ -23,6 +23,11 @@ const draftPrefix = runtimeConfig.content.draftPrefix
 
 async function onDocumentSelected(doc: BlogDocument) {
   const full = await fetchBlogDocument(doc._id)
+  if (!full) {
+    console.error('[open] could not fetch selected document', doc._id)
+    trackEvent('document_open_failed_not_found', { documentId: doc._id })
+    return
+  }
   const bodyHtml = portableTextToHtml(full.body)
   const titleHtml = `<h1 data-type="title">${escapeHtml(full.title ?? '')}</h1>`
   editorStore.openDocument(full, titleHtml + bodyHtml)
