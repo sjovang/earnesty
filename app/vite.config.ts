@@ -3,9 +3,17 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID'] ?? '5ibtsfdc'
+const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID']
 const SANITY_TOKEN = process.env['SANITY_TOKEN'] ?? ''
-const SANITY_DATASET = process.env['VITE_SANITY_DATASET'] ?? 'dev'
+const SANITY_DATASET = process.env['VITE_SANITY_DATASET'] ?? 'production'
+const SANITY_DOCUMENT_TYPE = process.env['VITE_SANITY_DOCUMENT_TYPE'] ?? 'blog'
+const SANITY_TITLE_FIELD = process.env['VITE_SANITY_TITLE_FIELD'] ?? 'title'
+const SANITY_BODY_FIELD = process.env['VITE_SANITY_BODY_FIELD'] ?? 'body'
+const SANITY_SLUG_FIELD = process.env['VITE_SANITY_SLUG_FIELD'] ?? 'slug'
+const SANITY_PUBLISHED_AT_FIELD = process.env['VITE_SANITY_PUBLISHED_AT_FIELD'] ?? 'publishedAt'
+const SANITY_DRAFT_PREFIX = process.env['VITE_SANITY_DRAFT_PREFIX'] ?? 'drafts.'
+const AUTH_LOGIN_PATH = process.env['VITE_AUTH_LOGIN_PATH'] ?? '/.auth/login/aad'
+const AUTH_LOGOUT_PATH = process.env['VITE_AUTH_LOGOUT_PATH'] ?? '/.auth/logout'
 
 // ── Dev auth mock ─────────────────────────────────────────────────────────────
 // In development, emulate the SWA auth and API endpoints so we don't need the
@@ -42,14 +50,14 @@ function devAuthPlugin(): Plugin {
         res.end(JSON.stringify({ clientPrincipal: mockPrincipal }))
       })
 
-      // GET /.auth/login/aad — redirect to home (already "signed in")
-      server.middlewares.use('/.auth/login/aad', (_req, res) => {
+      // GET auth login endpoint — redirect to home (already "signed in")
+      server.middlewares.use(AUTH_LOGIN_PATH, (_req, res) => {
         res.writeHead(302, { Location: '/' })
         res.end()
       })
 
-      // GET /.auth/logout — redirect to home
-      server.middlewares.use('/.auth/logout', (_req, res) => {
+      // GET auth logout endpoint — redirect to home
+      server.middlewares.use(AUTH_LOGOUT_PATH, (_req, res) => {
         res.writeHead(302, { Location: '/' })
         res.end()
       })
@@ -152,7 +160,7 @@ function devAuthPlugin(): Plugin {
 
           if (publishMatch && req.method === 'POST') {
             // Publish a draft document
-            if (!id.startsWith('drafts.')) {
+            if (!id.startsWith(SANITY_DRAFT_PREFIX)) {
               res.writeHead(400, { 'Content-Type': 'application/json' })
               res.end(JSON.stringify({ error: 'Document is not a draft' }))
               return
@@ -163,7 +171,7 @@ function devAuthPlugin(): Plugin {
               res.end(JSON.stringify({ error: 'Draft not found' }))
               return
             }
-            const publishedId = id.slice('drafts.'.length)
+            const publishedId = id.slice(SANITY_DRAFT_PREFIX.length)
             const fields = Object.fromEntries(
               Object.entries(draft).filter(([k]) => k !== '_id' && k !== '_rev'),
             )
@@ -178,12 +186,12 @@ function devAuthPlugin(): Plugin {
             // Create draft
             const body = await readBody(req)
             const { title, slug } = JSON.parse(body)
-            const docId = `drafts.${crypto.randomUUID()}`
+            const docId = `${SANITY_DRAFT_PREFIX}${crypto.randomUUID()}`
             const doc = await client.create({
               _id: docId,
-              _type: 'blog',
-              title,
-              slug: { _type: 'slug', current: slug },
+              _type: SANITY_DOCUMENT_TYPE,
+              [SANITY_TITLE_FIELD]: title,
+              [SANITY_SLUG_FIELD]: { _type: 'slug', current: slug },
             })
             res.writeHead(201, { 'Content-Type': 'application/json' })
             res.end(JSON.stringify(doc))
@@ -193,24 +201,24 @@ function devAuthPlugin(): Plugin {
             const { blocks, title } = JSON.parse(body)
             const fields: Record<string, unknown> = {}
             if (Array.isArray(blocks)) {
-              fields['body'] = blocks
+              fields[SANITY_BODY_FIELD] = blocks
             }
             if (typeof title === 'string') {
-              fields['title'] = title
+              fields[SANITY_TITLE_FIELD] = title
             }
             await client.patch(id).set(fields).commit()
             res.writeHead(204)
             res.end()
           } else if (req.method === 'GET' && !id) {
-            // List blog documents (authenticated — includes drafts)
+            // List documents (authenticated — includes drafts)
             const docs = await client.fetch(
-              `*[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+              `*[_type == "${SANITY_DOCUMENT_TYPE}"] | order(coalesce(${SANITY_PUBLISHED_AT_FIELD}, _createdAt) desc) {
                 _id,
                 _createdAt,
                 _updatedAt,
-                publishedAt,
-                title,
-                "body": body[_type == "block"][0..10]
+                "publishedAt": ${SANITY_PUBLISHED_AT_FIELD},
+                "title": ${SANITY_TITLE_FIELD},
+                "body": ${SANITY_BODY_FIELD}[_type == "block"][0..10]
               }`,
             )
             res.writeHead(200, { 'Content-Type': 'application/json' })

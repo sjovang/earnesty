@@ -1,23 +1,19 @@
 import { createClient } from '@sanity/client'
+import { runtimeConfig } from '../config/runtime'
 
-// In development the Vite server proxies /v2024-01-01/… to the real Sanity
-// API, avoiding the CORS restriction on localhost. In production and in tests
-// the client talks directly to the Sanity API (bypassing CDN to avoid stale
-// content). VITE_USE_PROXY is set in .env.development and must NOT be set in
-// test configs so that integration tests hit the real Sanity API directly.
-const devProxyConfig =
-  import.meta.env.VITE_USE_PROXY === 'true'
-    ? { apiHost: window.location.origin, useProjectHostname: false, useCdn: false }
-    : { useCdn: false }
+const contentConfig = runtimeConfig.content
+
+// In development the Vite server proxies Sanity API paths through localhost to
+// avoid CORS restrictions. In production and in tests the client talks directly
+// to Sanity (bypassing CDN to avoid stale content).
+const devProxyConfig = runtimeConfig.sanity.useProxy
+  ? { apiHost: window.location.origin, useProjectHostname: false, useCdn: false }
+  : { useCdn: false }
 
 export const sanityClient = createClient({
-  // Fall back to a placeholder so the module doesn't throw at import time when
-  // VITE_SANITY_PROJECT_ID is absent (e.g. CI jobs without dev-environment
-  // secrets). Integration tests guard themselves with describe.skipIf, but the
-  // skip check only runs after the import succeeds.
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID ?? 'unset',
-  dataset: import.meta.env.VITE_SANITY_DATASET ?? 'production',
-  apiVersion: '2024-01-01',
+  projectId: runtimeConfig.sanity.projectId,
+  dataset: runtimeConfig.sanity.dataset,
+  apiVersion: runtimeConfig.sanity.apiVersion,
   ...devProxyConfig,
 })
 
@@ -74,8 +70,8 @@ export interface BlogDocument {
 
 /** Converts a Sanity image asset ref to a CDN URL. */
 export function buildSanityImageUrl(ref: string): string {
-  const projectId = import.meta.env.VITE_SANITY_PROJECT_ID
-  const dataset = import.meta.env.VITE_SANITY_DATASET ?? 'production'
+  const projectId = runtimeConfig.sanity.projectId
+  const dataset = runtimeConfig.sanity.dataset
   // ref format: "image-{id}-{WxH}-{ext}"  →  "{id}-{WxH}.{ext}"
   const filename = ref.replace(/^image-/, '').replace(/-([a-z0-9]+)$/i, '.$1')
   return `https://cdn.sanity.io/images/${projectId}/${dataset}/${filename}`
@@ -327,13 +323,13 @@ function key() {
 /** Fetch list of blog documents (title + enough body blocks for 50-word preview). */
 export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
   return sanityClient.fetch(`
-    *[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+    *[_type == "${contentConfig.documentType}"] | order(coalesce(${contentConfig.publishedAtField}, _createdAt) desc) {
       _id,
       _createdAt,
       _updatedAt,
-      publishedAt,
-      title,
-      "body": body[_type == "block"][0..10]
+      "publishedAt": ${contentConfig.publishedAtField},
+      "title": ${contentConfig.titleField},
+      "body": ${contentConfig.bodyField}[_type == "block"][0..10]
     }
   `)
 }
@@ -341,7 +337,14 @@ export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
 /** Fetch the full body of a single document for editing. */
 export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
   return sanityClient.fetch(
-    `*[_type == "blog" && _id == $id][0]{ _id, _createdAt, _updatedAt, publishedAt, title, body }`,
+    `*[_type == "${contentConfig.documentType}" && _id == $id][0]{
+      _id,
+      _createdAt,
+      _updatedAt,
+      "publishedAt": ${contentConfig.publishedAtField},
+      "title": ${contentConfig.titleField},
+      "body": ${contentConfig.bodyField}
+    }`,
     { id },
   )
 }

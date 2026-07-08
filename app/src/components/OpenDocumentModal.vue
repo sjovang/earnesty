@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { useBlogDocuments } from '../composables/useBlogDocuments'
 import { extractPreview, type BlogDocument } from '../services/sanity'
+import { runtimeConfig } from '../config/runtime'
 
 const emit = defineEmits<{
   close: []
@@ -10,6 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const { documents, loading, error } = useBlogDocuments()
+const draftPrefix = runtimeConfig.content.draftPrefix
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
 type SortKey = 'newest' | 'oldest' | 'title-asc' | 'title-desc'
@@ -32,8 +34,8 @@ const resolvedDocs = computed<{ doc: BlogDocument; status: DocStatus }[]>(() => 
   const map = new Map<string, { draft?: BlogDocument; published?: BlogDocument }>()
 
   for (const doc of documents.value) {
-    const isDraft = doc._id.startsWith('drafts.')
-    const baseId = isDraft ? doc._id.slice('drafts.'.length) : doc._id
+    const isDraft = doc._id.startsWith(draftPrefix)
+    const baseId = isDraft ? doc._id.slice(draftPrefix.length) : doc._id
     const entry = map.get(baseId) ?? {}
     if (isDraft) entry.draft = doc
     else entry.published = doc

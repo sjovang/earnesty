@@ -13,6 +13,7 @@ import { tiptapJsonToPortableText, type TiptapNode } from '../services/sanity'
 import { apiSaveDocument, apiCreateDraft, apiUploadImage, type ImageAsset } from '../services/api'
 import { trackException, trackEvent } from '../services/appInsights'
 import { INTRO_HTML } from '../constants'
+import { runtimeConfig } from '../config/runtime'
 import { TitleNode } from '../extensions/TitleNode'
 import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
@@ -59,7 +60,7 @@ let latestJson: TiptapNode | null = null
 let creatingDraft = false
 let currentSavePromise: Promise<void> | null = null
 
-const INTRO_TITLE = 'Earnesty is your space for focused writing'
+const INTRO_TITLE = runtimeConfig.app.introTitle
 
 // Register flushSave so App.vue can drain pending saves before publish
 editorStore.flushSave = async () => {
@@ -418,7 +419,7 @@ watch(
           :size="120"
           class="intro-lockup__logo"
         />
-        <span class="intro-lockup__name">Earnesty</span>
+        <span class="intro-lockup__name">{{ runtimeConfig.app.name }}</span>
       </div>
     </Transition>
 

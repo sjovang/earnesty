@@ -1,4 +1,5 @@
 import { createClient, type SanityClient } from '@sanity/client'
+import { getApiRuntimeConfig } from './config/runtime.js'
 
 let _client: SanityClient | null = null
 
@@ -8,22 +9,12 @@ let _client: SanityClient | null = null
  *  are not yet available at cold-start time. */
 export function getSanityClient(): SanityClient {
   if (!_client) {
-    const projectId = process.env['SANITY_PROJECT_ID']
-    const token = process.env['SANITY_TOKEN']
-    if (!projectId || !token) {
-      const missing = [
-        !projectId && 'SANITY_PROJECT_ID',
-        !token && 'SANITY_TOKEN',
-      ].filter(Boolean).join(', ')
-      throw new Error(
-        `Missing required environment variable(s): ${missing}`,
-      )
-    }
+    const config = getApiRuntimeConfig()
     _client = createClient({
-      projectId,
-      dataset: process.env['SANITY_DATASET'] ?? 'production',
-      apiVersion: '2024-01-01',
-      token,
+      projectId: config.sanity.projectId,
+      dataset: config.sanity.dataset,
+      apiVersion: config.sanity.apiVersion,
+      token: config.sanity.token,
       useCdn: false,
     })
   }

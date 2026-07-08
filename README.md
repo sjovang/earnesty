@@ -29,8 +29,20 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    ```env
    VITE_SANITY_PROJECT_ID=your_project_id
    VITE_SANITY_DATASET=dev
-   VITE_SANITY_TOKEN=your_sanity_token
+   VITE_SANITY_DOCUMENT_TYPE=blog
+   VITE_SANITY_TITLE_FIELD=title
+   VITE_SANITY_BODY_FIELD=body
+   VITE_SANITY_SLUG_FIELD=slug
+   VITE_SANITY_PUBLISHED_AT_FIELD=publishedAt
+   VITE_SANITY_DRAFT_PREFIX=drafts.
+   VITE_AUTH_LOGIN_PATH=/.auth/login/aad
+   VITE_AUTH_LOGOUT_PATH=/.auth/logout
+   VITE_AUTH_POST_LOGIN_REDIRECT_PARAM=post_login_redirect_uri
+   VITE_APP_NAME=Earnesty
+   VITE_APP_INTRO_TITLE=Earnesty is your space for focused writing
    ```
+
+   `SANITY_TOKEN` remains server-side only and must not be added as a `VITE_` variable.
 
 3. **Start the dev server**
 
@@ -47,6 +59,46 @@ A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and
    ```
 
    This runs ESLint and type-check automatically before every commit.
+
+## Runtime configuration contract
+
+The app and API expose a typed runtime configuration contract so deployments can customize branding, schema mapping, and auth endpoints without code changes.
+
+### Frontend (`VITE_*`)
+
+| Variable | Required | Default |
+|---|---|---|
+| `VITE_SANITY_PROJECT_ID` | Yes | — |
+| `VITE_SANITY_DATASET` | No | `production` |
+| `VITE_SANITY_DOCUMENT_TYPE` | No | `blog` |
+| `VITE_SANITY_TITLE_FIELD` | No | `title` |
+| `VITE_SANITY_BODY_FIELD` | No | `body` |
+| `VITE_SANITY_SLUG_FIELD` | No | `slug` |
+| `VITE_SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
+| `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` |
+| `VITE_AUTH_LOGIN_PATH` | No | `/.auth/login/aad` |
+| `VITE_AUTH_LOGOUT_PATH` | No | `/.auth/logout` |
+| `VITE_AUTH_POST_LOGIN_REDIRECT_PARAM` | No | `post_login_redirect_uri` |
+| `VITE_APP_NAME` | No | `Earnesty` |
+| `VITE_APP_INTRO_TITLE` | No | `${VITE_APP_NAME} is your space for focused writing` |
+| `VITE_APPLICATIONINSIGHTS_CONNECTION_STRING` | No | unset |
+
+### API / SWA app settings
+
+| Variable | Required | Default |
+|---|---|---|
+| `SANITY_PROJECT_ID` | Yes | — |
+| `SANITY_TOKEN` | Yes | — |
+| `SANITY_DATASET` | No | `production` |
+| `SANITY_API_VERSION` | No | `2024-01-01` |
+| `SANITY_DOCUMENT_TYPE` | No | `blog` |
+| `SANITY_TITLE_FIELD` | No | `title` |
+| `SANITY_BODY_FIELD` | No | `body` |
+| `SANITY_SLUG_FIELD` | No | `slug` |
+| `SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
+| `SANITY_DRAFT_PREFIX` | No | `drafts.` |
+
+Validation is fail-fast: missing required variables or invalid values (for example malformed field names or draft prefix without a trailing dot) throw explicit startup/runtime errors.
 
 ## Building for production
 
@@ -197,4 +249,3 @@ On the app registration, add a federated credential to trust GitHub Actions toke
    - **Entity type:** `Environment`
    - **GitHub environment name:** `production`
 4. Click **Add**
-

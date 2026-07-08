@@ -4,6 +4,7 @@ import AppLogo from './AppLogo.vue'
 import UserModal from './UserModal.vue'
 import type { SaveStatus, PublishStatus } from '../stores/editor'
 import type { SwaUser } from '../stores/auth'
+import { runtimeConfig } from '../config/runtime'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -86,7 +87,7 @@ function onLeave() {
       <div class="menubar__left">
         <span class="menubar__brand">
           <AppLogo :size="16" />
-          Earnesty
+          {{ runtimeConfig.app.name }}
         </span>
         <span
           v-if="documentTitle"

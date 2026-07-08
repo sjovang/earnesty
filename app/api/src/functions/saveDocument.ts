@@ -4,6 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getApiRuntimeConfig } from '../config/runtime.js'
 
 app.http('saveDocument', {
   methods: ['PATCH'],
@@ -24,7 +25,12 @@ app.http('saveDocument', {
       return { status: 400, jsonBody: { error: 'Missing document ID' } }
     }
 
-    const DRAFT_ID_RE = /^drafts\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    const draftPrefix = getApiRuntimeConfig().content.draftPrefix
+    const escapedPrefix = draftPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const DRAFT_ID_RE = new RegExp(
+      `^${escapedPrefix}[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`,
+      'i',
+    )
     if (!DRAFT_ID_RE.test(id)) {
       return { status: 400, jsonBody: { error: 'Invalid document ID' } }
     }
@@ -58,12 +64,13 @@ app.http('saveDocument', {
     }
 
     try {
+      const config = getApiRuntimeConfig()
       const fields: Record<string, unknown> = {}
       if (Array.isArray(body.blocks)) {
-        fields['body'] = body.blocks
+        fields[config.content.bodyField] = body.blocks
       }
       if (typeof body.title === 'string') {
-        fields['title'] = body.title
+        fields[config.content.titleField] = body.title
       }
       await getSanityClient().patch(id).set(fields).commit()
       return { status: 204 }

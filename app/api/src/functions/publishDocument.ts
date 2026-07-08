@@ -4,6 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { isDraftDocumentId, toPublishedDocumentId } from '../config/runtime.js'
 
 app.http('publishDocument', {
   methods: ['POST'],
@@ -24,7 +25,7 @@ app.http('publishDocument', {
       return { status: 400, jsonBody: { error: 'Missing document ID' } }
     }
 
-    if (!id.startsWith('drafts.')) {
+    if (!isDraftDocumentId(id)) {
       return { status: 400, jsonBody: { error: 'Document is not a draft' } }
     }
 
@@ -34,7 +35,7 @@ app.http('publishDocument', {
         return { status: 404, jsonBody: { error: 'Draft not found' } }
       }
 
-      const publishedId = id.slice('drafts.'.length)
+      const publishedId = toPublishedDocumentId(id)
 
       // Copy the draft content to the published document and delete the draft
       // in a single transaction so Sanity never sees an inconsistent state.

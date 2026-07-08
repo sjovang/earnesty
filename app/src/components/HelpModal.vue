@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
+import { runtimeConfig } from '../config/runtime'
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
 const mod = isMac ? '⌘' : 'Ctrl+'
@@ -23,7 +24,7 @@ const shortcuts = [
     @close="$emit('close')"
   >
     <p class="intro">
-      Earnesty is a distraction-free writing environment. Click anywhere on the page and start
+      {{ runtimeConfig.app.name }} is a distraction-free writing environment. Click anywhere on the page and start
       typing. Your words are the only thing that matters.
     </p>
     <p class="intro">

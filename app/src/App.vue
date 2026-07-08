@@ -11,6 +11,7 @@ import { useAuthStore } from './stores/auth'
 import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
 import { apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
+import { runtimeConfig } from './config/runtime'
 
 const showOpen = ref(false)
 const showHelp = ref(false)
@@ -18,6 +19,7 @@ const showSettings = ref(false)
 const showPublishModal = ref(false)
 const editorStore = useEditorStore()
 const auth = useAuthStore()
+const draftPrefix = runtimeConfig.content.draftPrefix
 
 async function onDocumentSelected(doc: BlogDocument) {
   const full = await fetchBlogDocument(doc._id)
@@ -38,13 +40,13 @@ function escapeHtml(str: string): string {
 const canPublish = computed(() =>
   auth.isAuthenticated
   && !!editorStore.activeDocument
-  && editorStore.activeDocument._id.startsWith('drafts.')
+  && editorStore.activeDocument._id.startsWith(draftPrefix)
   && editorStore.publishStatus !== 'publishing',
 )
 
 const isDraft = computed(() =>
   !!editorStore.activeDocument
-  && editorStore.activeDocument._id.startsWith('drafts.'),
+  && editorStore.activeDocument._id.startsWith(draftPrefix),
 )
 
 const isMac = navigator.platform.toUpperCase().includes('MAC')
@@ -173,4 +175,3 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </template>
 
 <style scoped></style>
-
