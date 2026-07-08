@@ -1,42 +1,48 @@
-# frontend
+# Earnesty app (frontend + local dev adapter)
 
-This template should help get you started developing with Vue 3 in Vite.
+This directory contains the Vue frontend and local dev adapter used by `npm run dev`.
 
-## Recommended IDE Setup
+## Local setup
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+1. Install dependencies:
 
-## Recommended Browser Setup
+   ```sh
+   npm ci
+   cd api && npm ci
+   ```
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+2. Create your env file:
 
-## Type Support for `.vue` Imports in TS
+   ```sh
+   cp .env.example .env
+   ```
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+3. Set minimum required values in `.env`:
 
-## Customize configuration
+   ```env
+   VITE_SANITY_PROJECT_ID=your_project_id
+   VITE_SANITY_DATASET=dev
+   SANITY_TOKEN=your_sanity_token_with_write_access
+   ```
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+   `SANITY_TOKEN` is consumed by Vite's server-side dev adapter and is not exposed to the browser bundle.
 
-## Project Setup
+4. Start local development:
 
-```sh
-npm install
-```
+   ```sh
+   npm run dev
+   ```
 
-### Compile and Hot-Reload for Development
+   Runs on <http://localhost:5173> by default (`strictPort: false`, so Vite may pick another port).
 
-```sh
-npm run dev
-```
+## Useful commands
 
-### Type-Check, Compile and Minify for Production
+- `npm run dev` — frontend + local auth/API adapter (default local workflow)
+- `npm run dev:swa` — run through Azure SWA CLI (URL: <http://localhost:4280>)
+- `npm run build` — type-check + production build
+- `npm run test` — frontend test suite
+- `npm run test:integration` — frontend integration tests against Sanity dev dataset
 
-```sh
-npm run build
-```
+## Environment options
+
+`VITE_SANITY_PROJECT_ID` is required. For all other runtime options (schema mapping, auth routes, branding, telemetry, API runtime settings), see the root [README runtime configuration contract](../README.md#runtime-configuration-contract).
