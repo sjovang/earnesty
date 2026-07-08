@@ -10,14 +10,18 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { getSanityClient } from '../shared.js'
+import { getApiRuntimeConfig } from '../config/runtime.js'
 
 const hasCredentials = Boolean(
   process.env['SANITY_PROJECT_ID'] && process.env['SANITY_TOKEN'],
 )
 
+const runtimeConfig = getApiRuntimeConfig()
+const contentConfig = runtimeConfig.content
+
 // Each integration run gets a unique document ID so parallel runs never clash.
 const RUN_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-const DRAFT_ID = `drafts.integration-${RUN_ID}`
+const DRAFT_ID = `${contentConfig.draftPrefix}integration-${RUN_ID}`
 const PUBLISHED_ID = `integration-${RUN_ID}`
 
 const TEST_BLOCKS = [
@@ -42,21 +46,21 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
 
   // ── createDraft ─────────────────────────────────────────────────────────────
   // Mirrors the operation in createDraft.ts:
-  //   getSanityClient().create({ _id, _type: 'blog', title, slug })
+  //   getSanityClient().create({ _id, _type: config.documentType, [titleField], [slugField] })
 
   describe('createDraft operation', () => {
     it('creates a draft document in Sanity', async () => {
       const client = getSanityClient()
       const doc = await client.create({
         _id: DRAFT_ID,
-        _type: 'blog',
-        title: 'Integration Test Draft',
-        slug: { _type: 'slug', current: `integration-test-${RUN_ID}` },
+        _type: contentConfig.documentType,
+        [contentConfig.titleField]: 'Integration Test Draft',
+        [contentConfig.slugField]: { _type: 'slug', current: `integration-test-${RUN_ID}` },
       })
 
       expect(doc._id).toBe(DRAFT_ID)
-      expect(doc._type).toBe('blog')
-      expect(doc.title).toBe('Integration Test Draft')
+      expect(doc._type).toBe(contentConfig.documentType)
+      expect((doc as Record<string, unknown>)[contentConfig.titleField]).toBe('Integration Test Draft')
     })
 
     it('the created document is retrievable immediately (useCdn: false)', async () => {
@@ -68,14 +72,14 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
 
   // ── saveDocument ─────────────────────────────────────────────────────────────
   // Mirrors the operation in saveDocument.ts:
-  //   getSanityClient().patch(id).set({ body, title }).commit()
+  //   getSanityClient().patch(id).set({ [bodyField], [titleField] }).commit()
 
   describe('saveDocument operation', () => {
     it('patches the draft with PortableText blocks', async () => {
       const client = getSanityClient()
       const result = await client
         .patch(DRAFT_ID)
-        .set({ body: TEST_BLOCKS })
+        .set({ [contentConfig.bodyField]: TEST_BLOCKS })
         .commit()
 
       expect(result._id).toBe(DRAFT_ID)
@@ -85,7 +89,7 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
       const client = getSanityClient()
       const result = await client
         .patch(DRAFT_ID)
-        .set({ title: 'Updated Integration Title' })
+        .set({ [contentConfig.titleField]: 'Updated Integration Title' })
         .commit()
 
       expect(result._id).toBe(DRAFT_ID)
@@ -93,9 +97,9 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
 
     it('persists patched content when the document is fetched back', async () => {
       const doc = await getSanityClient().getDocument(DRAFT_ID) as Record<string, unknown>
-      expect(doc?.['title']).toBe('Updated Integration Title')
-      expect(Array.isArray(doc?.['body'])).toBe(true)
-      const body = doc?.['body'] as Array<Record<string, unknown>>
+      expect(doc?.[contentConfig.titleField]).toBe('Updated Integration Title')
+      expect(Array.isArray(doc?.[contentConfig.bodyField])).toBe(true)
+      const body = doc?.[contentConfig.bodyField] as Array<Record<string, unknown>>
       expect(body[0]?.['_type']).toBe('block')
     })
   })
@@ -129,8 +133,8 @@ describe.skipIf(!hasCredentials)('Integration: document lifecycle (mirrors Azure
     it('published document exists with the correct content after the transaction', async () => {
       const published = await getSanityClient().getDocument(PUBLISHED_ID) as Record<string, unknown>
       expect(published?.['_id']).toBe(PUBLISHED_ID)
-      expect(published?.['_type']).toBe('blog')
-      expect(published?.['title']).toBe('Updated Integration Title')
+      expect(published?.['_type']).toBe(contentConfig.documentType)
+      expect(published?.[contentConfig.titleField]).toBe('Updated Integration Title')
       // _rev must not be the original draft's _rev
       expect(published?.['_rev']).toBeDefined()
     })
