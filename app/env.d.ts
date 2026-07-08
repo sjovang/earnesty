@@ -15,6 +15,8 @@ interface ImportMetaEnv {
   readonly VITE_SANITY_SLUG_FIELD?: string
   readonly VITE_SANITY_PUBLISHED_AT_FIELD?: string
   readonly VITE_SANITY_DRAFT_PREFIX?: string
+  readonly VITE_AUTH_PROVIDER?: string
+  readonly VITE_AUTH_CURRENT_USER_PATH?: string
   readonly VITE_AUTH_LOGIN_PATH?: string
   readonly VITE_AUTH_LOGOUT_PATH?: string
   readonly VITE_AUTH_POST_LOGIN_REDIRECT_PARAM?: string
