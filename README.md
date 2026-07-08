@@ -2,97 +2,97 @@
 
 A minimal, focused writing environment built with [Vue 3](https://vuejs.org) and a [Sanity.io](https://sanity.io) backend.
 
-> [!IMPORTANT]
-> I treat this "app" as a vibe coding experiment to try out all kinds of weird stuff. There is zero effort on quality assurance =)
+## Quick start (run your own instance)
 
-## Prerequisites
+### 1. Prerequisites
 
-- [Node.js 22+](https://nodejs.org) with npm
+- [Node.js](https://nodejs.org) **22.x LTS recommended** (minimum supported: `20.19.0`)
+- npm (ships with Node.js)
+- A Sanity project + dataset
+- A Sanity token with read/write access to that dataset (used server-side)
 - [pre-commit](https://pre-commit.com) (optional, for local git hooks)
 
-## Local development
+### 2. Install dependencies
 
-1. **Install dependencies**
+```sh
+cd app && npm ci && cd api && npm ci
+```
 
-   ```sh
-   cd app && npm install
-   ```
+### 3. Configure local environment
 
-2. **Configure environment variables**
+```sh
+cp app/.env.example app/.env
+```
 
-   ```sh
-   cp app/.env.example app/.env
-   ```
+Then edit `app/.env` with your Sanity values. Minimum working setup:
 
-   Edit `app/.env`:
+```env
+VITE_SANITY_PROJECT_ID=your_project_id
+VITE_SANITY_DATASET=dev
+SANITY_TOKEN=your_sanity_token_with_write_access
+```
 
-   ```env
-   VITE_SANITY_PROJECT_ID=your_project_id
-   VITE_SANITY_DATASET=dev
-   VITE_SANITY_DOCUMENT_TYPE=blog
-   VITE_SANITY_TITLE_FIELD=title
-   VITE_SANITY_BODY_FIELD=body
-   VITE_SANITY_SLUG_FIELD=slug
-   VITE_SANITY_PUBLISHED_AT_FIELD=publishedAt
-   # Optional: JSON multi-type schema config (overrides the single-type vars above)
-   # VITE_SANITY_SCHEMA_CONFIG={"defaultType":"blog","types":[{"name":"blog","label":"Blog","titleField":"title","bodyField":"body","slugField":"slug","publishedAtField":"publishedAt","metadataFields":[{"key":"title","label":"Title","field":"title","type":"string","required":true},{"key":"slug","label":"Slug","field":"slug","type":"slug","required":true},{"key":"publishedAt","label":"Published at","field":"publishedAt","type":"datetime"},{"key":"tags","label":"Tags","field":"tags","type":"stringArray"}]}]}
-   VITE_SANITY_DRAFT_PREFIX=drafts.
-   VITE_AUTH_PROVIDER=swa
-   VITE_AUTH_CURRENT_USER_PATH=/.auth/me
-   VITE_AUTH_LOGIN_PATH=/.auth/login/aad
-   VITE_AUTH_LOGOUT_PATH=/.auth/logout
-   VITE_AUTH_POST_LOGIN_REDIRECT_PARAM=post_login_redirect_uri
-   VITE_APP_NAME=Earnesty
-   VITE_APP_INTRO_TITLE=Earnesty is your space for focused writing
-   ```
+`SANITY_TOKEN` is read by the local dev adapter in `vite.config.ts` and stays server-side (not exposed to browser code). Never set a `VITE_SANITY_TOKEN` variable.
 
-   `SANITY_TOKEN` remains server-side only and must not be added as a `VITE_` variable.
+### 4. Start development server
 
-3. **Start the dev server**
+```sh
+cd app && npm run dev
+```
 
-   ```sh
-   cd app && npm run dev
-   ```
+Default URL is <http://localhost:5173> (or the next available port because `strictPort` is `false`).
 
-   The app is available at <http://localhost:5173>.
+### 5. Optional: run with Azure Static Web Apps CLI
 
-4. **(Optional) Install pre-commit hooks**
+If you want to test the real SWA auth/API surface locally:
 
-   ```sh
-   pre-commit install
-   ```
+```sh
+cd app && npm run dev:swa
+```
 
-   This runs ESLint and type-check automatically before every commit.
+This serves the app through SWA CLI at <http://localhost:4280> and uses `app/api`.
+
+### 6. Optional: install pre-commit hooks
+
+```sh
+pre-commit install
+```
 
 ## Runtime configuration contract
 
-The app and API expose a typed runtime configuration contract so deployments can customize branding, schema mapping, and auth endpoints without code changes.
+Both frontend and API use typed runtime configuration so you can customize schema mapping, auth endpoints, and branding without code changes.
 
-### Frontend (`VITE_*`)
+### Frontend runtime (`VITE_*`)
 
-| Variable | Required | Default |
+| Variable | Required | Default / Notes |
 |---|---|---|
 | `VITE_SANITY_PROJECT_ID` | Yes | — |
 | `VITE_SANITY_DATASET` | No | `production` |
+| `VITE_SANITY_API_VERSION` | No | `2024-01-01` |
 | `VITE_SANITY_DOCUMENT_TYPE` | No | `blog` |
 | `VITE_SANITY_TITLE_FIELD` | No | `title` |
 | `VITE_SANITY_BODY_FIELD` | No | `body` |
 | `VITE_SANITY_SLUG_FIELD` | No | `slug` |
 | `VITE_SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
-| `VITE_SANITY_SCHEMA_CONFIG` | No | unset (falls back to single-type mapping variables) |
-| `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` |
-| `VITE_AUTH_PROVIDER` | No | `swa` |
+| `VITE_SANITY_SCHEMA_CONFIG` | No | JSON multi-type schema config. If set, it overrides single-type field mapping. |
+| `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
+| `VITE_AUTH_PROVIDER` | No | `swa` (`swa` or `api`) |
 | `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
 | `VITE_AUTH_LOGIN_PATH` | No | `/.auth/login/aad` |
 | `VITE_AUTH_LOGOUT_PATH` | No | `/.auth/logout` |
 | `VITE_AUTH_POST_LOGIN_REDIRECT_PARAM` | No | `post_login_redirect_uri` |
 | `VITE_APP_NAME` | No | `Earnesty` |
+| `VITE_APP_STORAGE_NAMESPACE` | No | Derived from app name (lowercase kebab-case) |
 | `VITE_APP_INTRO_TITLE` | No | `${VITE_APP_NAME} is your space for focused writing` |
+| `VITE_APP_INTRO_LEAD` | No | Built-in intro lead text |
+| `VITE_APP_INTRO_HINT` | No | Built-in intro hint text |
+| `VITE_APP_ABOUT_SUMMARY` | No | `A minimal, focused writing environment.` |
 | `VITE_APPLICATIONINSIGHTS_CONNECTION_STRING` | No | unset |
+| `VITE_USE_PROXY` | No | `false` (set to `true` in `.env.development`) |
 
-### API runtime settings
+### API runtime (`SANITY_*`, `AUTH_*`)
 
-| Variable | Required | Default |
+| Variable | Required | Default / Notes |
 |---|---|---|
 | `SANITY_PROJECT_ID` | Yes | — |
 | `SANITY_TOKEN` | Yes | — |
@@ -103,13 +103,13 @@ The app and API expose a typed runtime configuration contract so deployments can
 | `SANITY_BODY_FIELD` | No | `body` |
 | `SANITY_SLUG_FIELD` | No | `slug` |
 | `SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
-| `SANITY_SCHEMA_CONFIG` | No | unset (falls back to single-type mapping variables) |
-| `SANITY_DRAFT_PREFIX` | No | `drafts.` |
-| `AUTH_PROVIDER` | No | `swa` |
+| `SANITY_SCHEMA_CONFIG` | No | JSON multi-type schema config. If set, it overrides single-type field mapping. |
+| `SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
+| `AUTH_PROVIDER` | No | `swa` (`swa` or `header`) |
 | `AUTH_PRINCIPAL_HEADER` | No | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
 | `AUTH_PRINCIPAL_ENCODING` | No | `base64-json` for `swa`, `json` for `header` |
 
-Validation is fail-fast: missing required variables or invalid values (for example malformed field names or draft prefix without a trailing dot) throw explicit startup/runtime errors.
+Validation is fail-fast: invalid or missing required settings throw explicit runtime errors.
 
 ### Portability boundary
 
@@ -238,7 +238,7 @@ Azure Static Web Apps uses the hybrid OIDC flow (`response_type=code id_token`),
 
 ### Configure SWA app settings
 
-App settings are managed automatically by the Bicep infrastructure deployment. Supply them as GitHub secrets in the `production` environment (see [GitHub secrets](#github-secrets) below):
+App settings are managed automatically by the Bicep infrastructure deployment. Supply them as GitHub secrets in the `production` environment (see [Secrets and variables](#secrets-and-variables) below):
 
 | GitHub Secret | SWA App Setting | Description |
 |---------------|-----------------|-------------|
