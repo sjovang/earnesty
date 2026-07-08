@@ -7,7 +7,6 @@ defineProps<{ user: AuthUser }>()
 const emit = defineEmits<{ close: []; logout: [] }>()
 
 function providerLabel(identityProvider: string): string {
-  if (identityProvider === 'aad') return 'Microsoft'
   return identityProvider.charAt(0).toUpperCase() + identityProvider.slice(1)
 }
 </script>

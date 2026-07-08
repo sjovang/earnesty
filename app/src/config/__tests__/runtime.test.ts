@@ -23,6 +23,7 @@ describe('createRuntimeConfig', () => {
     expect(config.auth.currentUserPath).toBe('/.auth/me')
     expect(config.auth.loginPath).toBe('/.auth/login/aad')
     expect(config.app.name).toBe('Earnesty')
+    expect(config.app.storageNamespace).toBe('earnesty')
   })
 
   it('throws when VITE_SANITY_PROJECT_ID is missing outside test mode', () => {
@@ -70,6 +71,22 @@ describe('createRuntimeConfig', () => {
   it('throws on invalid auth provider', () => {
     expect(() => createRuntimeConfig(makeEnv({ VITE_AUTH_PROVIDER: 'custom' }))).toThrow(
       'VITE_AUTH_PROVIDER must be "swa" or "api"',
+    )
+  })
+
+  it('derives storageNamespace from app name when unset', () => {
+    const config = createRuntimeConfig(makeEnv({ VITE_APP_NAME: 'My App' }))
+    expect(config.app.storageNamespace).toBe('my-app')
+  })
+
+  it('accepts a custom VITE_APP_STORAGE_NAMESPACE', () => {
+    const config = createRuntimeConfig(makeEnv({ VITE_APP_STORAGE_NAMESPACE: 'my-custom-ns' }))
+    expect(config.app.storageNamespace).toBe('my-custom-ns')
+  })
+
+  it('throws on an invalid VITE_APP_STORAGE_NAMESPACE', () => {
+    expect(() => createRuntimeConfig(makeEnv({ VITE_APP_STORAGE_NAMESPACE: 'My NS!' }))).toThrow(
+      'VITE_APP_STORAGE_NAMESPACE',
     )
   })
 })

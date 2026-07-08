@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
+import { runtimeConfig } from '../config/runtime'
 
 export type Theme = 'light' | 'dark' | 'whimsical'
 export type Font = 'serif' | 'sans-serif' | 'comic-sans'
@@ -84,7 +85,7 @@ function clearWhimsicalPalette() {
   }
 }
 
-const STORAGE_KEY = 'ernesty:settings'
+const STORAGE_KEY = `${runtimeConfig.app.storageNamespace}:settings`
 
 interface Settings {
   theme: Theme
@@ -128,7 +129,7 @@ export const useSettingsStore = defineStore('settings', () => {
   let fontBeforeWhimsical: Font | null = null
 
   // Restore saved pre-whimsical font on init
-  const FONT_BEFORE_KEY = 'ernesty:fontBeforeWhimsical'
+  const FONT_BEFORE_KEY = `${runtimeConfig.app.storageNamespace}:fontBeforeWhimsical`
   if (settings.value.theme === 'whimsical') {
     const saved = localStorage.getItem(FONT_BEFORE_KEY)
     if (saved) fontBeforeWhimsical = saved as Font
