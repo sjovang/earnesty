@@ -36,8 +36,8 @@ param sanityProjectId string
 @description('Sanity dataset name.')
 param sanityDataset string
 
-@description('Sanity document type used by the app and API.')
-param sanityDocumentType string = ''
+@description('Sanity schema config JSON used by the app and API.')
+param sanitySchemaConfig string = ''
 
 // ── Resource group ────────────────────────────────────────────────────────────
 
@@ -86,7 +86,7 @@ module staticWebApp 'modules/static-web-app.bicep' = {
     sanityToken: sanityToken
     sanityProjectId: sanityProjectId
     sanityDataset: sanityDataset
-    sanityDocumentType: sanityDocumentType
+    sanitySchemaConfig: sanitySchemaConfig
     appInsightsConnectionString: appInsights.outputs.connectionString
   }
 }

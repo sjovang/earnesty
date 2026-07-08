@@ -45,7 +45,7 @@ jobs:
         env:
           VITE_SANITY_PROJECT_ID: ${{ secrets.VITE_SANITY_PROJECT_ID }}
           VITE_SANITY_DATASET: ${{ secrets.VITE_SANITY_DATASET }}
-          VITE_SANITY_DOCUMENT_TYPE: ${{ vars.SANITY_DOCUMENT_TYPE }}
+          VITE_SANITY_SCHEMA_CONFIG: ${{ vars.SANITY_SCHEMA_CONFIG }}
         run: npm run build
 
       - name: Deploy to Azure Static Web Apps

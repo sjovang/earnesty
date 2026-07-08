@@ -191,9 +191,18 @@ describe('createDraft handler – custom schema mapping', () => {
     process.env = {
       ...originalEnv,
       NODE_ENV: 'test',
-      SANITY_DOCUMENT_TYPE: 'article',
-      SANITY_TITLE_FIELD: 'headline',
-      SANITY_SLUG_FIELD: 'path',
+      SANITY_SCHEMA_CONFIG: JSON.stringify({
+        defaultType: 'article',
+        types: [
+          {
+            name: 'article',
+            titleField: 'headline',
+            bodyField: 'content',
+            slugField: 'path',
+            publishedAtField: 'publishedOn',
+          },
+        ],
+      }),
     }
     clearApiRuntimeConfigCache()
     vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })

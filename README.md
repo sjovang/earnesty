@@ -69,12 +69,7 @@ Both frontend and API use typed runtime configuration so you can customize schem
 | `VITE_SANITY_PROJECT_ID` | Yes | — |
 | `VITE_SANITY_DATASET` | No | `production` |
 | `VITE_SANITY_API_VERSION` | No | `2024-01-01` |
-| `VITE_SANITY_DOCUMENT_TYPE` | No | `blog` |
-| `VITE_SANITY_TITLE_FIELD` | No | `title` |
-| `VITE_SANITY_BODY_FIELD` | No | `body` |
-| `VITE_SANITY_SLUG_FIELD` | No | `slug` |
-| `VITE_SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
-| `VITE_SANITY_SCHEMA_CONFIG` | No | JSON multi-type schema config. If set, it overrides single-type field mapping. |
+| `VITE_SANITY_SCHEMA_CONFIG` | No | JSON schema config. If unset, the frontend uses a built-in single-type default equivalent to `blog` / `title` / `body` / `slug` / `publishedAt`. |
 | `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
 | `VITE_AUTH_PROVIDER` | No | `swa` (`swa` or `api`) |
 | `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
@@ -98,18 +93,64 @@ Both frontend and API use typed runtime configuration so you can customize schem
 | `SANITY_TOKEN` | Yes | — |
 | `SANITY_DATASET` | No | `production` |
 | `SANITY_API_VERSION` | No | `2024-01-01` |
-| `SANITY_DOCUMENT_TYPE` | No | `blog` |
-| `SANITY_TITLE_FIELD` | No | `title` |
-| `SANITY_BODY_FIELD` | No | `body` |
-| `SANITY_SLUG_FIELD` | No | `slug` |
-| `SANITY_PUBLISHED_AT_FIELD` | No | `publishedAt` |
-| `SANITY_SCHEMA_CONFIG` | No | JSON multi-type schema config. If set, it overrides single-type field mapping. |
+| `SANITY_SCHEMA_CONFIG` | No | JSON schema config. If unset, the API uses the same built-in single-type default as the frontend. |
 | `SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
 | `AUTH_PROVIDER` | No | `swa` (`swa` or `header`) |
 | `AUTH_PRINCIPAL_HEADER` | No | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
 | `AUTH_PRINCIPAL_ENCODING` | No | `base64-json` for `swa`, `json` for `header` |
 
 Validation is fail-fast: invalid or missing required settings throw explicit runtime errors.
+
+#### Schema config example
+
+`VITE_SANITY_SCHEMA_CONFIG` and `SANITY_SCHEMA_CONFIG` use the same JSON shape:
+
+```json
+{
+  "defaultType": "blog",
+  "types": [
+    {
+      "name": "blog",
+      "label": "Blog",
+      "titleField": "title",
+      "bodyField": "body",
+      "slugField": "slug",
+      "publishedAtField": "publishedAt",
+      "metadataFields": [
+        { "key": "title", "label": "Title", "field": "title", "type": "string", "required": true },
+        { "key": "slug", "label": "Slug", "field": "slug", "type": "slug", "required": true },
+        { "key": "publishedAt", "label": "Published at", "field": "publishedAt", "type": "datetime" },
+        { "key": "tags", "label": "Tags", "field": "tags", "type": "stringArray" }
+      ]
+    },
+    {
+      "name": "note",
+      "label": "Note",
+      "titleField": "name",
+      "bodyField": "content",
+      "slugField": "path",
+      "publishedAtField": "updatedAt"
+    }
+  ]
+}
+```
+
+When schema config is set, each type must declare `name`, `titleField`, `bodyField`, `slugField`, and `publishedAtField`. The old single-type mapping variables are no longer used as fallbacks. If schema config is unset, the app falls back to this built-in default:
+
+```json
+{
+  "defaultType": "blog",
+  "types": [
+    {
+      "name": "blog",
+      "titleField": "title",
+      "bodyField": "body",
+      "slugField": "slug",
+      "publishedAtField": "publishedAt"
+    }
+  ]
+}
+```
 
 ### Portability boundary
 
@@ -142,7 +183,7 @@ Create these under **Settings → Environments** in the GitHub repository. It is
 
 ### Secrets and variables
 
-Configure the following secrets on **each environment** (not at repository level):
+Configure the following secrets and variables on **each environment** (not at repository level):
 
 #### `dev` environment
 
@@ -151,6 +192,10 @@ Configure the following secrets on **each environment** (not at repository level
 | `VITE_SANITY_PROJECT_ID` | Sanity project ID |
 | `VITE_SANITY_DATASET` | Sanity dataset name (e.g. `dev`) |
 | `VITE_SANITY_TOKEN` | Sanity API token with read/write access |
+
+| Variable | Description |
+|--------|-------------|
+| `SANITY_SCHEMA_CONFIG` | Optional schema config JSON. The workflows pass this to both `VITE_SANITY_SCHEMA_CONFIG` and `SANITY_SCHEMA_CONFIG`. Leave it unset to use the built-in default schema. |
 
 #### `production` environment
 
@@ -166,20 +211,21 @@ Configure the following secrets on **each environment** (not at repository level
 | `SANITY_PROJECT_ID` | Sanity project ID (server-side, for API functions) |
 | `SANITY_DATASET` | Sanity dataset name (server-side, for API functions) |
 
-Optional runtime overrides are supported for reusable deployments. Configure these as **Azure Static Web App application settings** if you need non-default schema/auth mapping:
+| Variable | Description |
+|--------|-------------|
+| `SANITY_SCHEMA_CONFIG` | Optional schema config JSON used by build, integration tests, deployment, and SWA runtime settings. Leave it unset to use the built-in default schema. |
+
+Optional runtime overrides are supported for reusable deployments. Configure these as **Azure Static Web App application settings** if you need custom schema/auth mapping:
 
 | Optional SWA App Setting | Default |
 |---|---|
-| `SANITY_DOCUMENT_TYPE` | `blog` |
-| `SANITY_TITLE_FIELD` | `title` |
-| `SANITY_BODY_FIELD` | `body` |
-| `SANITY_SLUG_FIELD` | `slug` |
-| `SANITY_PUBLISHED_AT_FIELD` | `publishedAt` |
-| `SANITY_SCHEMA_CONFIG` | unset (falls back to single-type mapping variables) |
+| `SANITY_SCHEMA_CONFIG` | unset (uses built-in default schema config) |
 | `SANITY_DRAFT_PREFIX` | `drafts.` |
 | `AUTH_PROVIDER` | `swa` |
 | `AUTH_PRINCIPAL_HEADER` | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
 | `AUTH_PRINCIPAL_ENCODING` | `base64-json` for `swa`, `json` for `header` |
+
+The GitHub Actions workflows read the GitHub variable `SANITY_SCHEMA_CONFIG` and expose it as both `VITE_SANITY_SCHEMA_CONFIG` (frontend build/test) and `SANITY_SCHEMA_CONFIG` (API test/runtime).
 
 > [!TIP]
 > `VITE_SANITY_PROJECT_ID` is typically the same across environments. `VITE_SANITY_DATASET` and `VITE_SANITY_TOKEN` should differ — use a read/write token scoped to the appropriate dataset in each environment.
