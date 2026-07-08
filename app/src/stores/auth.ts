@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import { apiGetUser, type SwaUser } from '../services/api'
+import { runtimeConfig } from '../config/runtime'
 
 export type { SwaUser }
 
@@ -17,11 +18,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   function login() {
-    window.location.href = '/.auth/login/aad?post_login_redirect_uri=/'
+    window.location.href =
+      `${runtimeConfig.auth.loginPath}?${runtimeConfig.auth.postLoginRedirectParam}=/`
   }
 
   function logout() {
-    window.location.href = '/.auth/logout'
+    window.location.href = runtimeConfig.auth.logoutPath
   }
 
   return { user, loading, isAuthenticated, initialize, login, logout }

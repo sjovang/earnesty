@@ -35,6 +35,7 @@ describe('getSanityClient', () => {
     savedEnv['SANITY_PROJECT_ID'] = process.env['SANITY_PROJECT_ID']
     savedEnv['SANITY_TOKEN'] = process.env['SANITY_TOKEN']
     savedEnv['SANITY_DATASET'] = process.env['SANITY_DATASET']
+    savedEnv['NODE_ENV'] = process.env['NODE_ENV']
     vi.resetModules()
   })
 
@@ -46,6 +47,7 @@ describe('getSanityClient', () => {
   })
 
   it('throws when SANITY_PROJECT_ID is missing', async () => {
+    process.env['NODE_ENV'] = 'production'
     delete process.env['SANITY_PROJECT_ID']
     process.env['SANITY_TOKEN'] = 'test-token'
     const { getSanityClient } = await import('../shared.js')
@@ -53,6 +55,7 @@ describe('getSanityClient', () => {
   })
 
   it('throws when SANITY_TOKEN is missing', async () => {
+    process.env['NODE_ENV'] = 'production'
     process.env['SANITY_PROJECT_ID'] = 'test-project'
     delete process.env['SANITY_TOKEN']
     const { getSanityClient } = await import('../shared.js')
@@ -60,6 +63,7 @@ describe('getSanityClient', () => {
   })
 
   it('throws listing both variables when both are missing', async () => {
+    process.env['NODE_ENV'] = 'production'
     delete process.env['SANITY_PROJECT_ID']
     delete process.env['SANITY_TOKEN']
     const { getSanityClient } = await import('../shared.js')

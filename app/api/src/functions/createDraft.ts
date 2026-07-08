@@ -4,6 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getApiRuntimeConfig } from '../config/runtime.js'
 
 app.http('createDraft', {
   methods: ['POST'],
@@ -34,13 +35,16 @@ app.http('createDraft', {
     }
 
     try {
-      const id = `drafts.${crypto.randomUUID()}`
-      const doc = await getSanityClient().create({
+      const config = getApiRuntimeConfig()
+      const client = getSanityClient()
+      const id = `${config.content.draftPrefix}${crypto.randomUUID()}`
+      const createPayload: Record<string, unknown> = {
         _id: id,
-        _type: 'blog',
-        title: body.title.trim(),
-        slug: { _type: 'slug', current: body.slug.trim() },
-      })
+        _type: config.content.documentType,
+        [config.content.titleField]: body.title.trim(),
+        [config.content.slugField]: { _type: 'slug', current: body.slug.trim() },
+      }
+      const doc = await client.create(createPayload as Parameters<typeof client.create>[0])
       return { status: 201, jsonBody: doc }
     } catch (err) {
       console.error('[createDraft]', err)

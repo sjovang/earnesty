@@ -1,5 +1,6 @@
 import type { SanityBodyBlock, BlogDocument } from './sanity'
 import { trackException } from './appInsights'
+import { runtimeConfig } from '../config/runtime'
 
 export interface ImageAsset {
   assetRef: string
@@ -8,7 +9,8 @@ export interface ImageAsset {
   height: number | null
 }
 
-const LOGIN_PATH = '/.auth/login/aad'
+const LOGIN_PATH = runtimeConfig.auth.loginPath
+const POST_LOGIN_REDIRECT_PARAM = runtimeConfig.auth.postLoginRedirectParam
 const REDIRECT_COOLDOWN_MS = 10_000
 const REDIRECT_TS_KEY = '__auth_redirect_ts'
 
@@ -25,7 +27,7 @@ function redirectToLogin(): never {
   if (!redirectUri.startsWith('/') || redirectUri.startsWith('//')) {
     redirectUri = '/'
   }
-  window.location.href = `${LOGIN_PATH}?post_login_redirect_uri=${encodeURIComponent(redirectUri)}`
+  window.location.href = `${LOGIN_PATH}?${POST_LOGIN_REDIRECT_PARAM}=${encodeURIComponent(redirectUri)}`
   throw new Error('Not authenticated')
 }
 

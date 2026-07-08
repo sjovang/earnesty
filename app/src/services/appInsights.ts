@@ -1,8 +1,9 @@
 import { ApplicationInsights } from '@microsoft/applicationinsights-web'
+import { runtimeConfig } from '../config/runtime'
 
 let appInsights: ApplicationInsights | null = null
 
-const connectionString = import.meta.env.VITE_APPLICATIONINSIGHTS_CONNECTION_STRING as string | undefined
+const connectionString = runtimeConfig.telemetry.applicationInsightsConnectionString
 
 export function loadAppInsights(): void {
   if (!connectionString) return

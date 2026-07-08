@@ -1,9 +1,11 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { runtimeConfig } from '../config/runtime'
+</script>
 
 <template>
   <main class="about">
-    <h1>Earnesty</h1>
-    <p>A minimal, focused writing environment.</p>
+    <h1>{{ runtimeConfig.app.name }}</h1>
+    <p>{{ runtimeConfig.app.aboutSummary }}</p>
   </main>
 </template>
 

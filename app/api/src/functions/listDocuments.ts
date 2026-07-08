@@ -4,6 +4,7 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, parseClientPrincipal } from '../shared.js'
+import { getApiRuntimeConfig } from '../config/runtime.js'
 
 app.http('listDocuments', {
   methods: ['GET'],
@@ -20,14 +21,15 @@ app.http('listDocuments', {
     }
 
     try {
+      const config = getApiRuntimeConfig()
       const docs = await getSanityClient().fetch(
-        `*[_type == "blog"] | order(coalesce(publishedAt, _createdAt) desc) {
+        `*[_type == "${config.content.documentType}"] | order(coalesce(${config.content.publishedAtField}, _createdAt) desc) {
           _id,
           _createdAt,
           _updatedAt,
-          publishedAt,
-          title,
-          "body": body[_type == "block"][0..10]
+          "publishedAt": ${config.content.publishedAtField},
+          "title": ${config.content.titleField},
+          "body": ${config.content.bodyField}[_type == "block"][0..10]
         }`,
       )
       return { status: 200, jsonBody: docs }
