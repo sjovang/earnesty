@@ -1,0 +1,21 @@
+name: Enforce SHA-Pinned Actions
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  check-pinned-actions:
+    name: Check SHA pinning
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Validate workflow action pins
+        run: .github/scripts/check-action-sha-pins.sh
