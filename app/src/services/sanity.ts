@@ -335,7 +335,7 @@ export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
 }
 
 /** Fetch the full body of a single document for editing. */
-export async function fetchBlogDocument(id: string): Promise<BlogDocument> {
+export async function fetchBlogDocument(id: string): Promise<BlogDocument | null> {
   return sanityClient.fetch(
     `*[_type == "${contentConfig.documentType}" && _id == $id][0]{
       _id,
