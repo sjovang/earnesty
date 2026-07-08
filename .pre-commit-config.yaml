@@ -28,3 +28,10 @@ repos:
         entry: bash -c 'cd app && npm test'
         pass_filenames: false
         files: ^app/src/.*\.(ts|vue)$
+
+      - id: pin-github-actions
+        name: Enforce SHA-pinned GitHub actions
+        language: system
+        entry: .github/scripts/check-action-sha-pins.sh
+        pass_filenames: false
+        files: ^\.github/workflows/.*\.(yml|yaml)$
