@@ -3,9 +3,9 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
-const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID'] ?? '5ibtsfdc'
+const SANITY_PROJECT_ID = process.env['VITE_SANITY_PROJECT_ID']
 const SANITY_TOKEN = process.env['SANITY_TOKEN'] ?? ''
-const SANITY_DATASET = process.env['VITE_SANITY_DATASET'] ?? 'dev'
+const SANITY_DATASET = process.env['VITE_SANITY_DATASET'] ?? 'production'
 const SANITY_DOCUMENT_TYPE = process.env['VITE_SANITY_DOCUMENT_TYPE'] ?? 'blog'
 const SANITY_TITLE_FIELD = process.env['VITE_SANITY_TITLE_FIELD'] ?? 'title'
 const SANITY_BODY_FIELD = process.env['VITE_SANITY_BODY_FIELD'] ?? 'body'
