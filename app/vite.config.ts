@@ -39,6 +39,7 @@ function devAuthPlugin(): Plugin {
     userId: 'dev-user',
     userDetails: 'Local Developer',
     userRoles: ['authenticated', 'anonymous'],
+    claims: [] as { typ: string; val: string }[],
   }
 
   return {

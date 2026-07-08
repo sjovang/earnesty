@@ -9,20 +9,36 @@ export interface ImageAsset {
   height: number | null
 }
 
+export const AUTH_REDIRECT_TS_KEY = '__auth_redirect_ts'
 const REDIRECT_COOLDOWN_MS = 10_000
-const REDIRECT_TS_KEY = '__auth_redirect_ts'
+
+/** Clears the auth redirect cooldown timestamp, allowing the next redirect to proceed. */
+export function clearRedirectTimestamp(): void {
+  sessionStorage.removeItem(AUTH_REDIRECT_TS_KEY)
+}
+
+/** Thrown when an API call is rejected due to missing or expired authentication. */
+export class AuthError extends Error {
+  readonly isRedirectSuppressed: boolean
+
+  constructor(message: string, isRedirectSuppressed: boolean) {
+    super(message)
+    this.name = 'AuthError'
+    this.isRedirectSuppressed = isRedirectSuppressed
+  }
+}
 
 function redirectToLogin(): never {
   const now = Date.now()
-  const last = Number(sessionStorage.getItem(REDIRECT_TS_KEY) || '0')
+  const last = Number(sessionStorage.getItem(AUTH_REDIRECT_TS_KEY) || '0')
   if (now - last < REDIRECT_COOLDOWN_MS) {
-    throw new Error('Not authenticated (redirect suppressed to prevent loop)')
+    throw new AuthError('Not authenticated (redirect suppressed to prevent loop)', true)
   }
-  sessionStorage.setItem(REDIRECT_TS_KEY, String(now))
+  sessionStorage.setItem(AUTH_REDIRECT_TS_KEY, String(now))
 
   const redirectUri = window.location.pathname + window.location.search + window.location.hash
   window.location.href = authProvider.getLoginUrl(redirectUri)
-  throw new Error('Not authenticated')
+  throw new AuthError('Not authenticated', false)
 }
 
 function isMultipart(init?: RequestInit): boolean {
