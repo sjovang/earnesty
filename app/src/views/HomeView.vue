@@ -566,6 +566,28 @@ watch(
   margin-bottom: 0;
 }
 
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty) {
+  min-height: 1.4em;
+}
+
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty::before) {
+  content: attr(data-start-placeholder);
+  color: var(--ctp-subtext0);
+  pointer-events: none;
+}
+
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty::after) {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin: 0 0.24em;
+  background: var(--ctp-mauve);
+  border-radius: 2px;
+  vertical-align: -0.12em;
+  animation: start-caret-blink 1s steps(2, start) infinite;
+}
+
 /* ── Title node ───────────────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror h1[data-type='title']) {
   font-size: 2em;
@@ -744,6 +766,17 @@ watch(
 
 .focus-fade--active {
   opacity: 1;
+}
+
+@keyframes start-caret-blink {
+  0%,
+  48% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 
 /* ── Block inserter "+" button ────────────────────────────────────────────── */
