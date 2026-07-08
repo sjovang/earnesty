@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import AppMenuBar from './components/AppMenuBar.vue'
 import OpenDocumentModal from './components/OpenDocumentModal.vue'
@@ -64,18 +64,6 @@ const isDraft = computed(() =>
   && editorStore.activeDocument._id.startsWith(draftPrefix),
 )
 
-const isMac = navigator.platform.toUpperCase().includes('MAC')
-const publishShortcut = isMac ? '⌘⇧P' : 'Ctrl+Shift+P'
-
-const publishTooltip = computed(() => {
-  if (!auth.isAuthenticated) return 'Sign in to publish'
-  if (!editorStore.activeDocument) return 'No document open'
-  if (!isDraft.value) return 'No new changes'
-  if (editorStore.publishStatus === 'publishing') return 'Publishing…'
-  if (editorStore.saveStatus === 'saving') return `Saving… (${publishShortcut})`
-  return publishShortcut
-})
-
 function onNewDocument() {
   if (!auth.isAuthenticated) {
     editorStore.resetToPlaceholder()
@@ -134,19 +122,9 @@ async function doPublish() {
   }
 }
 
-function onKeydown(e: KeyboardEvent) {
-  const mod = e.metaKey || e.ctrlKey
-  if (mod && e.key === 'n') { e.preventDefault(); editorStore.resetToPlaceholder() }
-  if (mod && e.key === 'o' && auth.isAuthenticated) { e.preventDefault(); showOpen.value = true }
-  if (mod && e.shiftKey && e.key === 'P') { e.preventDefault(); publishDocument() }
-  if (e.key === 'F1') { e.preventDefault(); showHelp.value = true }
-}
-
 onMounted(async () => {
   await auth.initialize()
-  document.addEventListener('keydown', onKeydown)
 })
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
@@ -159,7 +137,6 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     :has-document="!!editorStore.activeDocument"
     :can-publish="canPublish"
     :is-draft="isDraft"
-    :publish-tooltip="publishTooltip"
     @new="onNewDocument"
     @open="showOpen = true"
     @publish="publishDocument"

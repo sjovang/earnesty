@@ -6,9 +6,6 @@ import type { SaveStatus, PublishStatus } from '../stores/editor'
 import type { AuthUser } from '../stores/auth'
 import { runtimeConfig } from '../config/runtime'
 
-const isMac = navigator.platform.toUpperCase().includes('MAC')
-const mod = isMac ? '⌘' : 'Ctrl+'
-
 const props = defineProps<{
   documentTitle?: string
   saveStatus?: SaveStatus
@@ -18,7 +15,6 @@ const props = defineProps<{
   hasDocument?: boolean
   canPublish?: boolean
   isDraft?: boolean
-  publishTooltip?: string
 }>()
 
 const statusLabel = computed(() => {
@@ -46,34 +42,6 @@ function mobileEmit(event: 'new' | 'open' | 'publish' | 'help' | 'settings' | 's
   mobileMenuOpen.value = false
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   emit(event as any)
-}
-
-// ── Cursor-following shortcut tooltip ─────────────────────────────────────────
-const tooltip = ref<{ label: string; x: number; y: number } | null>(null)
-
-const shortcuts: Record<string, string> = {
-  new:     `${mod}N`,
-  open:    `${mod}O`,
-  publish: `${mod}⇧P`,
-  help:    'F1',
-}
-
-function onEnter(key: string, e: MouseEvent) {
-  const label = key === 'publish' && props.publishTooltip
-    ? props.publishTooltip
-    : shortcuts[key] ?? key
-  tooltip.value = { label, x: e.clientX, y: e.clientY }
-}
-function onMove(key: string, e: MouseEvent) {
-  if (tooltip.value) {
-    const label = key === 'publish' && props.publishTooltip
-      ? props.publishTooltip
-      : shortcuts[key] ?? key
-    tooltip.value = { label, x: e.clientX, y: e.clientY }
-  }
-}
-function onLeave() {
-  tooltip.value = null
 }
 </script>
 
@@ -159,9 +127,6 @@ function onLeave() {
           role="menuitem"
           class="menubar__item"
           @click="$emit('new')"
-          @mouseenter="onEnter('new', $event)"
-          @mousemove="onMove('new', $event)"
-          @mouseleave="onLeave"
         >
           New
         </button>
@@ -175,9 +140,6 @@ function onLeave() {
           :class="{ 'menubar__item--disabled': !isAuthenticated }"
           :disabled="!isAuthenticated"
           @click="isAuthenticated && $emit('open')"
-          @mouseenter="onEnter('open', $event)"
-          @mousemove="onMove('open', $event)"
-          @mouseleave="onLeave"
         >
           Open
         </button>
@@ -191,9 +153,6 @@ function onLeave() {
           :class="{ 'menubar__item--disabled': !canPublish }"
           :disabled="!canPublish"
           @click="canPublish && $emit('publish')"
-          @mouseenter="onEnter('publish', $event)"
-          @mousemove="onMove('publish', $event)"
-          @mouseleave="onLeave"
         >
           Publish
           <span
@@ -238,9 +197,6 @@ function onLeave() {
           title="Help"
           aria-label="Help"
           @click="$emit('help')"
-          @mouseenter="onEnter('help', $event)"
-          @mousemove="onMove('help', $event)"
-          @mouseleave="onLeave"
         >
           <svg
             viewBox="0 0 20 20"
@@ -273,7 +229,6 @@ function onLeave() {
           class="menubar__item menubar__item--user"
           title="Account"
           @click="openUserModal"
-          @mouseleave="onLeave"
         >
           <span class="menubar__avatar menubar__avatar--initials">{{ user?.userDetails?.charAt(0) ?? '?' }}</span>
         </button>
@@ -282,9 +237,6 @@ function onLeave() {
           role="menuitem"
           class="menubar__item menubar__item--signin"
           @click="$emit('signin')"
-          @mouseenter="onEnter('signin', $event)"
-          @mousemove="onMove('signin', $event)"
-          @mouseleave="onLeave"
         >
           Sign in
         </button>
@@ -437,19 +389,7 @@ function onLeave() {
     />
   </Teleport>
 
-  <!-- Floating shortcut tooltip, follows the cursor -->
   <Teleport to="body">
-    <Transition name="tip">
-      <div
-        v-if="tooltip"
-        class="shortcut-tip"
-        :style="{ left: tooltip.x + 'px', top: (tooltip.y + 18) + 'px' }"
-        aria-hidden="true"
-      >
-        {{ tooltip.label }}
-      </div>
-    </Transition>
-    <!-- User profile modal -->
     <UserModal
       v-if="showUserModal && user"
       :user="user"
@@ -778,27 +718,4 @@ function onLeave() {
 .mobile-panel-leave-active { transition: opacity 0.1s ease, transform 0.1s ease; }
 .mobile-panel-enter-from, .mobile-panel-leave-to { opacity: 0; transform: translateY(-4px); }
 
-/* ── Shortcut tooltip ─────────────────────────────────────────────────────── */
-.shortcut-tip {
-  position: fixed;
-  z-index: 9999;
-  pointer-events: none;
-  transform: translateX(-50%);
-  background: var(--ctp-surface2);
-  color: var(--ctp-text);
-  font-size: var(--step--2);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  padding: 0.2em 0.55em;
-  border-radius: 4px;
-  border: 1px solid var(--ctp-surface1);
-  white-space: nowrap;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--ctp-crust) 40%, transparent);
-}
-
-.tip-enter-active { transition: opacity 0.1s ease, transform 0.1s ease; }
-.tip-leave-active { transition: opacity 0.08s ease; }
-.tip-enter-from  { opacity: 0; transform: translateX(-50%) translateY(-4px); }
-.tip-leave-to    { opacity: 0; }
-.tip-enter-to    { opacity: 1; transform: translateX(-50%) translateY(0); }
 </style>
