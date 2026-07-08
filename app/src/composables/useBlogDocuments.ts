@@ -1,25 +1,33 @@
 import { ref, onMounted } from 'vue'
 import type { ContentDocument } from '../services/sanity'
-import { apiListDocuments } from '../services/api'
+import { apiListDocuments, AuthError } from '../services/api'
 
 export function useDocuments() {
   const documents = ref<ContentDocument[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
+  const isAuthError = ref(false)
 
   onMounted(async () => {
     try {
       documents.value = await apiListDocuments()
     } catch (e) {
       console.error('[useDocuments] fetch failed:', e)
-      const msg = e instanceof Error ? e.message : String(e)
-      error.value = `Could not load documents: ${msg}`
+      if (e instanceof AuthError) {
+        isAuthError.value = true
+        error.value = e.isRedirectSuppressed
+          ? 'Your session has expired. Please sign in again.'
+          : 'Not authenticated'
+      } else {
+        const msg = e instanceof Error ? e.message : String(e)
+        error.value = `Could not load documents: ${msg}`
+      }
     } finally {
       loading.value = false
     }
   })
 
-  return { documents, loading, error }
+  return { documents, loading, error, isAuthError }
 }
 
 /** @deprecated Use {@link useDocuments} instead. */

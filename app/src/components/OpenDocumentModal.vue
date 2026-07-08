@@ -4,13 +4,16 @@ import BaseModal from './BaseModal.vue'
 import { useDocuments } from '../composables/useBlogDocuments'
 import { extractPreview, type ContentDocument } from '../services/sanity'
 import { runtimeConfig } from '../config/runtime'
+import { clearRedirectTimestamp } from '../services/api'
+import { useAuthStore } from '../stores/auth'
 
 const emit = defineEmits<{
   close: []
   select: [doc: ContentDocument]
 }>()
 
-const { documents, loading, error } = useDocuments()
+const auth = useAuthStore()
+const { documents, loading, error, isAuthError } = useDocuments()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
@@ -92,6 +95,11 @@ function select(doc: ContentDocument) {
   emit('select', doc)
   emit('close')
 }
+
+function signIn() {
+  clearRedirectTimestamp()
+  auth.login()
+}
 </script>
 
 <template>
@@ -129,7 +137,21 @@ function select(doc: ContentDocument) {
       Loading documents…
     </div>
 
-    <!-- Error -->
+    <!-- Auth error -->
+    <div
+      v-else-if="isAuthError"
+      class="status status--auth"
+    >
+      <p>Your session has expired.</p>
+      <button
+        class="signin-btn"
+        @click="signIn"
+      >
+        Sign in
+      </button>
+    </div>
+
+    <!-- Other error -->
     <div
       v-else-if="error"
       class="status status--error"
@@ -307,6 +329,28 @@ function select(doc: ContentDocument) {
 }
 
 .status--error { color: var(--ctp-red); }
+
+.status--auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--ctp-subtext0);
+}
+
+.signin-btn {
+  background: var(--ctp-mauve);
+  color: var(--ctp-base);
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.signin-btn:hover { background: color-mix(in srgb, var(--ctp-mauve) 80%, var(--ctp-text)); }
 
 /* ── Document list ─────────────────────────────────────────────────────────── */
 .doc-list {

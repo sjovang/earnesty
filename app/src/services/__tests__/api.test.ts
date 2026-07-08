@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { apiSaveDocument, apiPublishDocument, apiCreateDraft } from '../api.js'
+import { apiSaveDocument, apiPublishDocument, apiCreateDraft, AuthError, clearRedirectTimestamp, AUTH_REDIRECT_TS_KEY } from '../api.js'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function makeResponse(status: number, body?: unknown): Response {
+function makeResponse(status: number, body?: unknown, type: ResponseType = 'basic'): Response {
   return {
     ok: status >= 200 && status < 300,
     status,
-    type: 'basic',
+    type,
     redirected: false,
     json: vi.fn().mockResolvedValue(body),
     text: vi.fn().mockResolvedValue(JSON.stringify(body)),
@@ -17,11 +17,77 @@ function makeResponse(status: number, body?: unknown): Response {
 const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
-// Stub browser globals used by redirectToLogin() to prevent errors on 401.
-vi.stubGlobal('sessionStorage', {
+const mockSessionStorage = {
   getItem: vi.fn(() => '0'),
   setItem: vi.fn(),
   removeItem: vi.fn(),
+}
+vi.stubGlobal('sessionStorage', mockSessionStorage)
+
+vi.stubGlobal('window', {
+  location: { href: '', pathname: '/', search: '', hash: '' },
+})
+
+// ── AuthError ─────────────────────────────────────────────────────────────────
+
+describe('AuthError', () => {
+  it('is an instance of Error', () => {
+    const err = new AuthError('test', false)
+    expect(err).toBeInstanceOf(Error)
+    expect(err).toBeInstanceOf(AuthError)
+  })
+
+  it('sets name to AuthError', () => {
+    const err = new AuthError('test', false)
+    expect(err.name).toBe('AuthError')
+  })
+
+  it('exposes isRedirectSuppressed flag', () => {
+    expect(new AuthError('msg', false).isRedirectSuppressed).toBe(false)
+    expect(new AuthError('msg', true).isRedirectSuppressed).toBe(true)
+  })
+})
+
+// ── clearRedirectTimestamp ────────────────────────────────────────────────────
+
+describe('clearRedirectTimestamp', () => {
+  it('removes the redirect timestamp from sessionStorage', () => {
+    mockSessionStorage.removeItem.mockClear()
+    clearRedirectTimestamp()
+    expect(mockSessionStorage.removeItem).toHaveBeenCalledWith(AUTH_REDIRECT_TS_KEY)
+  })
+})
+
+// ── Auth redirect (401 / opaqueredirect) ──────────────────────────────────────
+
+describe('apiFetch — auth redirect', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+    mockSessionStorage.getItem.mockReturnValue('0')
+    mockSessionStorage.setItem.mockClear()
+  })
+
+  it('throws AuthError (not suppressed) on 401 when no recent redirect', async () => {
+    mockFetch.mockResolvedValue(makeResponse(401))
+    await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
+      (e: unknown) => e instanceof AuthError && !e.isRedirectSuppressed,
+    )
+  })
+
+  it('throws AuthError (not suppressed) on opaqueredirect when no recent redirect', async () => {
+    mockFetch.mockResolvedValue(makeResponse(0, undefined, 'opaqueredirect'))
+    await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
+      (e: unknown) => e instanceof AuthError && !e.isRedirectSuppressed,
+    )
+  })
+
+  it('throws AuthError (suppressed) on 401 when redirect was recent', async () => {
+    mockSessionStorage.getItem.mockReturnValue(String(Date.now() - 1000))
+    mockFetch.mockResolvedValue(makeResponse(401))
+    await expect(apiSaveDocument('doc-123', [])).rejects.toSatisfy(
+      (e: unknown) => e instanceof AuthError && e.isRedirectSuppressed,
+    )
+  })
 })
 
 // ── apiSaveDocument ───────────────────────────────────────────────────────────
