@@ -59,7 +59,7 @@ export interface SanityCodeBlock {
 
 export type SanityBodyBlock = SanityBlock | SanityImageBlock | SanityCodeBlock
 
-export interface BlogDocument {
+export interface ContentDocument {
   _id: string
   _createdAt: string
   _updatedAt: string
@@ -67,6 +67,9 @@ export interface BlogDocument {
   title: string
   body?: SanityBodyBlock[]
 }
+
+/** @deprecated Use {@link ContentDocument} instead. */
+export type BlogDocument = ContentDocument
 
 /** Converts a Sanity image asset ref to a CDN URL. */
 export function buildSanityImageUrl(ref: string): string {
@@ -320,8 +323,8 @@ function key() {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-/** Fetch list of blog documents (title + enough body blocks for 50-word preview). */
-export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
+/** Fetch list of content documents (title + enough body blocks for 50-word preview). */
+export async function fetchDocuments(): Promise<ContentDocument[]> {
   return sanityClient.fetch(`
     *[_type == "${contentConfig.documentType}"] | order(coalesce(${contentConfig.publishedAtField}, _createdAt) desc) {
       _id,
@@ -334,8 +337,11 @@ export async function fetchBlogDocuments(): Promise<BlogDocument[]> {
   `)
 }
 
+/** @deprecated Use {@link fetchDocuments} instead. */
+export const fetchBlogDocuments = fetchDocuments
+
 /** Fetch the full body of a single document for editing. */
-export async function fetchBlogDocument(id: string): Promise<BlogDocument | null> {
+export async function fetchDocument(id: string): Promise<ContentDocument | null> {
   return sanityClient.fetch(
     `*[_type == "${contentConfig.documentType}" && _id == $id][0]{
       _id,
@@ -348,3 +354,6 @@ export async function fetchBlogDocument(id: string): Promise<BlogDocument | null
     { id },
   )
 }
+
+/** @deprecated Use {@link fetchDocument} instead. */
+export const fetchBlogDocument = fetchDocument
