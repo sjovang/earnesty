@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, shallowRef } from 'vue'
-import type { BlogDocument } from '../services/sanity'
+import type { ContentDocument } from '../services/sanity'
 import { INTRO_HTML } from '../constants'
 
 export interface DocumentMeta {
@@ -14,7 +14,7 @@ const SESSION_KEY = 'earnesty-session'
 export const CONTENT_KEY = 'earnesty-content'
 
 interface PersistedSession {
-  activeDocument: BlogDocument | null
+  activeDocument: ContentDocument | null
   meta: DocumentMeta
 }
 
@@ -27,7 +27,7 @@ function loadSession(): PersistedSession | null {
   }
 }
 
-function saveSession(doc: BlogDocument | null, m: DocumentMeta) {
+function saveSession(doc: ContentDocument | null, m: DocumentMeta) {
   localStorage.setItem(SESSION_KEY, JSON.stringify({ activeDocument: doc, meta: m }))
 }
 
@@ -46,7 +46,7 @@ export type PublishStatus = 'idle' | 'publishing' | 'published' | 'error'
 export const useEditorStore = defineStore('editor', () => {
   const saved = loadSession()
 
-  const activeDocument = ref<BlogDocument | null>(saved?.activeDocument ?? null)
+  const activeDocument = ref<ContentDocument | null>(saved?.activeDocument ?? null)
   const currentContent = ref<string>('')
   const pendingHtml = ref<string | null>(null)
   const saveStatus = ref<SaveStatus>('idle')
@@ -58,7 +58,7 @@ export const useEditorStore = defineStore('editor', () => {
   /** Registered by HomeView to flush pending autosave before publish. */
   const flushSave = shallowRef<(() => Promise<void>) | null>(null)
 
-  function openDocument(doc: BlogDocument, html?: string) {
+  function openDocument(doc: ContentDocument, html?: string) {
     activeDocument.value = doc
     meta.value = {
       title: doc.title ?? '',

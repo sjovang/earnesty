@@ -8,7 +8,7 @@ import SettingsModal from './components/SettingsModal.vue'
 import PublishModal from './components/PublishModal.vue'
 import { useEditorStore, type DocumentMeta } from './stores/editor'
 import { useAuthStore } from './stores/auth'
-import { fetchBlogDocument, portableTextToHtml, type BlogDocument } from './services/sanity'
+import { fetchDocument, portableTextToHtml, type ContentDocument } from './services/sanity'
 import { apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
 import { runtimeConfig } from './config/runtime'
@@ -21,8 +21,8 @@ const editorStore = useEditorStore()
 const auth = useAuthStore()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
-async function onDocumentSelected(doc: BlogDocument) {
-  const full = await fetchBlogDocument(doc._id)
+async function onDocumentSelected(doc: ContentDocument) {
+  const full = await fetchDocument(doc._id)
   if (!full) {
     console.error('[open] could not fetch selected document', doc._id)
     trackEvent('document_open_failed_not_found', { documentId: doc._id })
@@ -108,7 +108,7 @@ async function doPublish() {
   editorStore.setPublishStatus('publishing')
   try {
     const { _id: publishedId } = await apiPublishDocument(doc._id)
-    const published = await fetchBlogDocument(publishedId)
+    const published = await fetchDocument(publishedId)
     if (!published) {
       console.error('[publish] could not fetch published document', publishedId)
       editorStore.setPublishStatus('error')

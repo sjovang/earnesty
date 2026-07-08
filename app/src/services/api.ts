@@ -1,4 +1,4 @@
-import type { SanityBodyBlock, BlogDocument } from './sanity'
+import type { SanityBodyBlock, ContentDocument } from './sanity'
 import { trackException } from './appInsights'
 import { authProvider } from './authProvider'
 
@@ -72,12 +72,12 @@ export async function apiSaveDocument(
   })
 }
 
-/** Creates a new blog draft via the API proxy. */
+/** Creates a new content draft via the API proxy. */
 export async function apiCreateDraft(
   title: string,
   slug: string,
-): Promise<BlogDocument> {
-  return apiFetch<BlogDocument>('/api/sanity/documents', {
+): Promise<ContentDocument> {
+  return apiFetch<ContentDocument>('/api/sanity/documents', {
     method: 'POST',
     body: JSON.stringify({ title, slug }),
   })
@@ -100,9 +100,9 @@ export async function apiUploadImage(file: File): Promise<ImageAsset> {
   return apiFetch<ImageAsset>('/api/sanity/images', { method: 'POST', body: form })
 }
 
-/** Fetches all blog documents (including drafts) via the API proxy. */
-export async function apiListDocuments(): Promise<BlogDocument[]> {
-  return apiFetch<BlogDocument[]>('/api/sanity/documents')
+/** Fetches all content documents (including drafts) via the API proxy. */
+export async function apiListDocuments(): Promise<ContentDocument[]> {
+  return apiFetch<ContentDocument[]>('/api/sanity/documents')
 }
 
 /** Fetches all image assets from Sanity via the API proxy. */

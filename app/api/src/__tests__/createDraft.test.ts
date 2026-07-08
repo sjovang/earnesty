@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest'
 import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
+import { clearApiRuntimeConfigCache } from '../config/runtime.js'
 
 const { getHandler, setHandler } = vi.hoisted(() => {
   let _handler: ((req: HttpRequest) => Promise<HttpResponseInit>) | null = null
@@ -170,5 +171,51 @@ describe('createDraft handler', () => {
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
     expect(res.status).toBe(502)
     expect(res.jsonBody).toEqual({ error: 'Failed to create draft' })
+  })
+})
+
+// ── Non-default schema mapping ────────────────────────────────────────────────
+
+describe('createDraft handler – custom schema mapping', () => {
+  const originalEnv = process.env
+
+  beforeEach(() => {
+    process.env = {
+      ...originalEnv,
+      NODE_ENV: 'test',
+      SANITY_DOCUMENT_TYPE: 'article',
+      SANITY_TITLE_FIELD: 'headline',
+      SANITY_SLUG_FIELD: 'path',
+    }
+    clearApiRuntimeConfigCache()
+    vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+    clearApiRuntimeConfigCache()
+  })
+
+  it('creates a draft with the configured document type', async () => {
+    const create = vi.fn().mockResolvedValue({ _id: 'drafts.test-id', _type: 'article' })
+    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+
+    await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article' } }))
+
+    const doc = vi.mocked(create).mock.calls[0][0] as Record<string, unknown>
+    expect(doc['_type']).toBe('article')
+  })
+
+  it('uses configured title and slug field names', async () => {
+    const create = vi.fn().mockResolvedValue({ _id: 'drafts.test-id', _type: 'article' })
+    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+
+    await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article' } }))
+
+    const doc = vi.mocked(create).mock.calls[0][0] as Record<string, unknown>
+    expect(doc['headline']).toBe('My Article')
+    expect(doc['path']).toMatchObject({ _type: 'slug', current: 'my-article' })
+    expect(doc).not.toHaveProperty('title')
+    expect(doc).not.toHaveProperty('slug')
   })
 })

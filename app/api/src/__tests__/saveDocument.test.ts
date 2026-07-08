@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest'
 import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
+import { clearApiRuntimeConfigCache } from '../config/runtime.js'
 
 // vi.hoisted() ensures these helpers exist when the vi.mock() factory runs.
 const { getHandler, setHandler } = vi.hoisted(() => {
@@ -193,5 +194,65 @@ describe('saveDocument handler', () => {
 
     expect(res.status).toBe(502)
     expect(res.jsonBody).toEqual({ error: 'Failed to save document' })
+  })
+})
+
+// ── Non-default schema mapping ────────────────────────────────────────────────
+
+describe('saveDocument handler – custom schema mapping', () => {
+  const originalEnv = process.env
+
+  beforeEach(() => {
+    process.env = {
+      ...originalEnv,
+      NODE_ENV: 'test',
+      SANITY_TITLE_FIELD: 'headline',
+      SANITY_BODY_FIELD: 'content',
+    }
+    clearApiRuntimeConfigCache()
+    vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+    clearApiRuntimeConfigCache()
+  })
+
+  it('uses the configured body field name when saving blocks', async () => {
+    const { patch, set } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+
+    const blocks = [{ _type: 'block', children: [] }]
+    await getHandler()(makeRequest({
+      params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' },
+      body: { blocks },
+    }))
+
+    expect(set).toHaveBeenCalledWith({ content: blocks })
+  })
+
+  it('uses the configured title field name when saving title', async () => {
+    const { patch, set } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+
+    await getHandler()(makeRequest({
+      params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' },
+      body: { title: 'Updated Headline' },
+    }))
+
+    expect(set).toHaveBeenCalledWith({ headline: 'Updated Headline' })
+  })
+
+  it('uses both configured field names when saving blocks and title together', async () => {
+    const { patch, set } = makePatchClient()
+    vi.mocked(getSanityClient).mockReturnValue({ patch } as any)
+
+    const blocks = [{ _type: 'block', children: [] }]
+    await getHandler()(makeRequest({
+      params: { id: 'drafts.550e8400-e29b-41d4-a716-446655440000' },
+      body: { blocks, title: 'Updated Headline' },
+    }))
+
+    expect(set).toHaveBeenCalledWith({ content: blocks, headline: 'Updated Headline' })
   })
 })

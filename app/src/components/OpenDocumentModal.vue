@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import BaseModal from './BaseModal.vue'
-import { useBlogDocuments } from '../composables/useBlogDocuments'
-import { extractPreview, type BlogDocument } from '../services/sanity'
+import { useDocuments } from '../composables/useBlogDocuments'
+import { extractPreview, type ContentDocument } from '../services/sanity'
 import { runtimeConfig } from '../config/runtime'
 
 const emit = defineEmits<{
   close: []
-  select: [doc: BlogDocument]
+  select: [doc: ContentDocument]
 }>()
 
-const { documents, loading, error } = useBlogDocuments()
+const { documents, loading, error } = useDocuments()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
@@ -30,8 +30,8 @@ const sortOptions: { value: SortKey; label: string }[] = [
 
 // Deduplicate draft/published pairs and compute status for each document.
 // When both draft and published exist, prefer the draft (it has the latest edits).
-const resolvedDocs = computed<{ doc: BlogDocument; status: DocStatus }[]>(() => {
-  const map = new Map<string, { draft?: BlogDocument; published?: BlogDocument }>()
+const resolvedDocs = computed<{ doc: ContentDocument; status: DocStatus }[]>(() => {
+  const map = new Map<string, { draft?: ContentDocument; published?: ContentDocument }>()
 
   for (const doc of documents.value) {
     const isDraft = doc._id.startsWith(draftPrefix)
@@ -88,7 +88,7 @@ function formatDate(iso: string) {
   })
 }
 
-function select(doc: BlogDocument) {
+function select(doc: ContentDocument) {
   emit('select', doc)
   emit('close')
 }

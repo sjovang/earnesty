@@ -1,9 +1,9 @@
 import { ref, onMounted } from 'vue'
-import type { BlogDocument } from '../services/sanity'
+import type { ContentDocument } from '../services/sanity'
 import { apiListDocuments } from '../services/api'
 
-export function useBlogDocuments() {
-  const documents = ref<BlogDocument[]>([])
+export function useDocuments() {
+  const documents = ref<ContentDocument[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
 
@@ -11,7 +11,7 @@ export function useBlogDocuments() {
     try {
       documents.value = await apiListDocuments()
     } catch (e) {
-      console.error('[useBlogDocuments] fetch failed:', e)
+      console.error('[useDocuments] fetch failed:', e)
       const msg = e instanceof Error ? e.message : String(e)
       error.value = `Could not load documents: ${msg}`
     } finally {
@@ -21,3 +21,6 @@ export function useBlogDocuments() {
 
   return { documents, loading, error }
 }
+
+/** @deprecated Use {@link useDocuments} instead. */
+export const useBlogDocuments = useDocuments

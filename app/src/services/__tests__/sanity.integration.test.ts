@@ -3,7 +3,7 @@
  *
  * These tests run against the real Sanity development dataset. They use an
  * admin client (SANITY_TOKEN) to create and clean up test data, then verify
- * that fetchBlogDocuments and fetchBlogDocument can read it via the
+ * that fetchDocuments and fetchDocument can read it via the
  * unauthenticated public client in sanity.ts.
  *
  * Required environment variables:
@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient } from '@sanity/client'
-import { fetchBlogDocuments, fetchBlogDocument } from '../sanity.js'
+import { fetchDocuments, fetchDocument } from '../sanity.js'
 
 const projectId = import.meta.env.VITE_SANITY_PROJECT_ID as string | undefined
 const dataset = (import.meta.env.VITE_SANITY_DATASET as string | undefined) ?? 'production'
@@ -27,7 +27,7 @@ const adminToken = process.env['SANITY_TOKEN']
 const hasCredentials = Boolean(projectId && adminToken)
 
 const RUN_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
-// Use a published (non-draft) ID so the GROQ query in fetchBlogDocuments finds it.
+// Use a published (non-draft) ID so the GROQ query in fetchDocuments finds it.
 const TEST_DOC_ID = `integration-fe-${RUN_ID}`
 
 describe.skipIf(!hasCredentials)('Integration: Sanity fetch functions', () => {
@@ -62,23 +62,23 @@ describe.skipIf(!hasCredentials)('Integration: Sanity fetch functions', () => {
     await adminClient.delete(TEST_DOC_ID).catch(() => {})
   })
 
-  // ── fetchBlogDocuments ───────────────────────────────────────────────────────
+  // ── fetchDocuments ───────────────────────────────────────────────────────
 
-  describe('fetchBlogDocuments', () => {
+  describe('fetchDocuments', () => {
     it('returns an array', async () => {
-      const docs = await fetchBlogDocuments()
+      const docs = await fetchDocuments()
       expect(Array.isArray(docs)).toBe(true)
     })
 
     it('includes the test document in the results', async () => {
-      const docs = await fetchBlogDocuments()
+      const docs = await fetchDocuments()
       const found = docs.find((d) => d._id === TEST_DOC_ID)
       expect(found).toBeDefined()
       expect(found?.title).toBe('Integration Fetch Test')
     })
 
     it('returns documents with the expected shape', async () => {
-      const docs = await fetchBlogDocuments()
+      const docs = await fetchDocuments()
       expect(docs.length).toBeGreaterThan(0)
       const doc = docs[0]
       expect(doc).toHaveProperty('_id')
@@ -88,18 +88,18 @@ describe.skipIf(!hasCredentials)('Integration: Sanity fetch functions', () => {
     })
   })
 
-  // ── fetchBlogDocument ────────────────────────────────────────────────────────
+  // ── fetchDocument ────────────────────────────────────────────────────────
 
-  describe('fetchBlogDocument', () => {
+  describe('fetchDocument', () => {
     it('retrieves the test document by ID', async () => {
-      const doc = await fetchBlogDocument(TEST_DOC_ID)
+      const doc = await fetchDocument(TEST_DOC_ID)
       expect(doc).not.toBeNull()
       expect(doc._id).toBe(TEST_DOC_ID)
       expect(doc.title).toBe('Integration Fetch Test')
     })
 
     it('returns the full body of the document', async () => {
-      const doc = await fetchBlogDocument(TEST_DOC_ID)
+      const doc = await fetchDocument(TEST_DOC_ID)
       expect(Array.isArray(doc.body)).toBe(true)
       expect(doc.body?.length).toBeGreaterThan(0)
       expect(doc.body?.[0]?._type).toBe('block')

@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest'
 import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
+import { clearApiRuntimeConfigCache } from '../config/runtime.js'
 
 const { getHandler, setHandler } = vi.hoisted(() => {
   let _handler: ((req: HttpRequest) => Promise<HttpResponseInit>) | null = null
@@ -108,5 +109,52 @@ describe('listDocuments handler', () => {
     const query = mockFetch.mock.calls[0][0] as string
     expect(query).toContain('_type == "blog"')
     expect(query).toContain('order(')
+  })
+})
+
+// ── Non-default schema mapping ────────────────────────────────────────────────
+
+describe('listDocuments handler – custom schema mapping', () => {
+  const originalEnv = process.env
+
+  beforeEach(() => {
+    process.env = {
+      ...originalEnv,
+      NODE_ENV: 'test',
+      SANITY_DOCUMENT_TYPE: 'article',
+      SANITY_TITLE_FIELD: 'headline',
+      SANITY_BODY_FIELD: 'content',
+      SANITY_PUBLISHED_AT_FIELD: 'publishedOn',
+    }
+    clearApiRuntimeConfigCache()
+    vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+    clearApiRuntimeConfigCache()
+  })
+
+  it('filters by the configured document type', async () => {
+    const mockFetch = vi.fn().mockResolvedValue([])
+    vi.mocked(getSanityClient).mockReturnValue({ fetch: mockFetch } as any)
+
+    await getHandler()(makeRequest())
+
+    const query = mockFetch.mock.calls[0][0] as string
+    expect(query).toContain('_type == "article"')
+    expect(query).not.toContain('_type == "blog"')
+  })
+
+  it('uses configured field names in the projection', async () => {
+    const mockFetch = vi.fn().mockResolvedValue([])
+    vi.mocked(getSanityClient).mockReturnValue({ fetch: mockFetch } as any)
+
+    await getHandler()(makeRequest())
+
+    const query = mockFetch.mock.calls[0][0] as string
+    expect(query).toContain('"title": headline')
+    expect(query).toContain('"publishedAt": publishedOn')
+    expect(query).toContain('"body": content')
   })
 })

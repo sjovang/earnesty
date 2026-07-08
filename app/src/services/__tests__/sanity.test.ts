@@ -4,8 +4,8 @@ import {
   tiptapJsonToPortableText,
   buildSanityImageUrl,
   extractPreview,
-  fetchBlogDocuments,
-  fetchBlogDocument,
+  fetchDocuments,
+  fetchDocument,
   type SanityBodyBlock,
   type SanityBlock,
   type TiptapNode,
@@ -432,27 +432,27 @@ describe('tiptapJsonToPortableText', () => {
   })
 })
 
-// ── fetchBlogDocuments ────────────────────────────────────────────────────────
+// ── fetchDocuments ────────────────────────────────────────────────────────────
 
-describe('fetchBlogDocuments', () => {
+describe('fetchDocuments', () => {
   beforeEach(() => {
     mockClientFetch.mockReset()
   })
 
-  it('returns the list of blog documents', async () => {
+  it('returns the list of content documents', async () => {
     const mockDocs = [
       { _id: 'doc-1', title: 'First Post', _createdAt: '2024-01-01', _updatedAt: '2024-01-01' },
       { _id: 'doc-2', title: 'Second Post', _createdAt: '2024-01-02', _updatedAt: '2024-01-02' },
     ]
     mockClientFetch.mockResolvedValue(mockDocs)
 
-    const docs = await fetchBlogDocuments()
+    const docs = await fetchDocuments()
     expect(docs).toEqual(mockDocs)
   })
 
   it('queries Sanity with a GROQ expression', async () => {
     mockClientFetch.mockResolvedValue([])
-    await fetchBlogDocuments()
+    await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
     expect(query).toMatch(/^\s*\*\[/)
@@ -461,7 +461,7 @@ describe('fetchBlogDocuments', () => {
 
   it('orders results by published date descending', async () => {
     mockClientFetch.mockResolvedValue([])
-    await fetchBlogDocuments()
+    await fetchDocuments()
 
     const query = mockClientFetch.mock.calls[0][0] as string
     expect(query).toContain('order(')
@@ -469,9 +469,9 @@ describe('fetchBlogDocuments', () => {
   })
 })
 
-// ── fetchBlogDocument ─────────────────────────────────────────────────────────
+// ── fetchDocument ─────────────────────────────────────────────────────────────
 
-describe('fetchBlogDocument', () => {
+describe('fetchDocument', () => {
   beforeEach(() => {
     mockClientFetch.mockReset()
   })
@@ -480,13 +480,13 @@ describe('fetchBlogDocument', () => {
     const mockDoc = { _id: 'doc-1', title: 'My Post', _createdAt: '2024-01-01', _updatedAt: '2024-01-01', body: [] }
     mockClientFetch.mockResolvedValue(mockDoc)
 
-    const doc = await fetchBlogDocument('doc-1')
+    const doc = await fetchDocument('doc-1')
     expect(doc).toEqual(mockDoc)
   })
 
   it('passes the document ID as a GROQ parameter', async () => {
     mockClientFetch.mockResolvedValue(null)
-    await fetchBlogDocument('my-doc-id')
+    await fetchDocument('my-doc-id')
 
     const params = mockClientFetch.mock.calls[0][1] as Record<string, string>
     expect(params).toMatchObject({ id: 'my-doc-id' })
@@ -494,7 +494,7 @@ describe('fetchBlogDocument', () => {
 
   it('queries by _id using a GROQ expression', async () => {
     mockClientFetch.mockResolvedValue(null)
-    await fetchBlogDocument('doc-1')
+    await fetchDocument('doc-1')
 
     const query = mockClientFetch.mock.calls[0][0] as string
     expect(query).toContain('_id == $id')
