@@ -59,6 +59,14 @@ const CREATED_DOC = {
   slug: { _type: 'slug', current: 'my-post' },
 }
 
+function makeCreateClient(options?: { slugConflictId?: string | null; createThrows?: unknown }) {
+  const fetch = vi.fn().mockResolvedValue(options?.slugConflictId ?? null)
+  const create = options?.createThrows
+    ? vi.fn().mockRejectedValue(options.createThrows)
+    : vi.fn().mockResolvedValue(CREATED_DOC)
+  return { fetch, create }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('createDraft handler', () => {
@@ -112,8 +120,8 @@ describe('createDraft handler', () => {
   })
 
   it('creates a draft with a "drafts." prefixed ID', async () => {
-    const create = vi.fn().mockResolvedValue(CREATED_DOC)
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient()
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
 
@@ -122,8 +130,8 @@ describe('createDraft handler', () => {
   })
 
   it('creates a draft with correct type, title, and slug', async () => {
-    const create = vi.fn().mockResolvedValue(CREATED_DOC)
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient()
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
 
@@ -137,8 +145,8 @@ describe('createDraft handler', () => {
   })
 
   it('trims whitespace from title and slug', async () => {
-    const create = vi.fn().mockResolvedValue(CREATED_DOC)
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient()
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     await getHandler()(makeRequest({ body: { title: '  My Post  ', slug: '  my-post  ' } }))
 
@@ -148,8 +156,8 @@ describe('createDraft handler', () => {
   })
 
   it('returns 201 with the created document', async () => {
-    const create = vi.fn().mockResolvedValue(CREATED_DOC)
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient()
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
 
@@ -163,9 +171,20 @@ describe('createDraft handler', () => {
     )
   })
 
+  it('returns 409 when slug is already in use for the document type', async () => {
+    const { fetch, create } = makeCreateClient({ slugConflictId: 'drafts.existing-id' })
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
+
+    const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
+
+    expect(res.status).toBe(409)
+    expect(res.jsonBody).toEqual({ error: '"slug" must be unique for this content type' })
+    expect(create).not.toHaveBeenCalled()
+  })
+
   it('returns 502 when Sanity client throws', async () => {
-    const create = vi.fn().mockRejectedValue(new Error('Sanity create failed'))
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient({ createThrows: new Error('Sanity create failed') })
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
     expect(res.status).toBe(502)
@@ -173,8 +192,8 @@ describe('createDraft handler', () => {
   })
 
   it('returns 502 with generic message for non-Error throws', async () => {
-    const create = vi.fn().mockRejectedValue('string error')
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    const { fetch, create } = makeCreateClient({ createThrows: 'string error' })
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     const res = await getHandler()(makeRequest({ body: { title: 'My Post', slug: 'my-post' } }))
     expect(res.status).toBe(502)
@@ -214,8 +233,9 @@ describe('createDraft handler – custom schema mapping', () => {
   })
 
   it('creates a draft with the configured document type', async () => {
+    const fetch = vi.fn().mockResolvedValue(null)
     const create = vi.fn().mockResolvedValue({ _id: 'drafts.test-id', _type: 'article' })
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article', documentType: 'article' } }))
 
@@ -224,8 +244,9 @@ describe('createDraft handler – custom schema mapping', () => {
   })
 
   it('uses configured title and slug field names', async () => {
+    const fetch = vi.fn().mockResolvedValue(null)
     const create = vi.fn().mockResolvedValue({ _id: 'drafts.test-id', _type: 'article' })
-    vi.mocked(getSanityClient).mockReturnValue({ create } as any)
+    vi.mocked(getSanityClient).mockReturnValue({ fetch, create } as any)
 
     await getHandler()(makeRequest({ body: { title: 'My Article', slug: 'my-article' } }))
 

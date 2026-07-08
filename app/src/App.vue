@@ -18,7 +18,12 @@ const showOpen = ref(false)
 const showNew = ref(false)
 const showHelp = ref(false)
 const showSettings = ref(false)
+const showMetadataModal = ref(false)
 const showPublishModal = ref(false)
+const metadataError = ref('')
+const publishError = ref('')
+const metadataSubmitting = ref(false)
+const publishSubmitting = ref(false)
 const editorStore = useEditorStore()
 const auth = useAuthStore()
 const draftPrefix = runtimeConfig.content.draftPrefix
@@ -59,6 +64,12 @@ const canPublish = computed(() =>
   && editorStore.publishStatus !== 'publishing',
 )
 
+const canEditMetadata = computed(() =>
+  auth.isAuthenticated
+  && !!editorStore.activeDocument
+  && editorStore.publishStatus !== 'publishing',
+)
+
 const isDraft = computed(() =>
   !!editorStore.activeDocument
   && editorStore.activeDocument._id.startsWith(draftPrefix),
@@ -74,25 +85,70 @@ function onNewDocument() {
 
 async function publishDocument() {
   if (!canPublish.value) return
+  publishError.value = ''
   showPublishModal.value = true
 }
 
-async function onPublishConfirm(meta: DocumentMeta) {
-  showPublishModal.value = false
+function openMetadataModal() {
+  if (!canEditMetadata.value) return
+  metadataError.value = ''
+  showMetadataModal.value = true
+}
+
+function isPersistableDraft(id: string): boolean {
+  return id.startsWith(draftPrefix)
+}
+
+function toMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}
+
+async function persistMetadata(meta: DocumentMeta): Promise<void> {
   const doc = editorStore.activeDocument
-  if (!doc) return
+  if (!doc || !auth.isAuthenticated || !isPersistableDraft(doc._id)) return
+  await apiSaveDocument(doc._id, undefined, meta.title, editorStore.metadataPayload())
+}
+
+async function onMetadataSubmit(meta: DocumentMeta) {
+  metadataError.value = ''
+  metadataSubmitting.value = true
+  editorStore.updateMeta(meta)
+  try {
+    await persistMetadata(meta)
+    showMetadataModal.value = false
+  } catch (err) {
+    metadataError.value = toMessage(err, 'Failed to save metadata')
+    trackException(err instanceof Error ? err : new Error(String(err)), { action: 'save_metadata' })
+  } finally {
+    metadataSubmitting.value = false
+  }
+}
+
+async function onPublishConfirm(meta: DocumentMeta) {
+  publishError.value = ''
+  publishSubmitting.value = true
+  const doc = editorStore.activeDocument
+  if (!doc) {
+    publishSubmitting.value = false
+    return
+  }
 
   editorStore.updateMeta(meta)
 
   try {
     // Save metadata updates to Sanity before publishing
-    await apiSaveDocument(doc._id, undefined, meta.title, editorStore.metadataPayload())
+    await persistMetadata(meta)
   } catch (err) {
     console.error('[publish] pre-publish save failed:', err)
+    publishError.value = toMessage(err, 'Failed to save metadata before publish')
+    publishSubmitting.value = false
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'pre_publish_save' })
     return
   }
 
+  showPublishModal.value = false
+  publishSubmitting.value = false
   await doPublish()
 }
 
@@ -135,10 +191,12 @@ onMounted(async () => {
     :user="auth.user ?? undefined"
     :is-authenticated="auth.isAuthenticated"
     :has-document="!!editorStore.activeDocument"
+    :can-edit-metadata="canEditMetadata"
     :can-publish="canPublish"
     :is-draft="isDraft"
     @new="onNewDocument"
     @open="showOpen = true"
+    @metadata="openMetadataModal"
     @publish="publishDocument"
     @help="showHelp = true"
     @settings="showSettings = true"
@@ -165,9 +223,20 @@ onMounted(async () => {
     @close="showSettings = false"
   />
   <PublishModal
+    v-if="showMetadataModal"
+    mode="edit"
+    :is-submitting="metadataSubmitting"
+    :error-message="metadataError"
+    @close="showMetadataModal = false"
+    @submit="onMetadataSubmit"
+  />
+  <PublishModal
     v-if="showPublishModal"
+    mode="publish"
+    :is-submitting="publishSubmitting"
+    :error-message="publishError"
     @close="showPublishModal = false"
-    @publish="onPublishConfirm"
+    @submit="onPublishConfirm"
   />
 </template>
 

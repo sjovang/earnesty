@@ -4,7 +4,13 @@ import {
   type HttpResponseInit,
 } from '@azure/functions'
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
-import { getApiRuntimeConfig, getContentTypeConfig, type MetadataFieldConfig } from '../config/runtime.js'
+import {
+  getApiRuntimeConfig,
+  getContentTypeConfig,
+  toPublishedDocumentId,
+  type MetadataFieldConfig,
+} from '../config/runtime.js'
+import { findSlugConflictId } from '../slugUniqueness.js'
 
 function normalizeMetadataFieldValue(
   field: MetadataFieldConfig,
@@ -20,6 +26,9 @@ function normalizeMetadataFieldValue(
     case 'slug':
       if (typeof value !== 'string') {
         throw new Error(`"${field.key}" must be a string`)
+      }
+      if (!value.trim()) {
+        throw new Error(`"${field.key}" is required`)
       }
       return { _type: 'slug', current: value.trim() }
     case 'stringArray':
@@ -107,6 +116,7 @@ app.http('saveDocument', {
       }
       const typeConfig = getContentTypeConfig(existing._type)
       const fields: Record<string, unknown> = {}
+      let slugForUniquenessCheck: string | null = null
       if (Array.isArray(body.blocks)) {
         fields[typeConfig.bodyField] = body.blocks
       }
@@ -121,13 +131,31 @@ app.http('saveDocument', {
             return { status: 400, jsonBody: { error: `"metadata.${key}" is not configured for this type` } }
           }
           try {
-            fields[field.field] = normalizeMetadataFieldValue(field, value)
+            const normalized = normalizeMetadataFieldValue(field, value)
+            fields[field.field] = normalized
+            if (field.type === 'slug' && typeof normalized === 'object' && normalized !== null && 'current' in normalized) {
+              const current = normalized.current
+              if (typeof current === 'string') {
+                slugForUniquenessCheck = current
+              }
+            }
           } catch (error) {
             return {
               status: 400,
               jsonBody: { error: error instanceof Error ? error.message : `Invalid value for "${key}"` },
             }
           }
+        }
+      }
+      if (slugForUniquenessCheck) {
+        const conflictId = await findSlugConflictId(client, {
+          documentType: typeConfig.name,
+          slugField: typeConfig.slugField,
+          slug: slugForUniquenessCheck,
+          excludeIds: [id, toPublishedDocumentId(id)],
+        })
+        if (conflictId) {
+          return { status: 409, jsonBody: { error: '"slug" must be unique for this content type' } }
         }
       }
       await client.patch(id).set(fields).commit()
