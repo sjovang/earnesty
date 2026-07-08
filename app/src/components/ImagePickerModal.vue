@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import BaseModal from './BaseModal.vue'
 import { apiUploadImage, apiListImages, type ImageAsset } from '../services/api'
+import { clampPage, paginateImages, sortLibraryImages, type ImageSortKey } from './imageLibrary'
 
 const emit = defineEmits<{
   close: []
@@ -76,6 +77,28 @@ async function uploadFile(file: File) {
 const libraryImages = ref<ImageAsset[]>([])
 const libraryLoading = ref(false)
 const libraryError = ref<string | null>(null)
+const sortBy = ref<ImageSortKey>('newest')
+const currentPage = ref(1)
+const PAGE_SIZE = 15
+
+const sortOptions: { value: ImageSortKey; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'name-asc', label: 'Name A–Z' },
+  { value: 'name-desc', label: 'Name Z–A' },
+]
+
+const sortedLibraryImages = computed(() => sortLibraryImages(libraryImages.value, sortBy.value))
+const totalPages = computed(() => Math.max(1, Math.ceil(sortedLibraryImages.value.length / PAGE_SIZE)))
+const pagedLibraryImages = computed(() => paginateImages(sortedLibraryImages.value, currentPage.value, PAGE_SIZE))
+
+watch(sortBy, () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, (pages) => {
+  currentPage.value = clampPage(currentPage.value, pages)
+})
 
 async function loadLibrary() {
   if (libraryImages.value.length > 0) return
@@ -92,7 +115,12 @@ async function loadLibrary() {
 
 function switchToLibrary() {
   activeTab.value = 'library'
+  currentPage.value = 1
   loadLibrary()
+}
+
+function goToPage(page: number) {
+  currentPage.value = clampPage(page, totalPages.value)
 }
 
 onMounted(() => {
@@ -187,6 +215,23 @@ onMounted(() => {
         v-else
         class="tab-panel"
       >
+        <div
+          v-if="!libraryLoading && !libraryError && libraryImages.length > 0"
+          class="library-controls"
+          role="group"
+          aria-label="Sort images"
+        >
+          <button
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            class="library-sort-tab"
+            :class="{ 'library-sort-tab--active': sortBy === opt.value }"
+            @click="sortBy = opt.value"
+          >
+            {{ opt.label }}
+          </button>
+        </div>
+
         <p
           v-if="libraryLoading"
           class="status"
@@ -210,7 +255,7 @@ onMounted(() => {
           class="grid"
         >
           <button
-            v-for="img in libraryImages"
+            v-for="img in pagedLibraryImages"
             :key="img.assetRef"
             class="grid__item"
             :title="img.assetRef"
@@ -222,6 +267,27 @@ onMounted(() => {
               class="grid__thumb"
               loading="lazy"
             >
+          </button>
+        </div>
+
+        <div
+          v-if="!libraryLoading && !libraryError && libraryImages.length > PAGE_SIZE"
+          class="pagination"
+        >
+          <button
+            class="pagination__button"
+            :disabled="currentPage <= 1"
+            @click="goToPage(currentPage - 1)"
+          >
+            Previous
+          </button>
+          <span class="pagination__status">Page {{ currentPage }} of {{ totalPages }}</span>
+          <button
+            class="pagination__button"
+            :disabled="currentPage >= totalPages"
+            @click="goToPage(currentPage + 1)"
+          >
+            Next
           </button>
         </div>
       </div>
@@ -272,6 +338,38 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.library-controls {
+  display: flex;
+  gap: 2px;
+  background: var(--ctp-surface0);
+  border-radius: 7px;
+  padding: 3px;
+}
+
+.library-sort-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--ctp-subtext1);
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 0.3rem 0.4rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.library-sort-tab:hover:not(.library-sort-tab--active) {
+  color: var(--ctp-text);
+  background: color-mix(in srgb, var(--ctp-surface1) 60%, transparent);
+}
+
+.library-sort-tab--active {
+  background: var(--ctp-surface2);
+  color: var(--ctp-text);
 }
 
 .drop-zone {
@@ -346,28 +444,23 @@ onMounted(() => {
 /* ── Library grid ── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
-  max-height: 320px;
-  overflow-y: auto;
+  max-height: 440px;
+  overflow: hidden;
 }
 
 .grid__item {
-  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   background: var(--ctp-surface0);
   border: 2px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   overflow: hidden;
   padding: 0;
-  min-width: 0;
   transition: border-color 0.15s ease;
-}
-
-.grid__item::before {
-  content: '';
-  display: block;
-  padding-bottom: 100%;
 }
 
 .grid__item:hover {
@@ -375,11 +468,10 @@ onMounted(() => {
 }
 
 .grid__thumb {
-  position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 /* ── Status / error ── */
@@ -395,5 +487,32 @@ onMounted(() => {
   color: var(--ctp-red);
   font-size: 0.85rem;
   margin: 0;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.pagination__button {
+  background: var(--ctp-surface0);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  color: var(--ctp-text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.6rem;
+}
+
+.pagination__button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination__status {
+  color: var(--ctp-subtext0);
+  font-size: 0.8rem;
 }
 </style>

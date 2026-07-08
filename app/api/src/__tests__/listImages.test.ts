@@ -67,8 +67,20 @@ describe('listImages handler', () => {
 
   it('returns 200 with mapped image assets', async () => {
     const rawAssets = [
-      { _id: 'image-abc-800x600-jpg', url: 'https://cdn.sanity.io/a.jpg', width: 800, height: 600 },
-      { _id: 'image-def-1920x1080-png', url: 'https://cdn.sanity.io/b.png', width: 1920, height: 1080 },
+      {
+        _id: 'image-abc-800x600-jpg',
+        url: 'https://cdn.sanity.io/a.jpg',
+        width: 800,
+        height: 600,
+        createdAt: '2024-01-01T10:00:00.000Z',
+      },
+      {
+        _id: 'image-def-1920x1080-png',
+        url: 'https://cdn.sanity.io/b.png',
+        width: 1920,
+        height: 1080,
+        createdAt: '2024-01-02T10:00:00.000Z',
+      },
     ]
     vi.mocked(getSanityClient).mockReturnValue({
       fetch: vi.fn().mockResolvedValue(rawAssets),
@@ -77,8 +89,20 @@ describe('listImages handler', () => {
     const res = await getHandler()(makeRequest())
     expect(res.status).toBe(200)
     expect(res.jsonBody).toEqual([
-      { assetRef: 'image-abc-800x600-jpg', url: 'https://cdn.sanity.io/a.jpg', width: 800, height: 600 },
-      { assetRef: 'image-def-1920x1080-png', url: 'https://cdn.sanity.io/b.png', width: 1920, height: 1080 },
+      {
+        assetRef: 'image-abc-800x600-jpg',
+        url: 'https://cdn.sanity.io/a.jpg',
+        width: 800,
+        height: 600,
+        createdAt: '2024-01-01T10:00:00.000Z',
+      },
+      {
+        assetRef: 'image-def-1920x1080-png',
+        url: 'https://cdn.sanity.io/b.png',
+        width: 1920,
+        height: 1080,
+        createdAt: '2024-01-02T10:00:00.000Z',
+      },
     ])
   })
 
@@ -94,7 +118,13 @@ describe('listImages handler', () => {
 
   it('returns 200 with null dimensions when metadata is missing', async () => {
     const rawAssets = [
-      { _id: 'image-abc-800x600-jpg', url: 'https://cdn.sanity.io/a.jpg', width: null, height: null },
+      {
+        _id: 'image-abc-800x600-jpg',
+        url: 'https://cdn.sanity.io/a.jpg',
+        width: null,
+        height: null,
+        createdAt: null,
+      },
     ]
     vi.mocked(getSanityClient).mockReturnValue({
       fetch: vi.fn().mockResolvedValue(rawAssets),
@@ -103,7 +133,13 @@ describe('listImages handler', () => {
     const res = await getHandler()(makeRequest())
     expect(res.status).toBe(200)
     expect(res.jsonBody).toEqual([
-      { assetRef: 'image-abc-800x600-jpg', url: 'https://cdn.sanity.io/a.jpg', width: null, height: null },
+      {
+        assetRef: 'image-abc-800x600-jpg',
+        url: 'https://cdn.sanity.io/a.jpg',
+        width: null,
+        height: null,
+        createdAt: null,
+      },
     ])
   })
 
