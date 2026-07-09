@@ -572,7 +572,7 @@ watch(
 
 .editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:is(:empty, :has(> br.ProseMirror-trailingBreak:only-child))::before) {
   content: attr(data-start-placeholder);
-  color: var(--ctp-subtext0);
+  color: var(--ui-placeholder-color);
   pointer-events: none;
 }
 
@@ -597,7 +597,7 @@ watch(
 
 .editor__content :deep(.ProseMirror h1[data-type='title']:empty::before) {
   content: 'Untitled';
-  color: var(--ctp-overlay0);
+  color: var(--ui-placeholder-color);
   pointer-events: none;
 }
 
@@ -619,9 +619,11 @@ watch(
 
 /* ── Blockquote ───────────────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror blockquote) {
-  border-left: 3px solid var(--ctp-mauve);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ctp-surface0) 35%, transparent);
   margin: 1.2em 0;
-  padding: 0.15em 1em;
+  padding: 0.55em 0.9em;
   color: var(--ctp-subtext1);
   font-style: italic;
 }

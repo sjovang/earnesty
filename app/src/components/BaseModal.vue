@@ -17,6 +17,7 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
     <div
       class="overlay"
       role="dialog"
+      aria-modal="true"
       :aria-label="props.title"
       @click.self="emit('close')"
     >

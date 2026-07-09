@@ -118,7 +118,7 @@ async function onMetadataSubmit(meta: DocumentMeta) {
     await persistMetadata(meta)
     showMetadataModal.value = false
   } catch (err) {
-    metadataError.value = toMessage(err, 'Failed to save metadata')
+    metadataError.value = toMessage(err, 'Failed to save metadata. Please retry.')
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'save_metadata' })
   } finally {
     metadataSubmitting.value = false
@@ -141,7 +141,7 @@ async function onPublishConfirm(meta: DocumentMeta) {
     await persistMetadata(meta)
   } catch (err) {
     console.error('[publish] pre-publish save failed:', err)
-    publishError.value = toMessage(err, 'Failed to save metadata before publish')
+    publishError.value = toMessage(err, 'Failed to save metadata before publish. Fix the fields and retry.')
     publishSubmitting.value = false
     trackException(err instanceof Error ? err : new Error(String(err)), { action: 'pre_publish_save' })
     return

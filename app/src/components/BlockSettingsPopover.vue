@@ -178,7 +178,7 @@ onUnmounted(() => {
 }
 
 .bsp__optional {
-  color: var(--ctp-overlay0);
+  color: var(--ui-hint-color);
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
@@ -223,7 +223,7 @@ onUnmounted(() => {
 }
 
 .bsp__input::placeholder {
-  color: var(--ctp-overlay0);
+  color: var(--ui-placeholder-color);
 }
 
 .bsp__apply {

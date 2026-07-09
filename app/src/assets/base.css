@@ -27,6 +27,7 @@
   --ctp-base:      #eff1f5;
   --ctp-mantle:    #e6e9ef;
   --ctp-crust:     #dce0e8;
+  color-scheme: light;
 }
 
 /* Catppuccin Macchiato (dark) */
@@ -57,6 +58,7 @@
   --ctp-base:      #24273a;
   --ctp-mantle:    #1e2030;
   --ctp-crust:     #181926;
+  color-scheme: dark;
 }
 
 /* Catppuccin-inspired Whimsical mode — vibrant accents, no base/text neutrals */
@@ -88,6 +90,13 @@
   --ctp-base:      #361428;
   --ctp-mantle:    #2a0e1f;
   --ctp-crust:     #1f0816;
+  color-scheme: dark;
+}
+
+:root {
+  --ui-label-color: var(--ctp-subtext1);
+  --ui-hint-color: var(--ctp-subtext1);
+  --ui-placeholder-color: var(--ctp-subtext1);
 }
 
 *,
@@ -141,4 +150,15 @@ a:hover {
   background: var(--ctp-surface0);
   border-color: var(--ctp-surface2);
   color: var(--ctp-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

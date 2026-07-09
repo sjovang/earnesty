@@ -439,8 +439,8 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   left: 0;
   right: 0;
   z-index: 100;
-  opacity: 0;
-  transition: opacity 0.35s ease;
+  opacity: 0.72;
+  transition: opacity 0.2s ease;
 }
 
 .menubar:hover,
@@ -492,7 +492,7 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
 
 .menubar__doc-title {
   font-size: var(--step--1);
-  color: var(--ctp-subtext0);
+  color: var(--ctp-subtext1);
   padding: 0 var(--space-xs);
   border-left: 1px solid var(--ctp-surface1);
   max-width: 260px;
@@ -609,7 +609,7 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   border-left: 1px solid var(--ctp-surface1);
 }
 
-.menubar__save--saving { color: var(--ctp-subtext0); }
+.menubar__save--saving { color: var(--ctp-subtext1); }
 .menubar__save--saved  { color: var(--ctp-green); }
 .menubar__save--error  { color: var(--ctp-red); }
 
