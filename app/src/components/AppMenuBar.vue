@@ -439,7 +439,7 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   left: 0;
   right: 0;
   z-index: 100;
-  transform: translateY(calc(-100% + 0.375rem));
+  transform: translateY(-100%);
   opacity: 0;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
@@ -450,7 +450,7 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   top: 100%;
   left: 0;
   right: 0;
-  height: 0.875rem;
+  height: 3.5rem;
 }
 
 .menubar:hover,
