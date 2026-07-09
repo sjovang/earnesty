@@ -61,6 +61,10 @@ function baseDocumentId(id: string): string {
   return id.startsWith(draftPrefix) ? id.slice(draftPrefix.length) : id
 }
 
+function toDraftDocumentId(id: string): string {
+  return `${draftPrefix}${baseDocumentId(id)}`
+}
+
 const canPublish = computed(() =>
   auth.isAuthenticated
   && !!editorStore.activeDocument
@@ -194,6 +198,28 @@ function onDocumentDeleted(doc: ContentDocument) {
   trackEvent('document_deleted', { documentId: doc._id })
 }
 
+async function onDocumentUnpublished(doc: ContentDocument) {
+  trackEvent('document_unpublished', { documentId: doc._id })
+  if (!editorStore.activeDocument || baseDocumentId(editorStore.activeDocument._id) !== baseDocumentId(doc._id)) {
+    return
+  }
+
+  try {
+    const draft = await apiGetDocument(toDraftDocumentId(doc._id))
+    if (!draft) {
+      editorStore.discardPendingSave?.()
+      editorStore.resetToPlaceholder()
+      return
+    }
+    editorStore.openDocument(draft)
+  } catch (err) {
+    trackException(err instanceof Error ? err : new Error(String(err)), {
+      action: 'open_unpublished_draft',
+      documentId: doc._id,
+    })
+  }
+}
+
 onMounted(async () => {
   await auth.initialize()
 })
@@ -225,6 +251,7 @@ onMounted(async () => {
     @delete="onDocumentDeleted"
     @close="showOpen = false"
     @select="onDocumentSelected"
+    @unpublish="onDocumentUnpublished"
   />
   <NewDocumentModal
     v-if="showNew"

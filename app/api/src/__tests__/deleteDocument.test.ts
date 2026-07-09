@@ -47,23 +47,38 @@ function makeRequest(options: { params?: Record<string, string> }): HttpRequest 
   } as unknown as HttpRequest
 }
 
+function makeDocument(id: string, title: string) {
+  return { _id: id, _type: 'blog', title, _createdAt: '2026-01-01', _updatedAt: '2026-01-01' }
+}
+
 function makeDeleteClient(options?: {
-  existingIds?: string[]
+  draft?: Record<string, unknown> | null
+  published?: Record<string, unknown> | null
   commitThrows?: boolean
+  deleteThrows?: boolean
 }) {
-  const existingIds = new Set(options?.existingIds ?? [DRAFT_ID, PUBLISHED_ID])
+  const docs = new Map<string, Record<string, unknown>>()
+  if (options?.draft) docs.set(DRAFT_ID, options.draft)
+  if (options?.published) docs.set(PUBLISHED_ID, options.published)
+
   const commit = options?.commitThrows
     ? vi.fn().mockRejectedValue(new Error('Transaction failed'))
     : vi.fn().mockResolvedValue({ transactionId: 'tx-delete-123' })
-  const deleteFn = vi.fn()
-  const transaction = vi.fn().mockReturnValue({
-    delete: deleteFn.mockImplementation(() => ({ delete: deleteFn, commit })),
-  })
-  const getDocument = vi.fn().mockImplementation(async (id: string) => (
-    existingIds.has(id) ? { _id: id, _type: 'blog' } : null
-  ))
+  const tx = {
+    createOrReplace: vi.fn(),
+    delete: vi.fn(),
+    commit,
+  }
+  tx.createOrReplace.mockImplementation(() => tx)
+  tx.delete.mockImplementation(() => tx)
 
-  return { getDocument, transaction, deleteFn, commit }
+  const transaction = vi.fn().mockReturnValue(tx)
+  const getDocument = vi.fn().mockImplementation(async (id: string) => docs.get(id) ?? null)
+  const deleteDoc = options?.deleteThrows
+    ? vi.fn().mockRejectedValue(new Error('Delete failed'))
+    : vi.fn().mockResolvedValue({ _id: DRAFT_ID })
+
+  return { getDocument, transaction, tx, deleteDoc, commit }
 }
 
 describe('deleteDocument handler', () => {
@@ -87,71 +102,82 @@ describe('deleteDocument handler', () => {
     expect(res.jsonBody).toEqual({ error: 'Missing document ID' })
   })
 
-  it('returns 404 when neither the draft nor published document exists', async () => {
-    const { getDocument, transaction } = makeDeleteClient({ existingIds: [] })
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
+  it('returns 404 when neither draft nor published document exists', async () => {
+    const { getDocument, transaction, deleteDoc } = makeDeleteClient()
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
 
     const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
     expect(res.status).toBe(404)
     expect(res.jsonBody).toEqual({ error: 'Document not found' })
   })
 
-  it('deletes both draft and published documents when given a draft ID', async () => {
-    const { getDocument, transaction, deleteFn, commit } = makeDeleteClient()
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
+  it('permanently deletes a draft-only document', async () => {
+    const draft = makeDocument(DRAFT_ID, 'Draft title')
+    const { getDocument, transaction, deleteDoc, tx } = makeDeleteClient({ draft })
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
 
     const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
 
-    expect(getDocument).toHaveBeenCalledWith(DRAFT_ID)
-    expect(getDocument).toHaveBeenCalledWith(PUBLISHED_ID)
-    expect(transaction).toHaveBeenCalled()
-    expect(deleteFn).toHaveBeenNthCalledWith(1, DRAFT_ID)
-    expect(deleteFn).toHaveBeenNthCalledWith(2, PUBLISHED_ID)
-    expect(commit).toHaveBeenCalled()
+    expect(deleteDoc).toHaveBeenCalledWith(DRAFT_ID)
+    expect(transaction).not.toHaveBeenCalled()
+    expect(tx.createOrReplace).not.toHaveBeenCalled()
     expect(res.status).toBe(204)
   })
 
-  it('deletes both draft and published documents when given a published ID', async () => {
-    const { getDocument, transaction, deleteFn } = makeDeleteClient()
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
-
-    await getHandler()(makeRequest({ params: { id: PUBLISHED_ID } }))
-
-    expect(getDocument).toHaveBeenCalledWith(DRAFT_ID)
-    expect(getDocument).toHaveBeenCalledWith(PUBLISHED_ID)
-    expect(deleteFn).toHaveBeenNthCalledWith(1, DRAFT_ID)
-    expect(deleteFn).toHaveBeenNthCalledWith(2, PUBLISHED_ID)
-  })
-
-  it('deletes only the draft when no published sibling exists', async () => {
-    const { getDocument, transaction, deleteFn, commit } = makeDeleteClient({ existingIds: [DRAFT_ID] })
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
-
-    const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
-
-    expect(deleteFn).toHaveBeenCalledTimes(1)
-    expect(deleteFn).toHaveBeenCalledWith(DRAFT_ID)
-    expect(commit).toHaveBeenCalled()
-    expect(res.status).toBe(204)
-  })
-
-  it('deletes only the published document when no draft sibling exists', async () => {
-    const { getDocument, transaction, deleteFn, commit } = makeDeleteClient({ existingIds: [PUBLISHED_ID] })
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
+  it('unpublishes a published-only document by moving it to draft', async () => {
+    const published = makeDocument(PUBLISHED_ID, 'Published title')
+    const { getDocument, transaction, deleteDoc, tx, commit } = makeDeleteClient({ published })
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
 
     const res = await getHandler()(makeRequest({ params: { id: PUBLISHED_ID } }))
 
-    expect(deleteFn).toHaveBeenCalledTimes(1)
-    expect(deleteFn).toHaveBeenCalledWith(PUBLISHED_ID)
+    expect(transaction).toHaveBeenCalled()
+    expect(tx.createOrReplace).toHaveBeenCalledWith(expect.objectContaining({
+      _id: DRAFT_ID,
+      _type: 'blog',
+      title: 'Published title',
+    }))
+    expect(tx.delete).toHaveBeenCalledWith(PUBLISHED_ID)
     expect(commit).toHaveBeenCalled()
+    expect(deleteDoc).not.toHaveBeenCalled()
     expect(res.status).toBe(204)
   })
 
-  it('returns 502 when the Sanity transaction fails', async () => {
-    const { getDocument, transaction } = makeDeleteClient({ commitThrows: true })
-    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction } as never)
+  it('replaces existing draft with published content when both versions exist', async () => {
+    const draft = makeDocument(DRAFT_ID, 'Draft changes')
+    const published = makeDocument(PUBLISHED_ID, 'Published baseline')
+    const { getDocument, transaction, deleteDoc, tx } = makeDeleteClient({ draft, published })
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
 
     const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
+
+    expect(tx.createOrReplace).toHaveBeenCalledWith(expect.objectContaining({
+      _id: DRAFT_ID,
+      title: 'Published baseline',
+    }))
+    expect(tx.delete).toHaveBeenCalledWith(PUBLISHED_ID)
+    expect(deleteDoc).not.toHaveBeenCalled()
+    expect(res.status).toBe(204)
+  })
+
+  it('returns 502 when unpublish transaction fails', async () => {
+    const published = makeDocument(PUBLISHED_ID, 'Published title')
+    const { getDocument, transaction, deleteDoc } = makeDeleteClient({ published, commitThrows: true })
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
+
+    const res = await getHandler()(makeRequest({ params: { id: PUBLISHED_ID } }))
+
+    expect(res.status).toBe(502)
+    expect(res.jsonBody).toEqual({ error: 'Failed to delete document' })
+  })
+
+  it('returns 502 when deleting draft-only document fails', async () => {
+    const draft = makeDocument(DRAFT_ID, 'Draft title')
+    const { getDocument, transaction, deleteDoc } = makeDeleteClient({ draft, deleteThrows: true })
+    vi.mocked(getSanityClient).mockReturnValue({ getDocument, transaction, delete: deleteDoc } as never)
+
+    const res = await getHandler()(makeRequest({ params: { id: DRAFT_ID } }))
+
     expect(res.status).toBe(502)
     expect(res.jsonBody).toEqual({ error: 'Failed to delete document' })
   })

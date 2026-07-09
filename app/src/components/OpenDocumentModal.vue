@@ -12,10 +12,11 @@ const emit = defineEmits<{
   close: []
   select: [doc: ContentDocument]
   delete: [doc: ContentDocument]
+  unpublish: [doc: ContentDocument]
 }>()
 
 const auth = useAuthStore()
-const { documents, loading, error, isAuthError, removeDocument } = useDocuments()
+const { documents, loading, error, isAuthError, removeDocument, refreshDocuments } = useDocuments()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
@@ -108,10 +109,39 @@ function select(doc: ContentDocument) {
   emit('close')
 }
 
-async function remove(doc: ContentDocument) {
+function actionForStatus(status: DocStatus): 'delete' | 'unpublish' {
+  return status === 'draft' ? 'delete' : 'unpublish'
+}
+
+function actionLabel(status: DocStatus): string {
+  return actionForStatus(status) === 'delete' ? 'Delete' : 'Unpublish'
+}
+
+function inProgressLabel(status: DocStatus): string {
+  return actionForStatus(status) === 'delete' ? 'Deleting…' : 'Unpublishing…'
+}
+
+function confirmationMessage(title: string, status: DocStatus): string {
+  if (status === 'draft') {
+    return `Delete "${title}"? This permanently deletes the draft and cannot be undone.`
+  }
+  if (status === 'changed') {
+    return `Unpublish "${title}"? This replaces the current draft with the published version and removes the published document.`
+  }
+  return `Unpublish "${title}"? This moves the published document back to draft status.`
+}
+
+function fallbackError(status: DocStatus): string {
+  return actionForStatus(status) === 'delete'
+    ? 'Failed to delete draft. Please retry.'
+    : 'Failed to unpublish document. Please retry.'
+}
+
+async function remove(doc: ContentDocument, status: DocStatus) {
   if (!canDeleteDocuments.value || deletingId.value) return
   const title = doc.title?.trim() || 'Untitled'
-  const confirmed = window.confirm(`Delete "${title}"? This removes the document from Sanity.`)
+  const action = actionForStatus(status)
+  const confirmed = window.confirm(confirmationMessage(title, status))
   if (!confirmed) return
 
   deleteError.value = ''
@@ -119,12 +149,17 @@ async function remove(doc: ContentDocument) {
 
   try {
     await apiDeleteDocument(doc._id)
-    removeDocument(doc._id)
-    emit('delete', doc)
+    if (action === 'delete') {
+      removeDocument(doc._id)
+      emit('delete', doc)
+    } else {
+      await refreshDocuments()
+      emit('unpublish', doc)
+    }
   } catch (error) {
-    deleteError.value = toMessage(error, 'Failed to delete document. Please retry.')
+    deleteError.value = toMessage(error, fallbackError(status))
     trackException(error instanceof Error ? error : new Error(String(error)), {
-      action: 'delete_document',
+      action: action === 'delete' ? 'delete_document' : 'unpublish_document',
       documentId: doc._id,
     })
   } finally {
@@ -297,10 +332,10 @@ function signIn() {
             v-if="canDeleteDocuments"
             class="doc-list__delete"
             :disabled="!!deletingId"
-            :aria-label="`Delete ${doc.title ?? 'Untitled'}`"
-            @click.stop="remove(doc)"
+            :aria-label="`${actionLabel(status)} ${doc.title ?? 'Untitled'}`"
+            @click.stop="remove(doc, status)"
           >
-            {{ deletingId === doc._id ? 'Deleting…' : 'Delete' }}
+            {{ deletingId === doc._id ? inProgressLabel(status) : actionLabel(status) }}
           </button>
         </div>
         <Transition name="preview-fade">
