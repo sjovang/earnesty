@@ -17,11 +17,20 @@ defineEmits<{ close: [] }>()
     <p class="intro">
       Markdown is supported for formatting.
       <a
-        href="https://github.com/sjovang/earnesty/blob/main/docs/markdown.md"
+        href="/docs/markdown.md"
         target="_blank"
         rel="noopener noreferrer"
         class="docs-link"
       >See which syntax is available →</a>
+    </p>
+    <p class="intro">
+      Project source code:
+      <a
+        href="https://github.com/sjovang/earnesty"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="docs-link"
+      >https://github.com/sjovang/earnesty</a>
     </p>
   </BaseModal>
 </template>
