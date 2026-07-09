@@ -255,10 +255,17 @@ function getCaretTop(): number | null {
 
 let hoveredLinkRange: { from: number; to: number } | null = null
 
+function toElement(target: EventTarget | null): Element | null {
+  if (target instanceof Element) return target
+  if (target instanceof Node) return target.parentElement
+  return null
+}
+
 function setHoverLinkSelection(target: EventTarget | null): boolean {
   const editor = tiptap.value
-  if (!editor || !(target instanceof Element)) return false
-  const anchor = target.closest('.ProseMirror a')
+  const element = toElement(target)
+  if (!editor || !element) return false
+  const anchor = element.closest('.ProseMirror a')
   if (!(anchor instanceof HTMLAnchorElement)) return false
 
   const pos = editor.view.posAtDOM(anchor, 0)
@@ -405,7 +412,8 @@ const tiptap = useEditor({
         return false
       },
       mouseout(_view, event) {
-        if (!(event.relatedTarget instanceof Element) || !event.relatedTarget.closest('.ProseMirror a')) {
+        const relatedElement = toElement(event.relatedTarget)
+        if (!relatedElement || !relatedElement.closest('.ProseMirror a')) {
           clearHoverLinkSelection()
         }
         return false
