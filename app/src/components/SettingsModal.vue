@@ -297,7 +297,7 @@ function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ctp-subtext0);
-  text-align: center;
+  text-align: left;
 }
 
 .settings__row {
