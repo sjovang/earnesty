@@ -330,7 +330,10 @@ function signIn() {
           <span class="doc-list__date">{{ formatDate(doc._updatedAt) }}</span>
           <button
             v-if="canDeleteDocuments"
-            class="doc-list__delete"
+            :class="[
+              'doc-list__delete',
+              { 'doc-list__delete--unpublish': actionForStatus(status) === 'unpublish' },
+            ]"
             :disabled="!!deletingId"
             :aria-label="`${actionLabel(status)} ${doc.title ?? 'Untitled'}`"
             @click.stop="remove(doc, status)"
@@ -520,6 +523,14 @@ function signIn() {
 
 .doc-list__delete:hover:not(:disabled) {
   background: color-mix(in srgb, var(--ctp-red) 14%, transparent);
+}
+
+.doc-list__delete--unpublish {
+  color: var(--ctp-yellow);
+}
+
+.doc-list__delete--unpublish:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ctp-yellow) 14%, transparent);
 }
 
 .doc-list__delete:disabled {
