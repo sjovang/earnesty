@@ -8,7 +8,8 @@ describe('HomeView styles', () => {
   const testDir = dirname(fileURLToPath(import.meta.url))
   const source = readFileSync(resolve(testDir, '../HomeView.vue'), 'utf8')
 
-  it('does not use a one-sided accent stripe on blockquotes', () => {
-    expect(source).not.toMatch(/\.editor__content\s*:deep\(\.ProseMirror blockquote\)\s*\{[\s\S]*border-left:/)
+  it('uses a one-sided accent stripe on blockquotes instead of a full border', () => {
+    expect(source).toMatch(/\.editor__content\s*:deep\(\.ProseMirror blockquote\)\s*\{[^}]*border-left:/)
+    expect(source).not.toMatch(/\.editor__content\s*:deep\(\.ProseMirror blockquote\)\s*\{[^}]*\bborder\s*:/)
   })
 })
