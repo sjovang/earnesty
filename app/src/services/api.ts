@@ -34,6 +34,13 @@ export interface GrammarCheckResult {
   matches: GrammarMatch[]
 }
 
+export type GrammarCapabilityReason = 'missing_api_key'
+
+export interface GrammarCapabilityResult {
+  advancedAvailable: boolean
+  reason?: GrammarCapabilityReason
+}
+
 export const AUTH_REDIRECT_TS_KEY = '__auth_redirect_ts'
 const REDIRECT_COOLDOWN_MS = 10_000
 
@@ -171,4 +178,9 @@ export async function apiCheckGrammar(text: string, language: string): Promise<G
     method: 'POST',
     body: JSON.stringify({ text, language }),
   })
+}
+
+/** Returns whether advanced grammar mode is currently available for this user session. */
+export async function apiGetGrammarCapability(): Promise<GrammarCapabilityResult> {
+  return apiFetch<GrammarCapabilityResult>('/api/grammar/capability')
 }

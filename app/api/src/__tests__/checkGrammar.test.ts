@@ -3,12 +3,17 @@ import type { HttpRequest, HttpResponseInit } from '@azure/functions'
 import { requireAuthenticatedPrincipal } from '../shared.js'
 import { clearApiRuntimeConfigCache } from '../config/runtime.js'
 
-const { getHandler, setHandler } = vi.hoisted(() => {
+const { getHandler, setHandler, getClearGrammarRateLimiter, setClearGrammarRateLimiter } = vi.hoisted(() => {
   let _handler: ((req: HttpRequest) => Promise<HttpResponseInit>) | null = null
+  let _clearGrammarRateLimiter: (() => void) | null = null
   return {
     getHandler: () => _handler!,
     setHandler: (h: (req: HttpRequest) => Promise<HttpResponseInit>) => {
       _handler = h
+    },
+    getClearGrammarRateLimiter: () => _clearGrammarRateLimiter!,
+    setClearGrammarRateLimiter: (clearer: () => void) => {
+      _clearGrammarRateLimiter = clearer
     },
   }
 })
@@ -29,7 +34,8 @@ const mockFetch = vi.fn()
 vi.stubGlobal('fetch', mockFetch)
 
 beforeAll(async () => {
-  await import('../functions/checkGrammar.js')
+  const module = await import('../functions/checkGrammar.js')
+  setClearGrammarRateLimiter(module.clearGrammarRateLimiter)
 })
 
 function makeRequest(options: { body?: unknown; jsonThrows?: boolean }): HttpRequest {
@@ -57,8 +63,11 @@ describe('checkGrammar handler', () => {
     process.env = {
       ...originalEnv,
       NODE_ENV: 'test',
+      GRAMMAR_REQUIRE_API_KEY: 'false',
+      GRAMMAR_RATE_LIMIT_RPM: '20',
     }
     clearApiRuntimeConfigCache()
+    getClearGrammarRateLimiter()()
     mockFetch.mockReset()
     vi.mocked(requireAuthenticatedPrincipal).mockReturnValue({ principal: VALID_PRINCIPAL })
   })
@@ -66,6 +75,7 @@ describe('checkGrammar handler', () => {
   afterEach(() => {
     process.env = originalEnv
     clearApiRuntimeConfigCache()
+    getClearGrammarRateLimiter()()
   })
 
   it('returns 401 when not authenticated', async () => {
@@ -92,6 +102,20 @@ describe('checkGrammar handler', () => {
     const res = await getHandler()(makeRequest({ body: { text: 'a'.repeat(20_001) } }))
     expect(res.status).toBe(400)
     expect(res.jsonBody).toEqual({ error: '"text" exceeds 20000 characters' })
+  })
+
+  it('returns 503 when grammar API key is required but not configured', async () => {
+    process.env['GRAMMAR_REQUIRE_API_KEY'] = 'true'
+    delete process.env['GRAMMAR_API_KEY']
+    clearApiRuntimeConfigCache()
+
+    const res = await getHandler()(makeRequest({ body: { text: 'Hello world' } }))
+
+    expect(res.status).toBe(503)
+    expect(res.jsonBody).toEqual({
+      error: 'Advanced grammar is unavailable because API key is not configured',
+    })
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 
   it('forwards request to grammar provider and returns normalized matches', async () => {
@@ -142,10 +166,39 @@ describe('checkGrammar handler', () => {
     expect(res.jsonBody).toEqual({ error: 'Grammar service unavailable' })
   })
 
+  it('returns 429 when provider is rate limited', async () => {
+    mockFetch.mockResolvedValue({ ok: false, status: 429, json: vi.fn() })
+    const res = await getHandler()(makeRequest({ body: { text: 'Hello world' } }))
+    expect(res.status).toBe(429)
+    expect(res.jsonBody).toEqual({
+      error: 'Grammar provider is rate limited. Please try again shortly.',
+    })
+  })
+
   it('returns 502 when provider call throws', async () => {
     mockFetch.mockRejectedValue(new Error('Network down'))
     const res = await getHandler()(makeRequest({ body: { text: 'Hello world' } }))
     expect(res.status).toBe(502)
     expect(res.jsonBody).toEqual({ error: 'Failed to check grammar' })
+  })
+
+  it('returns 429 when per-user grammar request rate limit is exceeded', async () => {
+    process.env['GRAMMAR_RATE_LIMIT_RPM'] = '1'
+    clearApiRuntimeConfigCache()
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ matches: [] }),
+    })
+
+    const first = await getHandler()(makeRequest({ body: { text: 'First request' } }))
+    const second = await getHandler()(makeRequest({ body: { text: 'Second request' } }))
+
+    expect(first.status).toBe(200)
+    expect(second.status).toBe(429)
+    expect(second.headers).toEqual(expect.objectContaining({ 'Retry-After': expect.any(String) }))
+    expect(second.jsonBody).toEqual(
+      expect.objectContaining({ error: expect.stringContaining('Too many grammar requests') }),
+    )
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 })

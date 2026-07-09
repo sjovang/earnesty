@@ -5,6 +5,7 @@ import {
   apiCreateDraft,
   apiGetDocument,
   apiCheckGrammar,
+  apiGetGrammarCapability,
   AuthError,
   clearRedirectTimestamp,
   AUTH_REDIRECT_TS_KEY,
@@ -287,6 +288,29 @@ describe('apiGetDocument', () => {
 describe('apiCheckGrammar', () => {
   beforeEach(() => {
     mockFetch.mockReset()
+  })
+
+  describe('apiGetGrammarCapability', () => {
+    beforeEach(() => {
+      mockFetch.mockReset()
+    })
+
+    it('sends a GET request to the grammar capability endpoint', async () => {
+      mockFetch.mockResolvedValue(makeResponse(200, { advancedAvailable: true }))
+      await apiGetGrammarCapability()
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        '/api/grammar/capability',
+        expect.objectContaining({ redirect: 'manual' }),
+      )
+    })
+
+    it('returns grammar capability payload from the API', async () => {
+      const payload = { advancedAvailable: false, reason: 'missing_api_key' as const }
+      mockFetch.mockResolvedValue(makeResponse(200, payload))
+
+      await expect(apiGetGrammarCapability()).resolves.toEqual(payload)
+    })
   })
 
   it('sends a POST request to the grammar endpoint', async () => {

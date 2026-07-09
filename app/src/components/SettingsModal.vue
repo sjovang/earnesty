@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import BaseModal from './BaseModal.vue'
 import {
   useSettingsStore,
@@ -11,11 +12,14 @@ import {
   type AutocorrectSetting,
 } from '../stores/settings'
 import { useAuthStore } from '../stores/auth'
+import { AuthError, apiGetGrammarCapability, type GrammarCapabilityResult } from '../services/api'
+import { advancedUnavailableReason, advancedUnavailableTooltip } from './proofreadingAvailability'
 
 defineEmits<{ close: [] }>()
 
 const store = useSettingsStore()
 const auth = useAuthStore()
+const grammarCapability = ref<GrammarCapabilityResult | null>(null)
 
 const themes: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -69,8 +73,52 @@ const editorLanguages: { value: string; label: string }[] = [
   { value: 'nl', label: 'Dutch' },
 ]
 
+async function refreshGrammarCapability() {
+  if (!auth.isAuthenticated) {
+    grammarCapability.value = null
+    return
+  }
+
+  try {
+    grammarCapability.value = await apiGetGrammarCapability()
+  } catch (error) {
+    if (error instanceof AuthError) {
+      grammarCapability.value = null
+      return
+    }
+    console.error('[settings] Failed to load grammar capability', error)
+  }
+}
+
+watch(
+  () => auth.isAuthenticated,
+  () => {
+    void refreshGrammarCapability()
+  },
+  { immediate: true },
+)
+
+watch(
+  [() => auth.isAuthenticated, grammarCapability],
+  () => {
+    if (store.settings.proofreadingMode === 'advanced' && isProofreadingModeDisabled('advanced')) {
+      store.setProofreadingMode('native')
+    }
+  },
+  { deep: false },
+)
+
+function proofreadingUnavailableReason(mode: ProofreadingMode) {
+  if (mode !== 'advanced') return null
+  return advancedUnavailableReason(auth.isAuthenticated, grammarCapability.value)
+}
+
 function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
-  return mode === 'advanced' && !auth.isAuthenticated
+  return proofreadingUnavailableReason(mode) !== null
+}
+
+function proofreadingModeTooltip(mode: ProofreadingMode): string | undefined {
+  return advancedUnavailableTooltip(proofreadingUnavailableReason(mode))
 }
 </script>
 
@@ -180,6 +228,7 @@ function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
                 { 'settings__btn--disabled': isProofreadingModeDisabled(mode.value) },
               ]"
               :disabled="isProofreadingModeDisabled(mode.value)"
+              :title="proofreadingModeTooltip(mode.value)"
               @click="store.setProofreadingMode(mode.value)"
             >
               {{ mode.label }}
