@@ -6,13 +6,15 @@ import {
 import { getSanityClient, requireAuthenticatedPrincipal } from '../shared.js'
 import { getApiRuntimeConfig, isDraftDocumentId, toPublishedDocumentId } from '../config/runtime.js'
 
-function relatedDocumentIds(id: string): [string, string] {
+function toRelatedDocumentIds(id: string): { draftId: string; publishedId: string } {
   if (isDraftDocumentId(id)) {
-    return [id, toPublishedDocumentId(id)]
+    return { draftId: id, publishedId: toPublishedDocumentId(id) }
   }
 
-  const draftId = `${getApiRuntimeConfig().content.draftPrefix}${id}`
-  return [draftId, id]
+  return {
+    draftId: `${getApiRuntimeConfig().content.draftPrefix}${id}`,
+    publishedId: id,
+  }
 }
 
 app.http('deleteDocument', {
@@ -32,20 +34,27 @@ app.http('deleteDocument', {
 
     try {
       const client = getSanityClient()
-      const candidateIds = relatedDocumentIds(id)
-      const existingDocuments = await Promise.all(candidateIds.map((documentId) => client.getDocument(documentId)))
-      const existingIds = candidateIds.filter((_documentId, index) => Boolean(existingDocuments[index]))
+      const { draftId, publishedId } = toRelatedDocumentIds(id)
+      const [draft, published] = await Promise.all([
+        client.getDocument(draftId),
+        client.getDocument(publishedId),
+      ])
 
-      if (existingIds.length === 0) {
+      if (!draft && !published) {
         return { status: 404, jsonBody: { error: 'Document not found' } }
       }
 
-      const transaction = existingIds.reduce(
-        (builder, documentId) => builder.delete(documentId),
-        client.transaction(),
-      )
+      if (published) {
+        const { _id: _publishedId, _rev: _publishedRev, ...fields } = published
+        await client
+          .transaction()
+          .createOrReplace({ ...fields, _id: draftId })
+          .delete(publishedId)
+          .commit()
+      } else if (draft) {
+        await client.delete(draftId)
+      }
 
-      await transaction.commit()
       return { status: 204 }
     } catch (err) {
       console.error('[deleteDocument]', err)

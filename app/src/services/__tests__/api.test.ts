@@ -227,6 +227,16 @@ describe('apiDeleteDocument', () => {
     )
   })
 
+  it('uses the same DELETE endpoint for published document IDs (unpublish flow)', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204))
+    await apiDeleteDocument('doc-123')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/sanity/documents/doc-123',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
   it('encodes special characters in the document ID', async () => {
     mockFetch.mockResolvedValue(makeResponse(204))
     await apiDeleteDocument('drafts.some/id')
