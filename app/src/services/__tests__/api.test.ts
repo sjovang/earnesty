@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
+  apiDeleteDocument,
   apiSaveDocument,
   apiPublishDocument,
   apiCreateDraft,
@@ -206,6 +207,43 @@ describe('apiPublishDocument', () => {
   it('throws on a non-2xx response', async () => {
     mockFetch.mockResolvedValue(makeResponse(400, { error: 'Document is not a draft' }))
     await expect(apiPublishDocument('not-a-draft')).rejects.toThrow('Document is not a draft')
+  })
+})
+
+// ── apiDeleteDocument ───────────────────────────────────────────────────────────
+
+describe('apiDeleteDocument', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  it('sends a DELETE request to the document endpoint', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204))
+    await apiDeleteDocument('drafts.doc-123')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/sanity/documents/drafts.doc-123',
+      expect.objectContaining({ method: 'DELETE' }),
+    )
+  })
+
+  it('encodes special characters in the document ID', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204))
+    await apiDeleteDocument('drafts.some/id')
+
+    const [url] = mockFetch.mock.calls[0] as [string, RequestInit]
+    expect(url).toContain(encodeURIComponent('drafts.some/id'))
+  })
+
+  it('resolves without a value on 204 No Content', async () => {
+    mockFetch.mockResolvedValue(makeResponse(204))
+    const result = await apiDeleteDocument('drafts.doc-123')
+    expect(result).toBeUndefined()
+  })
+
+  it('throws on a non-2xx response', async () => {
+    mockFetch.mockResolvedValue(makeResponse(404, { error: 'Document not found' }))
+    await expect(apiDeleteDocument('missing-id')).rejects.toThrow('Document not found')
   })
 })
 

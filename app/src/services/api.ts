@@ -150,6 +150,13 @@ export async function apiPublishDocument(
   )
 }
 
+/** Deletes a document and any paired draft/published sibling via the API proxy. */
+export async function apiDeleteDocument(id: string): Promise<void> {
+  await apiFetch<void>(`/api/sanity/documents/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+  })
+}
+
 /** Uploads an image file to Sanity via the API proxy. */
 export async function apiUploadImage(file: File): Promise<ImageAsset> {
   const form = new FormData()

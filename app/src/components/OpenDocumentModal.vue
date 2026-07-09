@@ -4,16 +4,18 @@ import BaseModal from './BaseModal.vue'
 import { useDocuments } from '../composables/useBlogDocuments'
 import { extractPreview, type ContentDocument } from '../services/sanity'
 import { runtimeConfig } from '../config/runtime'
-import { clearRedirectTimestamp } from '../services/api'
+import { apiDeleteDocument, clearRedirectTimestamp } from '../services/api'
+import { trackException } from '../services/appInsights'
 import { useAuthStore } from '../stores/auth'
 
 const emit = defineEmits<{
   close: []
   select: [doc: ContentDocument]
+  delete: [doc: ContentDocument]
 }>()
 
 const auth = useAuthStore()
-const { documents, loading, error, isAuthError } = useDocuments()
+const { documents, loading, error, isAuthError, removeDocument } = useDocuments()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 // ── Search & sort ─────────────────────────────────────────────────────────────
@@ -23,6 +25,8 @@ type DocStatus = 'draft' | 'published' | 'changed'
 const search = ref('')
 const sortBy = ref<SortKey>('newest')
 const hoveredId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
+const deleteError = ref('')
 
 const sortOptions: { value: SortKey; label: string }[] = [
   { value: 'newest',     label: 'Newest' },
@@ -79,6 +83,8 @@ const filtered = computed(() => {
   return list
 })
 
+const canDeleteDocuments = computed(() => auth.isAuthenticated)
+
 const statusMeta: Record<DocStatus, { label: string; color: string }> = {
   draft:     { label: 'Draft — not yet published',         color: 'var(--ctp-yellow)' },
   published: { label: 'Published',                         color: 'var(--ctp-green)'  },
@@ -91,9 +97,39 @@ function formatDate(iso: string) {
   })
 }
 
+function toMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message
+  return fallback
+}
+
 function select(doc: ContentDocument) {
+  if (deletingId.value) return
   emit('select', doc)
   emit('close')
+}
+
+async function remove(doc: ContentDocument) {
+  if (!canDeleteDocuments.value || deletingId.value) return
+  const title = doc.title?.trim() || 'Untitled'
+  const confirmed = window.confirm(`Delete "${title}"? This removes the document from Sanity.`)
+  if (!confirmed) return
+
+  deleteError.value = ''
+  deletingId.value = doc._id
+
+  try {
+    await apiDeleteDocument(doc._id)
+    removeDocument(doc._id)
+    emit('delete', doc)
+  } catch (error) {
+    deleteError.value = toMessage(error, 'Failed to delete document. Please retry.')
+    trackException(error instanceof Error ? error : new Error(String(error)), {
+      action: 'delete_document',
+      documentId: doc._id,
+    })
+  } finally {
+    deletingId.value = null
+  }
 }
 
 function signIn() {
@@ -158,10 +194,16 @@ function signIn() {
     >
       {{ error }}
     </div>
+    <div
+      v-if="deleteError && !loading && !isAuthError && !error"
+      class="status status--error status--inline"
+    >
+      {{ deleteError }}
+    </div>
 
     <!-- Empty search result -->
     <div
-      v-else-if="!filtered.length"
+      v-if="!loading && !isAuthError && !error && !filtered.length"
       class="status"
     >
       {{ documents.length ? 'No documents match your search.' : 'No documents found in this dataset.' }}
@@ -169,13 +211,15 @@ function signIn() {
 
     <!-- Document list -->
     <ul
-      v-else
+      v-else-if="!loading && !isAuthError && !error"
       class="doc-list"
     >
       <li
         v-for="{ doc, status } in filtered"
         :key="doc._id"
         class="doc-list__item"
+        :class="{ 'doc-list__item--busy': deletingId === doc._id }"
+        :aria-busy="deletingId === doc._id ? 'true' : undefined"
         @click="select(doc)"
         @mouseenter="hoveredId = doc._id"
         @mouseleave="hoveredId = null"
@@ -249,6 +293,15 @@ function signIn() {
 
           <span class="doc-list__title">{{ doc.title ?? '(Untitled)' }}</span>
           <span class="doc-list__date">{{ formatDate(doc._updatedAt) }}</span>
+          <button
+            v-if="canDeleteDocuments"
+            class="doc-list__delete"
+            :disabled="!!deletingId"
+            :aria-label="`Delete ${doc.title ?? 'Untitled'}`"
+            @click.stop="remove(doc)"
+          >
+            {{ deletingId === doc._id ? 'Deleting…' : 'Delete' }}
+          </button>
         </div>
         <Transition name="preview-fade">
           <p
@@ -328,6 +381,10 @@ function signIn() {
   padding: 2rem 0;
 }
 
+.status--inline {
+  padding: 0 0 0.75rem;
+}
+
 .status--error { color: var(--ctp-red); }
 
 .status--auth {
@@ -374,6 +431,7 @@ function signIn() {
 }
 
 .doc-list__item:hover { background: var(--ctp-surface0); }
+.doc-list__item--busy { cursor: progress; }
 
 .doc-list__main {
   display: flex;
@@ -404,6 +462,33 @@ function signIn() {
   color: var(--ctp-subtext1);
   font-size: 0.75rem;
   flex-shrink: 0;
+}
+
+.doc-list__delete {
+  border: none;
+  background: transparent;
+  color: var(--ctp-red);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.45rem;
+  border-radius: 5px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+
+.doc-list__item:hover .doc-list__delete,
+.doc-list__item:focus-within .doc-list__delete,
+.doc-list__delete:disabled {
+  opacity: 1;
+}
+
+.doc-list__delete:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ctp-red) 14%, transparent);
+}
+
+.doc-list__delete:disabled {
+  cursor: progress;
 }
 
 .doc-list__preview {
