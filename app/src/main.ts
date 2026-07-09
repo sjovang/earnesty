@@ -1,3 +1,8 @@
+import '@fontsource/domine/400.css'
+import '@fontsource/domine/700.css'
+import '@fontsource/atkinson-hyperlegible/400.css'
+import '@fontsource/atkinson-hyperlegible/700.css'
+import '@fontsource/gloria-hallelujah/400.css'
 import './assets/main.css'
 
 import { createApp } from 'vue'

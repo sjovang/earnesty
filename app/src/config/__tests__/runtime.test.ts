@@ -26,9 +26,9 @@ describe('createRuntimeConfig', () => {
     expect(config.app.storageNamespace).toBe('earnesty')
     expect(config.appearance.themes.light.colorScheme).toBe('light')
     expect(config.appearance.themes.dark.colorScheme).toBe('dark')
-    expect(config.appearance.fonts.sansSerif).toContain('system-ui')
-    expect(config.appearance.fonts.serif).toContain('Lora')
-    expect(config.appearance.fonts.comical).toContain('Comic Sans')
+    expect(config.appearance.fonts.sansSerif).toContain('Atkinson Hyperlegible')
+    expect(config.appearance.fonts.serif).toContain('Domine')
+    expect(config.appearance.fonts.handwriting).toContain('Gloria Hallelujah')
   })
 
   it('throws when VITE_SANITY_PROJECT_ID is missing outside test mode', () => {
@@ -138,7 +138,7 @@ describe('createRuntimeConfig', () => {
       VITE_FONT_CONFIG: JSON.stringify({
         sansSerif: 'Inter, system-ui, sans-serif',
         serif: 'Merriweather, serif',
-        comical: '"Comic Neue", cursive',
+        handwriting: '"Comic Neue", cursive',
       }),
     }))
 
@@ -147,8 +147,20 @@ describe('createRuntimeConfig', () => {
     expect(config.appearance.fonts).toEqual({
       sansSerif: 'Inter, system-ui, sans-serif',
       serif: 'Merriweather, serif',
-      comical: '"Comic Neue", cursive',
+      handwriting: '"Comic Neue", cursive',
     })
+  })
+
+  it('accepts legacy comical key as handwriting alias', () => {
+    const config = createRuntimeConfig(makeEnv({
+      VITE_FONT_CONFIG: JSON.stringify({
+        sansSerif: 'Inter, system-ui, sans-serif',
+        serif: 'Merriweather, serif',
+        comical: '"Comic Neue", cursive',
+      }),
+    }))
+
+    expect(config.appearance.fonts.handwriting).toBe('"Comic Neue", cursive')
   })
 
   it('throws when custom theme config is missing required themes', () => {
@@ -169,6 +181,6 @@ describe('createRuntimeConfig', () => {
         sansSerif: 'Inter, sans-serif',
         serif: 'Merriweather, serif',
       }),
-    }))).toThrow('VITE_FONT_CONFIG.comical')
+    }))).toThrow('VITE_FONT_CONFIG.handwriting')
   })
 })

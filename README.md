@@ -71,7 +71,7 @@ Both frontend and API use typed runtime configuration so you can customize schem
 | `VITE_SANITY_API_VERSION` | No | `2024-01-01` |
 | `VITE_SANITY_SCHEMA_CONFIG` | No | JSON schema config. If unset, the frontend uses a built-in single-type default equivalent to `blog` / `title` / `body` / `slug` / `publishedAt`. |
 | `VITE_THEME_CONFIG` | No | JSON theme config for `light` and `dark` themes. If unset, the frontend uses built-in Catppuccin Latte (light) and Macchiato (dark). |
-| `VITE_FONT_CONFIG` | No | JSON font-family config. If set, it must provide `sansSerif`, `serif`, and `comical`. |
+| `VITE_FONT_CONFIG` | No | JSON font-family config. If set, it must provide `sansSerif`, `serif`, and `handwriting`. |
 | `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
 | `VITE_AUTH_PROVIDER` | No | `swa` (`swa` or `api`) |
 | `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
@@ -170,11 +170,43 @@ Validation is fail-fast: invalid or missing required settings throw explicit run
 
 ```json
 {
-  "sansSerif": "system-ui, -apple-system, sans-serif",
-  "serif": "'Lora', Georgia, serif",
-  "comical": "'Comic Sans MS', cursive"
+  "sansSerif": "'Atkinson Hyperlegible', system-ui, sans-serif",
+  "serif": "'Domine', Georgia, serif",
+  "handwriting": "'Gloria Hallelujah', cursive"
 }
 ```
+
+Default font stacks (when `VITE_FONT_CONFIG` is unset):
+
+- `sansSerif`: `'Atkinson Hyperlegible', system-ui, -apple-system, BlinkMacSystemFont, sans-serif`
+- `serif`: `'Domine', Georgia, 'Times New Roman', serif`
+- `handwriting`: `'Gloria Hallelujah', 'Comic Sans MS', 'Comic Sans', cursive`
+
+### Fontsource usage
+
+The app bundles default fonts locally with [Fontsource](https://fontsource.org), so it does not fetch fonts from Google Fonts CDN.
+
+If you want custom fonts:
+
+1. Install the package(s), for example:
+
+   ```sh
+   cd app && npm install @fontsource/ibm-plex-serif @fontsource/public-sans @fontsource/caveat
+   ```
+
+2. Import the font CSS in `app/src/main.ts`, for example:
+
+   ```ts
+   import '@fontsource/ibm-plex-serif/400.css'
+   import '@fontsource/public-sans/400.css'
+   import '@fontsource/caveat/400.css'
+   ```
+
+3. Point `VITE_FONT_CONFIG` to those family names:
+
+   ```env
+   VITE_FONT_CONFIG={"sansSerif":"'Public Sans', system-ui, sans-serif","serif":"'IBM Plex Serif', Georgia, serif","handwriting":"'Caveat', cursive"}
+   ```
 
 When schema config is set, each type must declare `name`, `titleField`, `bodyField`, `slugField`, and `publishedAtField`. The old single-type mapping variables are no longer used as fallbacks. If schema config is unset, the app falls back to this built-in default:
 
