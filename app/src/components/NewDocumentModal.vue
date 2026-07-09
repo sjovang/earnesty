@@ -108,7 +108,7 @@ function escapeHtml(str: string): string {
 
       <div class="actions">
         <button
-          class="btn btn--secondary"
+          class="btn btn--ghost"
           :disabled="creating"
           @click="$emit('close')"
         >
@@ -141,18 +141,18 @@ function escapeHtml(str: string): string {
 }
 
 .field__label {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--ctp-subtext1);
+  color: var(--ui-label-color);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .field__hint {
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: var(--ctp-subtext0);
+  color: var(--ui-hint-color);
 }
 
 .field__input {
@@ -168,7 +168,7 @@ function escapeHtml(str: string): string {
   box-sizing: border-box;
 }
 
-.field__input::placeholder { color: var(--ctp-subtext0); }
+.field__input::placeholder { color: var(--ui-placeholder-color); }
 .field__input:focus { border-color: var(--ctp-mauve); }
 .field__input:disabled { opacity: 0.5; }
 
@@ -199,13 +199,13 @@ function escapeHtml(str: string): string {
 }
 
 .btn {
-  border: none;
+  border: 1px solid transparent;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.9rem;
   cursor: pointer;
-  transition: opacity 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .btn:disabled {
@@ -213,13 +213,14 @@ function escapeHtml(str: string): string {
   cursor: not-allowed;
 }
 
-.btn--secondary {
-  background: var(--ctp-surface0);
-  color: var(--ctp-text);
+.btn--ghost {
+  background: transparent;
+  border-color: var(--ctp-surface1);
+  color: var(--ctp-subtext1);
 }
 
-.btn--secondary:not(:disabled):hover {
-  background: var(--ctp-surface1);
+.btn--ghost:hover {
+  background: var(--ctp-surface0);
 }
 
 .btn--primary {
@@ -228,6 +229,6 @@ function escapeHtml(str: string): string {
 }
 
 .btn--primary:not(:disabled):hover {
-  opacity: 0.85;
+  filter: brightness(1.1);
 }
 </style>

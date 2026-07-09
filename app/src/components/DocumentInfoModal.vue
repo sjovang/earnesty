@@ -170,7 +170,7 @@ function save() {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ctp-subtext0);
+  color: var(--ui-label-color);
 }
 
 .field__input {
@@ -183,11 +183,14 @@ function save() {
   outline: none;
   transition: border-color 0.15s ease;
   width: 100%;
-  color-scheme: dark;
 }
 
 .field__input:focus {
   border-color: var(--ctp-mauve);
+}
+
+.field__input::placeholder {
+  color: var(--ui-placeholder-color);
 }
 
 .field__input--mono {
@@ -198,7 +201,7 @@ function save() {
 
 .field__hint {
   font-size: 0.72rem;
-  color: var(--ctp-overlay1);
+  color: var(--ui-hint-color);
 }
 
 /* ── Tag input ────────────────────────────────────────────────────────────── */
@@ -233,7 +236,7 @@ function save() {
 .tag__remove {
   background: none;
   border: none;
-  color: var(--ctp-overlay1);
+  color: var(--ui-hint-color);
   font-size: 0.65rem;
   cursor: pointer;
   padding: 0;
@@ -253,6 +256,10 @@ function save() {
   outline: none;
   color: var(--ctp-text);
   font-size: 0.9rem;
+}
+
+.tag-input__field::placeholder {
+  color: var(--ui-placeholder-color);
 }
 
 /* ── Actions ─────────────────────────────────────────────────────────────── */

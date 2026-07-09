@@ -261,7 +261,7 @@ function submit() {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--ctp-subtext0);
+  color: var(--ui-label-color);
 }
 
 .field__input {
@@ -275,7 +275,6 @@ function submit() {
   transition: border-color 0.15s ease;
   width: 100%;
   box-sizing: border-box;
-  color-scheme: dark;
 }
 
 .field__input-row .field__input {
@@ -284,6 +283,10 @@ function submit() {
 
 .field__input:focus {
   border-color: var(--ctp-mauve);
+}
+
+.field__input::placeholder {
+  color: var(--ui-placeholder-color);
 }
 
 .field__input--mono {
@@ -310,6 +313,10 @@ function submit() {
   margin: 0;
   font-size: 0.82rem;
   color: var(--ctp-red);
+  background: color-mix(in srgb, var(--ctp-red) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ctp-red) 25%, transparent);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
 }
 
 .btn {

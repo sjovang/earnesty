@@ -131,7 +131,7 @@ const widthLabels: Record<number, string> = {
   width: 5.5rem;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--ctp-subtext0);
+  color: var(--ui-label-color);
   text-align: left;
 }
 
