@@ -19,6 +19,9 @@
   },
   "dependencies": {
     "@catppuccin/palette": "^1.8.0",
+    "@fontsource/atkinson-hyperlegible": "^5.2.8",
+    "@fontsource/domine": "^5.2.8",
+    "@fontsource/gloria-hallelujah": "^5.2.6",
     "@microsoft/applicationinsights-web": "^3.4.2",
     "@sanity/client": "^7.23.0",
     "@tiptap/extension-code-block-lowlight": "^3.27.1",

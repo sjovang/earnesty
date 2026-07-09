@@ -68,6 +68,15 @@ describe('settings store proofreading controls', () => {
     expect(store.settings.editorLanguage).toBe('en')
   })
 
+  it('maps legacy comical font preference to handwriting', () => {
+    storage.setItem(SETTINGS_KEY, JSON.stringify({
+      font: 'comical',
+    }))
+
+    const store = useSettingsStore()
+    expect(store.settings.font).toBe('handwriting')
+  })
+
   it('persists proofreading changes', async () => {
     const store = useSettingsStore()
     store.setProofreadingMode('advanced')

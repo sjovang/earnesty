@@ -28,7 +28,7 @@
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "strict-origin-when-cross-origin",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://cdn.sanity.io data:; connect-src 'self' https://*.sanity.io https://dc.services.visualstudio.com https://*.in.applicationinsights.azure.com; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://cdn.sanity.io data:; connect-src 'self' https://*.sanity.io https://dc.services.visualstudio.com https://*.in.applicationinsights.azure.com; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
     "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()"
   },
   "mimeTypes": {

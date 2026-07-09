@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { runtimeConfig, type ResolvedTheme } from '../config/runtime'
 
 export type Theme = 'system' | 'light' | 'dark'
-export type Font = 'serif' | 'sans-serif' | 'comical'
+export type Font = 'serif' | 'sans-serif' | 'handwriting'
 export type ProofreadingMode = 'off' | 'native' | 'advanced'
 export type AutocorrectSetting = 'on' | 'off'
 
@@ -13,7 +13,7 @@ export const CONTENT_WIDTHS = [50, 60, 70] as const
 export function fontFamilyFor(font: Font): string {
   switch (font) {
     case 'sans-serif': return runtimeConfig.appearance.fonts.sansSerif
-    case 'comical': return runtimeConfig.appearance.fonts.comical
+    case 'handwriting': return runtimeConfig.appearance.fonts.handwriting
     default: return runtimeConfig.appearance.fonts.serif
   }
 }
@@ -59,7 +59,7 @@ function isTheme(value: unknown): value is Theme {
 }
 
 function isFont(value: unknown): value is Font {
-  return value === 'serif' || value === 'sans-serif' || value === 'comical'
+  return value === 'serif' || value === 'sans-serif' || value === 'handwriting'
 }
 
 function isProofreadingMode(value: unknown): value is ProofreadingMode {
@@ -79,11 +79,13 @@ function normalizeEditorLanguage(value: unknown): string {
 
 function normalizeSettings(raw: Partial<Settings> | null | undefined): Settings {
   const defaults = defaultSettings()
+  const storedFont = (raw as { font?: unknown } | null | undefined)?.font
+  const rawFont = storedFont === 'comical' ? 'handwriting' : storedFont
   return {
     theme: isTheme(raw?.theme) ? raw.theme : defaults.theme,
     fontSize: typeof raw?.fontSize === 'number' ? raw.fontSize : defaults.fontSize,
     lineSpacing: typeof raw?.lineSpacing === 'number' ? raw.lineSpacing : defaults.lineSpacing,
-    font: isFont(raw?.font) ? raw.font : defaults.font,
+    font: isFont(rawFont) ? rawFont : defaults.font,
     contentWidth: typeof raw?.contentWidth === 'number' ? raw.contentWidth : defaults.contentWidth,
     proofreadingMode: isProofreadingMode(raw?.proofreadingMode) ? raw.proofreadingMode : defaults.proofreadingMode,
     spellcheck: typeof raw?.spellcheck === 'boolean' ? raw.spellcheck : defaults.spellcheck,

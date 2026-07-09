@@ -70,7 +70,7 @@ export interface ThemeRuntimeConfig {
 export interface FontRuntimeConfig {
   sansSerif: string
   serif: string
-  comical: string
+  handwriting: string
 }
 
 const DEFAULT_CONTENT_FIELDS = {
@@ -147,9 +147,9 @@ const DEFAULT_THEME_CONFIG: Record<ResolvedTheme, ThemeRuntimeConfig> = {
 }
 
 const DEFAULT_FONT_CONFIG: FontRuntimeConfig = {
-  sansSerif: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-  serif: '\'Lora\', Georgia, \'Times New Roman\', serif',
-  comical: '\'Comic Sans MS\', \'Comic Sans\', cursive',
+  sansSerif: '\'Atkinson Hyperlegible\', system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+  serif: '\'Domine\', Georgia, \'Times New Roman\', serif',
+  handwriting: '\'Gloria Hallelujah\', \'Comic Sans MS\', \'Comic Sans\', cursive',
 }
 
 function envString(value: unknown): string | undefined {
@@ -233,7 +233,9 @@ interface ThemeInput {
 interface FontConfigInput {
   sansSerif?: unknown
   serif?: unknown
+  // Legacy alias retained for backwards compatibility with older env files.
   comical?: unknown
+  handwriting?: unknown
 }
 
 function defaultMetadataFields(type: {
@@ -513,10 +515,12 @@ function readFontConfig(value: string | undefined): FontRuntimeConfig {
     })
   }
 
+  const handwriting = parsed.handwriting ?? parsed.comical
+
   return {
     sansSerif: readRequiredFontFamily(parsed.sansSerif, 'VITE_FONT_CONFIG.sansSerif'),
     serif: readRequiredFontFamily(parsed.serif, 'VITE_FONT_CONFIG.serif'),
-    comical: readRequiredFontFamily(parsed.comical, 'VITE_FONT_CONFIG.comical'),
+    handwriting: readRequiredFontFamily(handwriting, 'VITE_FONT_CONFIG.handwriting'),
   }
 }
 

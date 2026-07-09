@@ -30,7 +30,7 @@ const themes: { value: Theme; label: string }[] = [
 const fonts: { value: Font; label: string }[] = [
   { value: 'serif', label: 'Serif' },
   { value: 'sans-serif', label: 'Sans-serif' },
-  { value: 'comical', label: 'Comical' },
+  { value: 'handwriting', label: 'Handwriting' },
 ]
 
 const fontSizeLabels: Record<number, string> = {
