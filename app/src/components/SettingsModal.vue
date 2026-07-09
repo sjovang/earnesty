@@ -294,8 +294,7 @@ function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
   font-size: 0.88rem;
   line-height: 1.2;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   color: var(--ctp-subtext0);
   text-align: left;
 }
