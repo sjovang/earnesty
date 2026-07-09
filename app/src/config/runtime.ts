@@ -34,6 +34,10 @@ export interface FrontendRuntimeConfig {
   telemetry: {
     applicationInsightsConnectionString?: string
   }
+  appearance: {
+    themes: Record<ResolvedTheme, ThemeRuntimeConfig>
+    fonts: FontRuntimeConfig
+  }
 }
 
 export type MetadataFieldType = 'string' | 'slug' | 'datetime' | 'stringArray' | 'boolean'
@@ -56,6 +60,19 @@ export interface ContentTypeConfig {
   metadataFields: MetadataFieldConfig[]
 }
 
+export type ResolvedTheme = 'light' | 'dark'
+
+export interface ThemeRuntimeConfig {
+  colorScheme: 'light' | 'dark'
+  colors: Record<string, string>
+}
+
+export interface FontRuntimeConfig {
+  sansSerif: string
+  serif: string
+  comical: string
+}
+
 const DEFAULT_CONTENT_FIELDS = {
   documentType: 'blog',
   titleField: 'title',
@@ -63,6 +80,77 @@ const DEFAULT_CONTENT_FIELDS = {
   slugField: 'slug',
   publishedAtField: 'publishedAt',
 } as const
+
+const DEFAULT_THEME_CONFIG: Record<ResolvedTheme, ThemeRuntimeConfig> = {
+  light: {
+    colorScheme: 'light',
+    colors: {
+      '--ctp-rosewater': '#dc8a78',
+      '--ctp-flamingo': '#dd7878',
+      '--ctp-pink': '#ea76cb',
+      '--ctp-mauve': '#8839ef',
+      '--ctp-red': '#d20f39',
+      '--ctp-maroon': '#e64553',
+      '--ctp-peach': '#fe640b',
+      '--ctp-yellow': '#df8e1d',
+      '--ctp-green': '#40a02b',
+      '--ctp-teal': '#179299',
+      '--ctp-sky': '#04a5e5',
+      '--ctp-sapphire': '#209fb5',
+      '--ctp-blue': '#1e66f5',
+      '--ctp-lavender': '#7287fd',
+      '--ctp-text': '#4c4f69',
+      '--ctp-subtext1': '#5c5f77',
+      '--ctp-subtext0': '#6c6f85',
+      '--ctp-overlay2': '#7c7f93',
+      '--ctp-overlay1': '#8c8fa1',
+      '--ctp-overlay0': '#9ca0b0',
+      '--ctp-surface2': '#acb0be',
+      '--ctp-surface1': '#bcc0cc',
+      '--ctp-surface0': '#ccd0da',
+      '--ctp-base': '#eff1f5',
+      '--ctp-mantle': '#e6e9ef',
+      '--ctp-crust': '#dce0e8',
+    },
+  },
+  dark: {
+    colorScheme: 'dark',
+    colors: {
+      '--ctp-rosewater': '#f4dbd6',
+      '--ctp-flamingo': '#f0c6c6',
+      '--ctp-pink': '#f5bde6',
+      '--ctp-mauve': '#c6a0f6',
+      '--ctp-red': '#ed8796',
+      '--ctp-maroon': '#ee99a0',
+      '--ctp-peach': '#f5a97f',
+      '--ctp-yellow': '#eed49f',
+      '--ctp-green': '#a6da95',
+      '--ctp-teal': '#8bd5ca',
+      '--ctp-sky': '#91d7e3',
+      '--ctp-sapphire': '#7dc4e4',
+      '--ctp-blue': '#8aadf4',
+      '--ctp-lavender': '#b7bdf8',
+      '--ctp-text': '#cad3f5',
+      '--ctp-subtext1': '#b8c0e0',
+      '--ctp-subtext0': '#a5adcb',
+      '--ctp-overlay2': '#939ab7',
+      '--ctp-overlay1': '#8087a2',
+      '--ctp-overlay0': '#6e738d',
+      '--ctp-surface2': '#5b6078',
+      '--ctp-surface1': '#494d64',
+      '--ctp-surface0': '#363a4f',
+      '--ctp-base': '#24273a',
+      '--ctp-mantle': '#1e2030',
+      '--ctp-crust': '#181926',
+    },
+  },
+}
+
+const DEFAULT_FONT_CONFIG: FontRuntimeConfig = {
+  sansSerif: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+  serif: '\'Lora\', Georgia, \'Times New Roman\', serif',
+  comical: '\'Comic Sans MS\', \'Comic Sans\', cursive',
+}
 
 function envString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
@@ -130,6 +218,22 @@ interface SchemaTypeInput {
 interface SchemaConfigInput {
   defaultType?: unknown
   types?: unknown
+}
+
+interface ThemeConfigInput {
+  light?: unknown
+  dark?: unknown
+}
+
+interface ThemeInput {
+  colorScheme?: unknown
+  colors?: unknown
+}
+
+interface FontConfigInput {
+  sansSerif?: unknown
+  serif?: unknown
+  comical?: unknown
 }
 
 function defaultMetadataFields(type: {
@@ -332,6 +436,90 @@ function readStorageNamespace(value: string | undefined, fallback: string): stri
   return ns
 }
 
+function readThemeName(value: unknown, key: string): ResolvedTheme {
+  if (value === 'light' || value === 'dark') return value
+  throw new Error(`Invalid runtime configuration: ${key} must be "light" or "dark"`)
+}
+
+function readThemeColors(value: unknown, key: string): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Invalid runtime configuration: ${key} must be an object`)
+  }
+  const entries = Object.entries(value)
+  if (entries.length === 0) {
+    throw new Error(`Invalid runtime configuration: ${key} must not be empty`)
+  }
+  const colors: Record<string, string> = {}
+  for (const [name, raw] of entries) {
+    const cssVar = typeof name === 'string' ? name.trim() : ''
+    if (!cssVar.startsWith('--')) {
+      throw new Error(`Invalid runtime configuration: ${key}.${name} must be a CSS variable key`)
+    }
+    const color = typeof raw === 'string' ? raw.trim() : ''
+    if (!color) {
+      throw new Error(`Invalid runtime configuration: ${key}.${name} must be a non-empty string`)
+    }
+    colors[cssVar] = color
+  }
+  return colors
+}
+
+function readTheme(themeName: ResolvedTheme, value: unknown, key: string): ThemeRuntimeConfig {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Invalid runtime configuration: ${key} must be an object`)
+  }
+  const input = value as ThemeInput
+  return {
+    colorScheme: readThemeName(input.colorScheme ?? themeName, `${key}.colorScheme`),
+    colors: readThemeColors(input.colors, `${key}.colors`),
+  }
+}
+
+function readThemeConfig(value: string | undefined): Record<ResolvedTheme, ThemeRuntimeConfig> {
+  if (!value) return DEFAULT_THEME_CONFIG
+
+  let parsed: ThemeConfigInput
+  try {
+    parsed = JSON.parse(value) as ThemeConfigInput
+  } catch (error) {
+    throw new Error('Invalid runtime configuration: VITE_THEME_CONFIG must be valid JSON', {
+      cause: error,
+    })
+  }
+
+  return {
+    light: readTheme('light', parsed.light, 'VITE_THEME_CONFIG.light'),
+    dark: readTheme('dark', parsed.dark, 'VITE_THEME_CONFIG.dark'),
+  }
+}
+
+function readRequiredFontFamily(value: unknown, key: string): string {
+  const family = typeof value === 'string' ? value.trim() : ''
+  if (!family) {
+    throw new Error(`Invalid runtime configuration: ${key} must be a non-empty string`)
+  }
+  return family
+}
+
+function readFontConfig(value: string | undefined): FontRuntimeConfig {
+  if (!value) return DEFAULT_FONT_CONFIG
+
+  let parsed: FontConfigInput
+  try {
+    parsed = JSON.parse(value) as FontConfigInput
+  } catch (error) {
+    throw new Error('Invalid runtime configuration: VITE_FONT_CONFIG must be valid JSON', {
+      cause: error,
+    })
+  }
+
+  return {
+    sansSerif: readRequiredFontFamily(parsed.sansSerif, 'VITE_FONT_CONFIG.sansSerif'),
+    serif: readRequiredFontFamily(parsed.serif, 'VITE_FONT_CONFIG.serif'),
+    comical: readRequiredFontFamily(parsed.comical, 'VITE_FONT_CONFIG.comical'),
+  }
+}
+
 
 export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
   const appName = envString(env.VITE_APP_NAME) ?? 'Earnesty'
@@ -358,6 +546,8 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
   const authProvider = readAuthProvider(envString(env.VITE_AUTH_PROVIDER))
   const defaultCurrentUserPath = authProvider === 'api' ? '/api/me' : '/.auth/me'
   const schemaConfig = readSchemaConfig(envString(env.VITE_SANITY_SCHEMA_CONFIG))
+  const themeConfig = readThemeConfig(envString(env.VITE_THEME_CONFIG))
+  const fontConfig = readFontConfig(envString(env.VITE_FONT_CONFIG))
   const defaultTypeConfig = schemaConfig.types[schemaConfig.defaultType]
   if (!defaultTypeConfig) {
     throw new Error(`Invalid runtime configuration: unknown default type ${schemaConfig.defaultType}`)
@@ -402,6 +592,10 @@ export function createRuntimeConfig(env: ImportMetaEnv): FrontendRuntimeConfig {
     },
     telemetry: {
       applicationInsightsConnectionString: envString(env.VITE_APPLICATIONINSIGHTS_CONNECTION_STRING),
+    },
+    appearance: {
+      themes: themeConfig,
+      fonts: fontConfig,
     },
   }
 }

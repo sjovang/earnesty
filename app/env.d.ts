@@ -10,6 +10,8 @@ interface ImportMetaEnv {
   readonly VITE_SANITY_DATASET?: string
   readonly VITE_SANITY_API_VERSION?: string
   readonly VITE_SANITY_SCHEMA_CONFIG?: string
+  readonly VITE_THEME_CONFIG?: string
+  readonly VITE_FONT_CONFIG?: string
   readonly VITE_SANITY_DRAFT_PREFIX?: string
   readonly VITE_AUTH_PROVIDER?: string
   readonly VITE_AUTH_CURRENT_USER_PATH?: string

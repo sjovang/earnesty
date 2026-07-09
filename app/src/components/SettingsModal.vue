@@ -22,15 +22,15 @@ const auth = useAuthStore()
 const grammarCapability = ref<GrammarCapabilityResult | null>(null)
 
 const themes: { value: Theme; label: string }[] = [
+  { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-  { value: 'whimsical', label: 'Whimsical' },
 ]
 
 const fonts: { value: Font; label: string }[] = [
   { value: 'serif', label: 'Serif' },
   { value: 'sans-serif', label: 'Sans-serif' },
-  { value: 'comic-sans', label: 'Comic Sans' },
+  { value: 'comical', label: 'Comical' },
 ]
 
 const fontSizeLabels: Record<number, string> = {
