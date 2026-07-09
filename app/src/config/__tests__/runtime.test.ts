@@ -24,6 +24,11 @@ describe('createRuntimeConfig', () => {
     expect(config.auth.loginPath).toBe('/.auth/login/aad')
     expect(config.app.name).toBe('Earnesty')
     expect(config.app.storageNamespace).toBe('earnesty')
+    expect(config.appearance.themes.light.colorScheme).toBe('light')
+    expect(config.appearance.themes.dark.colorScheme).toBe('dark')
+    expect(config.appearance.fonts.sansSerif).toContain('system-ui')
+    expect(config.appearance.fonts.serif).toContain('Lora')
+    expect(config.appearance.fonts.comical).toContain('Comic Sans')
   })
 
   it('throws when VITE_SANITY_PROJECT_ID is missing outside test mode', () => {
@@ -110,5 +115,60 @@ describe('createRuntimeConfig', () => {
     expect(() => createRuntimeConfig(makeEnv({ VITE_APP_STORAGE_NAMESPACE: 'My NS!' }))).toThrow(
       'VITE_APP_STORAGE_NAMESPACE',
     )
+  })
+
+  it('uses custom theme and font config when provided', () => {
+    const config = createRuntimeConfig(makeEnv({
+      VITE_THEME_CONFIG: JSON.stringify({
+        light: {
+          colorScheme: 'light',
+          colors: {
+            '--ctp-base': '#ffffff',
+            '--ctp-text': '#101010',
+          },
+        },
+        dark: {
+          colorScheme: 'dark',
+          colors: {
+            '--ctp-base': '#101010',
+            '--ctp-text': '#ffffff',
+          },
+        },
+      }),
+      VITE_FONT_CONFIG: JSON.stringify({
+        sansSerif: 'Inter, system-ui, sans-serif',
+        serif: 'Merriweather, serif',
+        comical: '"Comic Neue", cursive',
+      }),
+    }))
+
+    expect(config.appearance.themes.light.colors['--ctp-base']).toBe('#ffffff')
+    expect(config.appearance.themes.dark.colors['--ctp-text']).toBe('#ffffff')
+    expect(config.appearance.fonts).toEqual({
+      sansSerif: 'Inter, system-ui, sans-serif',
+      serif: 'Merriweather, serif',
+      comical: '"Comic Neue", cursive',
+    })
+  })
+
+  it('throws when custom theme config is missing required themes', () => {
+    expect(() => createRuntimeConfig(makeEnv({
+      VITE_THEME_CONFIG: JSON.stringify({
+        light: {
+          colors: {
+            '--ctp-base': '#ffffff',
+          },
+        },
+      }),
+    }))).toThrow('VITE_THEME_CONFIG.dark')
+  })
+
+  it('throws when custom font config omits a required font family', () => {
+    expect(() => createRuntimeConfig(makeEnv({
+      VITE_FONT_CONFIG: JSON.stringify({
+        sansSerif: 'Inter, sans-serif',
+        serif: 'Merriweather, serif',
+      }),
+    }))).toThrow('VITE_FONT_CONFIG.comical')
   })
 })

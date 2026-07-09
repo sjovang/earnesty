@@ -70,6 +70,8 @@ Both frontend and API use typed runtime configuration so you can customize schem
 | `VITE_SANITY_DATASET` | No | `production` |
 | `VITE_SANITY_API_VERSION` | No | `2024-01-01` |
 | `VITE_SANITY_SCHEMA_CONFIG` | No | JSON schema config. If unset, the frontend uses a built-in single-type default equivalent to `blog` / `title` / `body` / `slug` / `publishedAt`. |
+| `VITE_THEME_CONFIG` | No | JSON theme config for `light` and `dark` themes. If unset, the frontend uses built-in Catppuccin Latte (light) and Macchiato (dark). |
+| `VITE_FONT_CONFIG` | No | JSON font-family config. If set, it must provide `sansSerif`, `serif`, and `comical`. |
 | `VITE_SANITY_DRAFT_PREFIX` | No | `drafts.` (must end with `.`) |
 | `VITE_AUTH_PROVIDER` | No | `swa` (`swa` or `api`) |
 | `VITE_AUTH_CURRENT_USER_PATH` | No | `/.auth/me` for `swa`, `/api/me` for `api` |
@@ -136,6 +138,41 @@ Validation is fail-fast: invalid or missing required settings throw explicit run
       "publishedAtField": "updatedAt"
     }
   ]
+}
+```
+
+#### Theme config example
+
+`VITE_THEME_CONFIG` uses this JSON shape (both themes are required when set):
+
+```json
+{
+  "light": {
+    "colorScheme": "light",
+    "colors": {
+      "--ctp-base": "#eff1f5",
+      "--ctp-text": "#4c4f69"
+    }
+  },
+  "dark": {
+    "colorScheme": "dark",
+    "colors": {
+      "--ctp-base": "#24273a",
+      "--ctp-text": "#cad3f5"
+    }
+  }
+}
+```
+
+#### Font config example
+
+`VITE_FONT_CONFIG` uses this JSON shape (all keys are required when set):
+
+```json
+{
+  "sansSerif": "system-ui, -apple-system, sans-serif",
+  "serif": "'Lora', Georgia, serif",
+  "comical": "'Comic Sans MS', cursive"
 }
 ```
 
