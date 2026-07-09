@@ -7,9 +7,23 @@ const pluginKey = new PluginKey('block-inserter')
 /** Dispatched on the editor DOM when the user clicks the "+" button. */
 export const BLOCK_INSERTER_EVENT = 'block-inserter:open'
 
+interface BlockInserterContext {
+  parentTypeName: string
+  depth: number
+  isCollapsed: boolean
+}
+
+export function shouldShowBlockInserter(context: BlockInserterContext): boolean {
+  return (
+    context.parentTypeName === 'paragraph'
+    && context.depth === 1
+    && context.isCollapsed
+  )
+}
+
 /**
  * Renders a "+" widget decoration in the left margin whenever the cursor sits
- * on an empty top-level paragraph. Clicking it dispatches a
+ * on a top-level paragraph. Clicking it dispatches a
  * `block-inserter:open` CustomEvent on the editor DOM element.
  */
 export const BlockInserter = Extension.create({
@@ -24,10 +38,13 @@ export const BlockInserter = Extension.create({
             const { doc, selection } = state
             const { $head } = selection
 
-            // Only show on empty top-level paragraphs (depth 1 = direct child of doc)
-            if ($head.parent.type.name !== 'paragraph') return DecorationSet.empty
-            if ($head.depth !== 1) return DecorationSet.empty
-            if ($head.parent.content.size !== 0) return DecorationSet.empty
+            if (!shouldShowBlockInserter({
+              parentTypeName: $head.parent.type.name,
+              depth: $head.depth,
+              isCollapsed: selection.empty,
+            })) {
+              return DecorationSet.empty
+            }
 
             const pos = $head.before()
 

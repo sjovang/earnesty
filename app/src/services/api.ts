@@ -7,6 +7,7 @@ export interface ImageAsset {
   url: string
   width: number | null
   height: number | null
+  createdAt: string | null
 }
 
 export const AUTH_REDIRECT_TS_KEY = '__auth_redirect_ts'

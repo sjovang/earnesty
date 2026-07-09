@@ -10,6 +10,7 @@ interface ImageAsset {
   url: string
   width: number | null
   height: number | null
+  createdAt: string | null
 }
 
 app.http('listImages', {
@@ -24,13 +25,14 @@ app.http('listImages', {
 
     try {
       const assets = await getSanityClient().fetch<
-        { _id: string; url: string; width: number | null; height: number | null }[]
+        { _id: string; url: string; width: number | null; height: number | null; createdAt: string | null }[]
       >(
         `*[_type == "sanity.imageAsset"] | order(coalesce(metadata.exif.DateTimeOriginal, _createdAt) desc) {
           _id,
           url,
           "width": metadata.dimensions.width,
-          "height": metadata.dimensions.height
+          "height": metadata.dimensions.height,
+          "createdAt": coalesce(metadata.exif.DateTimeOriginal, _createdAt)
         }`,
       )
 
@@ -39,6 +41,7 @@ app.http('listImages', {
         url: a.url,
         width: a.width,
         height: a.height,
+        createdAt: a.createdAt,
       }))
 
       return { status: 200, jsonBody: result }
