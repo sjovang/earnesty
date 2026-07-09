@@ -10,6 +10,37 @@ export interface ImageAsset {
   createdAt: string | null
 }
 
+export interface GrammarReplacement {
+  value: string
+}
+
+export interface GrammarRule {
+  id: string
+  description: string
+  issueType: string
+}
+
+export interface GrammarMatch {
+  message: string
+  shortMessage: string
+  offset: number
+  length: number
+  replacements: GrammarReplacement[]
+  rule: GrammarRule
+}
+
+export interface GrammarCheckResult {
+  language: string
+  matches: GrammarMatch[]
+}
+
+export type GrammarCapabilityReason = 'missing_api_key'
+
+export interface GrammarCapabilityResult {
+  advancedAvailable: boolean
+  reason?: GrammarCapabilityReason
+}
+
 export const AUTH_REDIRECT_TS_KEY = '__auth_redirect_ts'
 const REDIRECT_COOLDOWN_MS = 10_000
 
@@ -139,4 +170,17 @@ export async function apiGetDocument(id: string): Promise<ContentDocument | null
 /** Fetches all image assets from Sanity via the API proxy. */
 export async function apiListImages(): Promise<ImageAsset[]> {
   return apiFetch<ImageAsset[]>('/api/sanity/images')
+}
+
+/** Checks text for grammar/spelling issues via the app-managed API proxy. */
+export async function apiCheckGrammar(text: string, language: string): Promise<GrammarCheckResult> {
+  return apiFetch<GrammarCheckResult>('/api/grammar/check', {
+    method: 'POST',
+    body: JSON.stringify({ text, language }),
+  })
+}
+
+/** Returns whether advanced grammar mode is currently available for this user session. */
+export async function apiGetGrammarCapability(): Promise<GrammarCapabilityResult> {
+  return apiFetch<GrammarCapabilityResult>('/api/grammar/capability')
 }

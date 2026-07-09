@@ -21,6 +21,12 @@ export interface ApiRuntimeConfig {
     principalHeader: string
     principalEncoding: 'base64-json' | 'json'
   }
+  grammar: {
+    apiUrl: string
+    apiKey?: string
+    requireApiKey: boolean
+    rateLimitRpm: number
+  }
 }
 
 export type MetadataFieldType = 'string' | 'slug' | 'datetime' | 'stringArray' | 'boolean'
@@ -298,6 +304,35 @@ function readHeaderName(value: string | undefined, fallback: string, key: string
   return header.toLowerCase()
 }
 
+function readBoolean(
+  value: string | undefined,
+  fallback: boolean,
+  key: string,
+): boolean {
+  const normalized = envString(value)?.toLowerCase()
+  if (!normalized) return fallback
+  if (normalized === 'true') return true
+  if (normalized === 'false') return false
+  throw new Error(`Invalid runtime configuration: ${key} must be "true" or "false"`)
+}
+
+function readPositiveInteger(
+  value: string | undefined,
+  fallback: number,
+  key: string,
+): number {
+  const normalized = envString(value)
+  if (!normalized) return fallback
+  if (!/^[0-9]+$/.test(normalized)) {
+    throw new Error(`Invalid runtime configuration: ${key} must be a positive integer`)
+  }
+  const parsed = Number.parseInt(normalized, 10)
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw new Error(`Invalid runtime configuration: ${key} must be a positive integer`)
+  }
+  return parsed
+}
+
 export function getApiRuntimeConfig(): ApiRuntimeConfig {
   if (cachedConfig) return cachedConfig
 
@@ -354,6 +389,12 @@ export function getApiRuntimeConfig(): ApiRuntimeConfig {
         'AUTH_PRINCIPAL_HEADER',
       ),
       principalEncoding: readPrincipalEncoding(process.env['AUTH_PRINCIPAL_ENCODING'] ?? defaultPrincipalEncoding),
+    },
+    grammar: {
+      apiUrl: envString(process.env['GRAMMAR_API_URL']) ?? 'https://api.languagetool.org/v2/check',
+      apiKey: envString(process.env['GRAMMAR_API_KEY']),
+      requireApiKey: readBoolean(process.env['GRAMMAR_REQUIRE_API_KEY'], true, 'GRAMMAR_REQUIRE_API_KEY'),
+      rateLimitRpm: readPositiveInteger(process.env['GRAMMAR_RATE_LIMIT_RPM'], 20, 'GRAMMAR_RATE_LIMIT_RPM'),
     },
   }
 

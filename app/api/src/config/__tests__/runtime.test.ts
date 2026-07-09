@@ -31,6 +31,12 @@ describe('getApiRuntimeConfig', () => {
       principalHeader: 'x-ms-client-principal',
       principalEncoding: 'base64-json',
     })
+    expect(config.grammar).toEqual({
+      apiUrl: 'https://api.languagetool.org/v2/check',
+      apiKey: undefined,
+      requireApiKey: true,
+      rateLimitRpm: 20,
+    })
   })
 
   it('throws when SANITY_DRAFT_PREFIX does not end with a dot', () => {
@@ -106,5 +112,38 @@ describe('getApiRuntimeConfig', () => {
     process.env['AUTH_PRINCIPAL_HEADER'] = 'x principal'
 
     expect(() => getApiRuntimeConfig()).toThrow('AUTH_PRINCIPAL_HEADER must contain only letters, digits, and hyphens')
+  })
+
+  it('accepts grammar API overrides', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['GRAMMAR_API_URL'] = 'https://example.com/grammar'
+    process.env['GRAMMAR_API_KEY'] = 'secret-key'
+    process.env['GRAMMAR_REQUIRE_API_KEY'] = 'false'
+    process.env['GRAMMAR_RATE_LIMIT_RPM'] = '120'
+
+    const config = getApiRuntimeConfig()
+    expect(config.grammar).toEqual({
+      apiUrl: 'https://example.com/grammar',
+      apiKey: 'secret-key',
+      requireApiKey: false,
+      rateLimitRpm: 120,
+    })
+  })
+
+  it('throws on invalid grammar key requirement value', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['GRAMMAR_REQUIRE_API_KEY'] = 'sometimes'
+
+    expect(() => getApiRuntimeConfig()).toThrow('GRAMMAR_REQUIRE_API_KEY must be "true" or "false"')
+  })
+
+  it('throws on invalid grammar rate-limit value', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['GRAMMAR_RATE_LIMIT_RPM'] = '0'
+
+    expect(() => getApiRuntimeConfig()).toThrow('GRAMMAR_RATE_LIMIT_RPM must be a positive integer')
   })
 })

@@ -46,3 +46,12 @@ This directory contains the Vue frontend and local dev adapter used by `npm run 
 ## Environment options
 
 `VITE_SANITY_PROJECT_ID` is required. For all other runtime options (schema mapping, auth routes, branding, telemetry, API runtime settings), see the root [README runtime configuration contract](../README.md#runtime-configuration-contract).
+
+## Proofreading controls
+
+- Native proofreading controls are available in **Settings** (`spellcheck`, `autocorrect`, `writing suggestions`, language).
+- Advanced grammar mode is **opt-in** and off by default.
+- Advanced checks are routed through the app API proxy (`/api/grammar/check`), with capability metadata exposed at `/api/grammar/capability`.
+- Advanced mode requires authentication and, by default, a configured `GRAMMAR_API_KEY` (`GRAMMAR_REQUIRE_API_KEY=true`).
+- The API enforces `GRAMMAR_RATE_LIMIT_RPM` (default `20`, suitable for LanguageTool free-tier usage). Increase it for premium plans.
+- When Advanced is unavailable, the Settings control stays disabled and shows a tooltip explaining whether sign-in or API-key configuration is required.
