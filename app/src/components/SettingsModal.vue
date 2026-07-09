@@ -280,27 +280,24 @@ function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
 .settings {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 1rem;
 }
 
 .settings__section {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 0.65rem 0.7rem 0.8rem;
-  border: 1px solid var(--ctp-surface0);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--ctp-mantle) 45%, transparent);
 }
 
 .settings__section-title {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.88rem;
   line-height: 1.2;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ctp-subtext0);
+  text-align: center;
 }
 
 .settings__row {
