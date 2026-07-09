@@ -46,3 +46,9 @@ This directory contains the Vue frontend and local dev adapter used by `npm run 
 ## Environment options
 
 `VITE_SANITY_PROJECT_ID` is required. For all other runtime options (schema mapping, auth routes, branding, telemetry, API runtime settings), see the root [README runtime configuration contract](../README.md#runtime-configuration-contract).
+
+## Proofreading controls
+
+- Native proofreading controls are available in **Settings** (`spellcheck`, `autocorrect`, `writing suggestions`, language).
+- Advanced grammar mode is **opt-in** and off by default.
+- Advanced checks are routed through the app API proxy (`/api/grammar/check`), which can be configured server-side with `GRAMMAR_API_URL` and `GRAMMAR_API_KEY`.

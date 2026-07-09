@@ -4,6 +4,8 @@ import { runtimeConfig } from '../config/runtime'
 
 export type Theme = 'light' | 'dark' | 'whimsical'
 export type Font = 'serif' | 'sans-serif' | 'comic-sans'
+export type ProofreadingMode = 'off' | 'native' | 'advanced'
+export type AutocorrectSetting = 'on' | 'off'
 
 export const FONT_SIZES = [18, 24, 30] as const
 export const CONTENT_WIDTHS = [50, 60, 70] as const
@@ -93,20 +95,77 @@ interface Settings {
   lineSpacing: number
   font: Font
   contentWidth: number
+  proofreadingMode: ProofreadingMode
+  spellcheck: boolean
+  autocorrect: AutocorrectSetting
+  writingSuggestions: boolean
+  editorLanguage: string
+}
+
+function defaultSettings(): Settings {
+  return {
+    theme: 'dark',
+    fontSize: 24,
+    lineSpacing: 1.7,
+    font: 'serif',
+    contentWidth: 60,
+    proofreadingMode: 'native',
+    spellcheck: true,
+    autocorrect: 'on',
+    writingSuggestions: true,
+    editorLanguage: 'en',
+  }
+}
+
+function isTheme(value: unknown): value is Theme {
+  return value === 'light' || value === 'dark' || value === 'whimsical'
+}
+
+function isFont(value: unknown): value is Font {
+  return value === 'serif' || value === 'sans-serif' || value === 'comic-sans'
+}
+
+function isProofreadingMode(value: unknown): value is ProofreadingMode {
+  return value === 'off' || value === 'native' || value === 'advanced'
+}
+
+function isAutocorrectSetting(value: unknown): value is AutocorrectSetting {
+  return value === 'on' || value === 'off'
+}
+
+function normalizeEditorLanguage(value: unknown): string {
+  if (typeof value !== 'string') return defaultSettings().editorLanguage
+  const trimmed = value.trim()
+  if (!trimmed) return defaultSettings().editorLanguage
+  return trimmed
+}
+
+function normalizeSettings(raw: Partial<Settings> | null | undefined): Settings {
+  const defaults = defaultSettings()
+  return {
+    theme: isTheme(raw?.theme) ? raw.theme : defaults.theme,
+    fontSize: typeof raw?.fontSize === 'number' ? raw.fontSize : defaults.fontSize,
+    lineSpacing: typeof raw?.lineSpacing === 'number' ? raw.lineSpacing : defaults.lineSpacing,
+    font: isFont(raw?.font) ? raw.font : defaults.font,
+    contentWidth: typeof raw?.contentWidth === 'number' ? raw.contentWidth : defaults.contentWidth,
+    proofreadingMode: isProofreadingMode(raw?.proofreadingMode) ? raw.proofreadingMode : defaults.proofreadingMode,
+    spellcheck: typeof raw?.spellcheck === 'boolean' ? raw.spellcheck : defaults.spellcheck,
+    autocorrect: isAutocorrectSetting(raw?.autocorrect) ? raw.autocorrect : defaults.autocorrect,
+    writingSuggestions: typeof raw?.writingSuggestions === 'boolean'
+      ? raw.writingSuggestions
+      : defaults.writingSuggestions,
+    editorLanguage: normalizeEditorLanguage(raw?.editorLanguage),
+  }
 }
 
 function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return { ...defaultSettings(), ...(JSON.parse(raw) as Partial<Settings>) }
+    if (raw) return normalizeSettings(JSON.parse(raw) as Partial<Settings>)
   } catch {
     // ignore
   }
   return defaultSettings()
-}
-
-function defaultSettings(): Settings {
-  return { theme: 'dark', fontSize: 24, lineSpacing: 1.7, font: 'serif', contentWidth: 60 }
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -172,5 +231,37 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value.contentWidth = width
   }
 
-  return { settings, setTheme, setFontSize, setLineSpacing, setFont, setContentWidth }
+  function setProofreadingMode(mode: ProofreadingMode) {
+    settings.value.proofreadingMode = mode
+  }
+
+  function setSpellcheck(enabled: boolean) {
+    settings.value.spellcheck = enabled
+  }
+
+  function setAutocorrect(value: AutocorrectSetting) {
+    settings.value.autocorrect = value
+  }
+
+  function setWritingSuggestions(enabled: boolean) {
+    settings.value.writingSuggestions = enabled
+  }
+
+  function setEditorLanguage(language: string) {
+    settings.value.editorLanguage = normalizeEditorLanguage(language)
+  }
+
+  return {
+    settings,
+    setTheme,
+    setFontSize,
+    setLineSpacing,
+    setFont,
+    setContentWidth,
+    setProofreadingMode,
+    setSpellcheck,
+    setAutocorrect,
+    setWritingSuggestions,
+    setEditorLanguage,
+  }
 })

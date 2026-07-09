@@ -98,6 +98,8 @@ Both frontend and API use typed runtime configuration so you can customize schem
 | `AUTH_PROVIDER` | No | `swa` (`swa` or `header`) |
 | `AUTH_PRINCIPAL_HEADER` | No | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
 | `AUTH_PRINCIPAL_ENCODING` | No | `base64-json` for `swa`, `json` for `header` |
+| `GRAMMAR_API_URL` | No | `https://api.languagetool.org/v2/check` |
+| `GRAMMAR_API_KEY` | No | unset |
 
 Validation is fail-fast: invalid or missing required settings throw explicit runtime errors.
 
@@ -224,6 +226,8 @@ Optional runtime overrides are supported for reusable deployments. Configure the
 | `AUTH_PROVIDER` | `swa` |
 | `AUTH_PRINCIPAL_HEADER` | `x-ms-client-principal` for `swa`, `x-authenticated-principal` for `header` |
 | `AUTH_PRINCIPAL_ENCODING` | `base64-json` for `swa`, `json` for `header` |
+| `GRAMMAR_API_URL` | `https://api.languagetool.org/v2/check` |
+| `GRAMMAR_API_KEY` | unset |
 
 The GitHub Actions workflows read the GitHub variable `SANITY_SCHEMA_CONFIG` and expose it as both `VITE_SANITY_SCHEMA_CONFIG` (frontend build/test) and `SANITY_SCHEMA_CONFIG` (API test/runtime).
 

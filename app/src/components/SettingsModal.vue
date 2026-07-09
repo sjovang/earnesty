@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import BaseModal from './BaseModal.vue'
-import { useSettingsStore, fontFamilyFor, FONT_SIZES, CONTENT_WIDTHS, type Theme, type Font } from '../stores/settings'
+import {
+  useSettingsStore,
+  fontFamilyFor,
+  FONT_SIZES,
+  CONTENT_WIDTHS,
+  type Theme,
+  type Font,
+  type ProofreadingMode,
+  type AutocorrectSetting,
+} from '../stores/settings'
 
 defineEmits<{ close: [] }>()
 
@@ -29,6 +38,34 @@ const widthLabels: Record<number, string> = {
   [CONTENT_WIDTHS[1]]: 'Normal',
   [CONTENT_WIDTHS[2]]: 'Wide',
 }
+
+const proofreadingModes: { value: ProofreadingMode; label: string }[] = [
+  { value: 'off', label: 'Off' },
+  { value: 'native', label: 'Native' },
+  { value: 'advanced', label: 'Advanced' },
+]
+
+const onOffOptions: { value: boolean; label: string }[] = [
+  { value: true, label: 'On' },
+  { value: false, label: 'Off' },
+]
+
+const autocorrectOptions: { value: AutocorrectSetting; label: string }[] = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+]
+
+const editorLanguages: { value: string; label: string }[] = [
+  { value: 'en', label: 'English' },
+  { value: 'en-GB', label: 'English (UK)' },
+  { value: 'en-US', label: 'English (US)' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'it', label: 'Italian' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'nl', label: 'Dutch' },
+]
 </script>
 
 <template>
@@ -109,11 +146,114 @@ const widthLabels: Record<number, string> = {
           </button>
         </div>
       </div>
+
+      <div class="settings__row">
+        <span class="settings__label">Proofreading</span>
+        <div
+          class="settings__choices"
+          role="group"
+          aria-label="Proofreading mode"
+        >
+          <button
+            v-for="mode in proofreadingModes"
+            :key="mode.value"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.proofreadingMode === mode.value }]"
+            @click="store.setProofreadingMode(mode.value)"
+          >
+            {{ mode.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="settings__row">
+        <span class="settings__label">Spellcheck</span>
+        <div
+          class="settings__choices"
+          role="group"
+          aria-label="Spellcheck"
+        >
+          <button
+            v-for="option in onOffOptions"
+            :key="`spell-${option.label}`"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.spellcheck === option.value }]"
+            @click="store.setSpellcheck(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="settings__row">
+        <span class="settings__label">Autocorrect</span>
+        <div
+          class="settings__choices"
+          role="group"
+          aria-label="Autocorrect"
+        >
+          <button
+            v-for="option in autocorrectOptions"
+            :key="`auto-${option.value}`"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.autocorrect === option.value }]"
+            @click="store.setAutocorrect(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="settings__row">
+        <span class="settings__label">Suggestions</span>
+        <div
+          class="settings__choices"
+          role="group"
+          aria-label="Writing suggestions"
+        >
+          <button
+            v-for="option in onOffOptions"
+            :key="`suggest-${option.label}`"
+            :class="['settings__btn', { 'settings__btn--active': store.settings.writingSuggestions === option.value }]"
+            @click="store.setWritingSuggestions(option.value)"
+          >
+            {{ option.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="settings__row">
+        <span class="settings__label">Language</span>
+        <label class="settings__select-wrap">
+          <span class="visually-hidden">Editor language</span>
+          <select
+            class="settings__select"
+            :value="store.settings.editorLanguage"
+            @change="store.setEditorLanguage(($event.target as HTMLSelectElement).value)"
+          >
+            <option
+              v-for="language in editorLanguages"
+              :key="language.value"
+              :value="language.value"
+            >
+              {{ language.label }}
+            </option>
+          </select>
+        </label>
+      </div>
     </div>
   </BaseModal>
 </template>
 
 <style scoped>
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  width: 1px;
+}
+
 .settings {
   display: flex;
   flex-direction: column;
@@ -128,7 +268,7 @@ const widthLabels: Record<number, string> = {
 
 .settings__label {
   flex-shrink: 0;
-  width: 5.5rem;
+  width: 6.5rem;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--ctp-subtext0);
@@ -175,5 +315,21 @@ const widthLabels: Record<number, string> = {
 .settings__btn--active:hover {
   background: var(--ctp-mauve);
   color: var(--ctp-base);
+}
+
+.settings__select-wrap {
+  display: flex;
+  flex: 1;
+}
+
+.settings__select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ctp-text);
+  font-size: 0.82rem;
+  padding: 0.38rem 0.55rem;
 }
 </style>

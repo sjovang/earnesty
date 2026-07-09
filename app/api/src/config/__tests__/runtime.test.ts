@@ -31,6 +31,10 @@ describe('getApiRuntimeConfig', () => {
       principalHeader: 'x-ms-client-principal',
       principalEncoding: 'base64-json',
     })
+    expect(config.grammar).toEqual({
+      apiUrl: 'https://api.languagetool.org/v2/check',
+      apiKey: undefined,
+    })
   })
 
   it('throws when SANITY_DRAFT_PREFIX does not end with a dot', () => {
@@ -106,5 +110,18 @@ describe('getApiRuntimeConfig', () => {
     process.env['AUTH_PRINCIPAL_HEADER'] = 'x principal'
 
     expect(() => getApiRuntimeConfig()).toThrow('AUTH_PRINCIPAL_HEADER must contain only letters, digits, and hyphens')
+  })
+
+  it('accepts grammar API overrides', () => {
+    process.env['SANITY_PROJECT_ID'] = 'project'
+    process.env['SANITY_TOKEN'] = 'token'
+    process.env['GRAMMAR_API_URL'] = 'https://example.com/grammar'
+    process.env['GRAMMAR_API_KEY'] = 'secret-key'
+
+    const config = getApiRuntimeConfig()
+    expect(config.grammar).toEqual({
+      apiUrl: 'https://example.com/grammar',
+      apiKey: 'secret-key',
+    })
   })
 })

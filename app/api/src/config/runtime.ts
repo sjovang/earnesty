@@ -21,6 +21,10 @@ export interface ApiRuntimeConfig {
     principalHeader: string
     principalEncoding: 'base64-json' | 'json'
   }
+  grammar: {
+    apiUrl: string
+    apiKey?: string
+  }
 }
 
 export type MetadataFieldType = 'string' | 'slug' | 'datetime' | 'stringArray' | 'boolean'
@@ -354,6 +358,10 @@ export function getApiRuntimeConfig(): ApiRuntimeConfig {
         'AUTH_PRINCIPAL_HEADER',
       ),
       principalEncoding: readPrincipalEncoding(process.env['AUTH_PRINCIPAL_ENCODING'] ?? defaultPrincipalEncoding),
+    },
+    grammar: {
+      apiUrl: envString(process.env['GRAMMAR_API_URL']) ?? 'https://api.languagetool.org/v2/check',
+      apiKey: envString(process.env['GRAMMAR_API_KEY']),
     },
   }
 

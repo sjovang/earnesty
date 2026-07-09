@@ -4,6 +4,7 @@ import {
   apiPublishDocument,
   apiCreateDraft,
   apiGetDocument,
+  apiCheckGrammar,
   AuthError,
   clearRedirectTimestamp,
   AUTH_REDIRECT_TS_KEY,
@@ -278,5 +279,55 @@ describe('apiGetDocument', () => {
     mockFetch.mockResolvedValue(makeResponse(200, null))
     const result = await apiGetDocument('missing-id')
     expect(result).toBeNull()
+  })
+})
+
+// ── apiCheckGrammar ─────────────────────────────────────────────────────────────
+
+describe('apiCheckGrammar', () => {
+  beforeEach(() => {
+    mockFetch.mockReset()
+  })
+
+  it('sends a POST request to the grammar endpoint', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, { language: 'en', matches: [] }))
+    await apiCheckGrammar('This are bad grammar.', 'en')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      '/api/grammar/check',
+      expect.objectContaining({ method: 'POST' }),
+    )
+  })
+
+  it('sends text and language in the request body', async () => {
+    mockFetch.mockResolvedValue(makeResponse(200, { language: 'en', matches: [] }))
+    await apiCheckGrammar('This are bad grammar.', 'en-GB')
+
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit]
+    const body = JSON.parse(init.body as string)
+    expect(body).toEqual({ text: 'This are bad grammar.', language: 'en-GB' })
+  })
+
+  it('returns grammar matches from the API', async () => {
+    const payload = {
+      language: 'en',
+      matches: [
+        {
+          message: 'Possible agreement error',
+          shortMessage: '',
+          offset: 5,
+          length: 3,
+          replacements: [{ value: 'is' }],
+          rule: { id: 'AGREEMENT', description: 'Agreement', issueType: 'grammar' },
+        },
+      ],
+    }
+    mockFetch.mockResolvedValue(makeResponse(200, payload))
+    await expect(apiCheckGrammar('This are bad grammar.', 'en')).resolves.toEqual(payload)
+  })
+
+  it('throws on non-2xx responses', async () => {
+    mockFetch.mockResolvedValue(makeResponse(502, { error: 'Grammar service unavailable' }))
+    await expect(apiCheckGrammar('Hello world', 'en')).rejects.toThrow('Grammar service unavailable')
   })
 })

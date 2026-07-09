@@ -18,6 +18,7 @@ import { TitleNode } from '../extensions/TitleNode'
 import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
 import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
+import { GrammarAssist } from '../extensions/GrammarAssist'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
@@ -111,6 +112,25 @@ function onVisualViewportResize() {
   updateKeyboardVisibility()
   checkContentLength()
   requestAnimationFrame(scrollToCaret)
+}
+
+function applyProofreadingAttributes() {
+  const dom = tiptap.value?.view.dom as HTMLElement | undefined
+  if (!dom) return
+
+  const proofreadingEnabled = settings.proofreadingMode !== 'off'
+  dom.setAttribute('spellcheck', proofreadingEnabled && settings.spellcheck ? 'true' : 'false')
+  dom.setAttribute('autocorrect', proofreadingEnabled && settings.autocorrect === 'on' ? 'on' : 'off')
+  dom.setAttribute(
+    'writingsuggestions',
+    proofreadingEnabled && settings.writingSuggestions ? 'true' : 'false',
+  )
+  dom.setAttribute('lang', settings.editorLanguage || 'en')
+}
+
+function syncGrammarAssistMode() {
+  if (!tiptap.value) return
+  tiptap.value.commands.setGrammarAssistEnabled(settings.proofreadingMode === 'advanced')
 }
 
 onMounted(() => {
@@ -258,10 +278,17 @@ const tiptap = useEditor({
     CodeBlockLowlight.configure({ lowlight }),
     BlockInserter,
     BlockSettings,
+    GrammarAssist,
   ],
   content: savedContent ?? INTRO_HTML,
   autofocus: 'end',
   editorProps: {
+    attributes: {
+      spellcheck: settings.proofreadingMode !== 'off' && settings.spellcheck ? 'true' : 'false',
+      autocorrect: settings.proofreadingMode !== 'off' && settings.autocorrect === 'on' ? 'on' : 'off',
+      writingsuggestions: settings.proofreadingMode !== 'off' && settings.writingSuggestions ? 'true' : 'false',
+      lang: settings.editorLanguage || 'en',
+    },
     handleDrop(_view, event, _slice, moved) {
       if (moved) return false
       const file = event.dataTransfer?.files[0]
@@ -340,6 +367,8 @@ const tiptap = useEditor({
   },
   onCreate() {
     checkContentLength()
+    applyProofreadingAttributes()
+    syncGrammarAssistMode()
     requestAnimationFrame(scrollToCaret)
   },
 })
@@ -388,6 +417,21 @@ watch(
       scrollToCaret()
     })
   },
+)
+
+watch(
+  () => [
+    settings.proofreadingMode,
+    settings.spellcheck,
+    settings.autocorrect,
+    settings.writingSuggestions,
+    settings.editorLanguage,
+  ],
+  () => {
+    applyProofreadingAttributes()
+    syncGrammarAssistMode()
+  },
+  { deep: false },
 )
 </script>
 
@@ -517,6 +561,14 @@ watch(
 
 .intro-lockup__logo {
   display: block;
+}
+
+:deep(.grammar-assist__issue) {
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--ctp-red);
+  text-decoration-thickness: 1.2px;
+  text-underline-offset: 0.16em;
 }
 
 .intro-lockup__name {

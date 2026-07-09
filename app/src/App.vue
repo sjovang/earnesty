@@ -9,6 +9,7 @@ import SettingsModal from './components/SettingsModal.vue'
 import PublishModal from './components/PublishModal.vue'
 import { useEditorStore, type DocumentMeta } from './stores/editor'
 import { useAuthStore } from './stores/auth'
+import { useSettingsStore } from './stores/settings'
 import { portableTextToHtml, type ContentDocument } from './services/sanity'
 import { apiGetDocument, apiPublishDocument, apiSaveDocument } from './services/api'
 import { trackException, trackEvent } from './services/appInsights'
@@ -26,6 +27,7 @@ const metadataSubmitting = ref(false)
 const publishSubmitting = ref(false)
 const editorStore = useEditorStore()
 const auth = useAuthStore()
+const settingsStore = useSettingsStore()
 const draftPrefix = runtimeConfig.content.draftPrefix
 
 async function onDocumentSelected(doc: ContentDocument) {
@@ -73,6 +75,16 @@ const canEditMetadata = computed(() =>
 const isDraft = computed(() =>
   !!editorStore.activeDocument
   && editorStore.activeDocument._id.startsWith(draftPrefix),
+)
+
+const proofreadingLabel = computed(() => {
+  if (settingsStore.settings.proofreadingMode === 'off') return 'Proofing off'
+  if (settingsStore.settings.proofreadingMode === 'advanced') return 'Advanced proofing'
+  return 'Native proofing'
+})
+
+const proofreadingStyle = computed(() =>
+  settingsStore.settings.proofreadingMode === 'off' ? 'off' : 'active',
 )
 
 function onNewDocument() {
@@ -194,6 +206,8 @@ onMounted(async () => {
     :can-edit-metadata="canEditMetadata"
     :can-publish="canPublish"
     :is-draft="isDraft"
+    :proofreading-label="proofreadingLabel"
+    :proofreading-style="proofreadingStyle"
     @new="onNewDocument"
     @open="showOpen = true"
     @metadata="openMetadataModal"
