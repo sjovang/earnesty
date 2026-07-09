@@ -1,5 +1,40 @@
 # Changelog
 
+## [2.0.0](https://github.com/sjovang/earnesty/compare/frontend-v1.5.0...frontend-v2.0.0) (2026-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* replace legacy schema env vars with schema config ([#175](https://github.com/sjovang/earnesty/issues/175))
+* define runtime configuration contract for reusable deployments ([#154](https://github.com/sjovang/earnesty/issues/154))
+
+### Features
+
+* decouple hosting/deployment assumptions from Azure-only defaults ([#161](https://github.com/sjovang/earnesty/issues/161)) ([c918dbc](https://github.com/sjovang/earnesty/commit/c918dbc44455331283400bd229d7f01abcfd1637)), closes [#146](https://github.com/sjovang/earnesty/issues/146)
+* Decouple metadata editing from publish flow ([#177](https://github.com/sjovang/earnesty/issues/177)) ([cfbaa78](https://github.com/sjovang/earnesty/commit/cfbaa78290bfef1265935e488f228909950d924a))
+* decouple product-named storage keys and auth provider label ([#164](https://github.com/sjovang/earnesty/issues/164)) ([2b3d4cc](https://github.com/sjovang/earnesty/commit/2b3d4ccd243041c469e4309074212634de750b8f))
+* define runtime configuration contract for reusable deployments ([#154](https://github.com/sjovang/earnesty/issues/154)) ([6a83e3d](https://github.com/sjovang/earnesty/commit/6a83e3d47c543043518ee79c03721d23bf569627))
+* introduce configurable Sanity schema mapping (type and field flexibility) ([#160](https://github.com/sjovang/earnesty/issues/160)) ([511d046](https://github.com/sjovang/earnesty/commit/511d0468bef0eb7407f9263c81b6373e05e950c4))
+* replace legacy schema env vars with schema config ([#175](https://github.com/sjovang/earnesty/issues/175)) ([62bbbbb](https://github.com/sjovang/earnesty/commit/62bbbbb36aa3164aad893670313d48cfca40b8f7))
+* schema-driven metadata modal with multi-type Sanity mapping ([#169](https://github.com/sjovang/earnesty/issues/169)) ([1d60bff](https://github.com/sjovang/earnesty/commit/1d60bff3858fc7b3e8efc0a83561770fb5c1e418))
+
+
+### Bug Fixes
+
+* allow absent or null claims in SWA principal validation ([#167](https://github.com/sjovang/earnesty/issues/167)) ([7c00a5d](https://github.com/sjovang/earnesty/commit/7c00a5d544e52bfd07ca50aa602ef3961671efc5))
+* Edge menubar width regression from root scrollbar gutter ([#173](https://github.com/sjovang/earnesty/issues/173)) ([43ed0c5](https://github.com/sjovang/earnesty/commit/43ed0c57c3e7ee59bf30d6fec057fa7024fb78e8))
+* improve block insertion and image library usability ([#181](https://github.com/sjovang/earnesty/issues/181)) ([8ca52b4](https://github.com/sjovang/earnesty/commit/8ca52b459cc701d3dd050c678d93f0321566e567))
+* open unpublished drafts from open document ([#168](https://github.com/sjovang/earnesty/issues/168)) ([7096264](https://github.com/sjovang/earnesty/commit/70962641b6d3d71751bae4cdd57070d528288bb8))
+* prevent image picker library thumbnail overlap ([#182](https://github.com/sjovang/earnesty/issues/182)) ([dc56582](https://github.com/sjovang/earnesty/commit/dc56582d9a1c8e0f27559e2cdf37e2c4f82b6490))
+* remove menu shortcut tooltips and keyboard bindings ([#176](https://github.com/sjovang/earnesty/issues/176)) ([8785aaa](https://github.com/sjovang/earnesty/commit/8785aaa80f1edc23a6d644b85cfda43f90d38dea))
+* resolve auth redirect loop when opening document list ([#165](https://github.com/sjovang/earnesty/issues/165)) ([fd1a802](https://github.com/sjovang/earnesty/commit/fd1a8022c02a8fde373ed2c142b11d5f62444fbb))
+* resolve Dependabot vulnerabilities in frontend dev dependencies ([#162](https://github.com/sjovang/earnesty/issues/162)) ([2b2c2f2](https://github.com/sjovang/earnesty/commit/2b2c2f2df13023ff02e535ce141742e1a0afff05))
+* restore document open flow and CSP-compliant asset loading ([#158](https://github.com/sjovang/earnesty/issues/158)) ([8e238ab](https://github.com/sjovang/earnesty/commit/8e238aba497d187666d661b631341c818c434657))
+* show helper text in empty first body paragraph ([#180](https://github.com/sjovang/earnesty/issues/180)) ([cbc0678](https://github.com/sjovang/earnesty/commit/cbc0678a78ec257f75f493d1e2c17d71cac06fa1))
+* show sign-in UI on direct 401 instead of auto-redirecting ([#166](https://github.com/sjovang/earnesty/issues/166)) ([282a19c](https://github.com/sjovang/earnesty/commit/282a19c14bf328a67c2bd20263e81ebaf4c48801))
+* show title and writing cue after creating draft ([#179](https://github.com/sjovang/earnesty/issues/179)) ([943da06](https://github.com/sjovang/earnesty/commit/943da06d3825053be015a0238baf11936db500c6))
+* top fade overlap at document start ([#178](https://github.com/sjovang/earnesty/issues/178)) ([83ae954](https://github.com/sjovang/earnesty/commit/83ae95414132709d694ee05807e3b2a4a9be017e))
+
 ## [1.5.0](https://github.com/sjovang/earnesty/compare/frontend-v1.4.0...frontend-v1.5.0) (2026-07-08)
 
 
