@@ -79,7 +79,7 @@ const libraryLoading = ref(false)
 const libraryError = ref<string | null>(null)
 const sortBy = ref<ImageSortKey>('newest')
 const currentPage = ref(1)
-const PAGE_SIZE = 15
+const PAGE_SIZE = 12
 
 const sortOptions: { value: ImageSortKey; label: string }[] = [
   { value: 'newest', label: 'Newest' },
@@ -446,14 +446,16 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
-  max-height: 440px;
-  overflow: hidden;
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
 }
 
 .grid__item {
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1;
+  min-height: 0;
   background: var(--ctp-surface0);
   border: 2px solid transparent;
   border-radius: 6px;

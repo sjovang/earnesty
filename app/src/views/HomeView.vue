@@ -501,7 +501,7 @@ watch(
 /* Long-form content: top-aligned with typewriter bottom padding */
 .editor--long-content {
   justify-content: flex-start;
-  padding-top: var(--space-3xl);
+  padding-top: calc(var(--space-3xl) * 2);
   padding-bottom: 50vh;
 }
 
