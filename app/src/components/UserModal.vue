@@ -6,8 +6,12 @@ defineProps<{ user: AuthUser }>()
 
 const emit = defineEmits<{ close: []; logout: [] }>()
 
+const PROVIDER_LABELS: Record<string, string> = {
+  aad: 'Entra ID',
+}
+
 function providerLabel(identityProvider: string): string {
-  return identityProvider.charAt(0).toUpperCase() + identityProvider.slice(1)
+  return PROVIDER_LABELS[identityProvider] ?? (identityProvider.charAt(0).toUpperCase() + identityProvider.slice(1))
 }
 </script>
 
