@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
+import { TextSelection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { getMarkRange } from '@tiptap/core'
 import { createLowlight, common } from 'lowlight'
 import { useSettingsStore, fontFamilyFor } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
@@ -22,10 +24,12 @@ import { GrammarAssist } from '../extensions/GrammarAssist'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
+import LinkBubbleMenu from '../components/LinkBubbleMenu.vue'
 import BlockPickerPopover from '../components/BlockPickerPopover.vue'
 import BlockSettingsPopover from '../components/BlockSettingsPopover.vue'
 
 const lowlight = createLowlight(common)
+const MARKDOWN_LINK_RE = /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)/g
 
 const { settings } = useSettingsStore()
 const editorStore = useEditorStore()
@@ -246,8 +250,35 @@ function getCaretTop(): number | null {
     sel.removeAllRanges()
     sel.addRange(range)
   }
-
   return rect.top
+}
+
+let hoveredLinkRange: { from: number; to: number } | null = null
+
+function setHoverLinkSelection(target: EventTarget | null): boolean {
+  const editor = tiptap.value
+  if (!editor || !(target instanceof Element)) return false
+  const anchor = target.closest('.ProseMirror a')
+  if (!(anchor instanceof HTMLAnchorElement)) return false
+
+  const pos = editor.view.posAtDOM(anchor, 0)
+  const linkMark = editor.state.schema.marks.link
+  if (!linkMark) return false
+  const range = getMarkRange(editor.state.doc.resolve(pos), linkMark)
+  if (!range) return false
+  if (hoveredLinkRange && hoveredLinkRange.from === range.from && hoveredLinkRange.to === range.to) return true
+
+  hoveredLinkRange = { from: range.from, to: range.to }
+  editor.view.dispatch(
+    editor.state.tr
+      .setSelection(TextSelection.create(editor.state.doc, range.from, range.to))
+      .setMeta('addToHistory', false),
+  )
+  return true
+}
+
+function clearHoverLinkSelection() {
+  hoveredLinkRange = null
 }
 
 function scrollToCaret() {
@@ -310,7 +341,7 @@ const tiptap = useEditor({
       }
 
       // Handle markdown link syntax: [text](url)
-      const mdLinkRe = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g
+      const mdLinkRe = MARKDOWN_LINK_RE
       if (mdLinkRe.test(text)) {
         event.preventDefault()
         mdLinkRe.lastIndex = 0
@@ -345,6 +376,40 @@ const tiptap = useEditor({
       event.preventDefault()
       handleImageFile(file)
       return true
+    },
+    handleTextInput(view, from, _to, text) {
+      if (text !== ')') return false
+      const editor = tiptap.value
+      if (!editor) return false
+
+      const $from = view.state.doc.resolve(from)
+      const parentText = $from.parent.textBetween(0, $from.parentOffset, '\0', '\0')
+      const candidate = `${parentText}${text}`
+      const match = /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)$/.exec(candidate)
+      if (!match) return false
+
+      const linkText = match[1]
+      const href = match[2]
+      const linkMarkType = view.state.schema.marks.link
+      if (!linkText || !href || !linkMarkType) return false
+      const matchStart = from - (match[0].length - text.length)
+      const linkMark = linkMarkType.create({ href })
+      const tr = view.state.tr.insertText(linkText, matchStart, from + text.length)
+      tr.addMark(matchStart, matchStart + linkText.length, linkMark)
+      view.dispatch(tr)
+      return true
+    },
+    handleDOMEvents: {
+      mouseover(_view, event) {
+        setHoverLinkSelection(event.target)
+        return false
+      },
+      mouseout(_view, event) {
+        if (!(event.relatedTarget instanceof Element) || !event.relatedTarget.closest('.ProseMirror a')) {
+          clearHoverLinkSelection()
+        }
+        return false
+      },
     },
   },
   onUpdate({ editor }) {
@@ -481,6 +546,11 @@ watch(
       ref="imageBubbleMenu"
       :editor="tiptap"
       @replace="openImagePicker(true)"
+    />
+
+    <LinkBubbleMenu
+      v-if="tiptap"
+      :editor="tiptap"
     />
   </main>
 
@@ -713,7 +783,7 @@ watch(
   color: var(--ctp-blue);
   text-decoration: underline;
   text-underline-offset: 3px;
-  cursor: text;
+  cursor: pointer;
 }
 
 /* ── Inline code ──────────────────────────────────────────────────────────── */
