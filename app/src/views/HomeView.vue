@@ -566,17 +566,17 @@ watch(
   margin-bottom: 0;
 }
 
-.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty) {
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:is(:empty, :has(> br.ProseMirror-trailingBreak:only-child))) {
   min-height: 1.4em;
 }
 
-.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty::before) {
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:is(:empty, :has(> br.ProseMirror-trailingBreak:only-child))::before) {
   content: attr(data-start-placeholder);
   color: var(--ctp-subtext0);
   pointer-events: none;
 }
 
-.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:empty::after) {
+.editor__content :deep(.ProseMirror h1[data-type='title'] + p[data-start-placeholder]:is(:empty, :has(> br.ProseMirror-trailingBreak:only-child))::after) {
   content: '';
   display: inline-block;
   width: 2px;
