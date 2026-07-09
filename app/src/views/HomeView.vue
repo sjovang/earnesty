@@ -671,11 +671,9 @@ watch(
 
 /* ── Blockquote ───────────────────────────────────────────────────────────── */
 .editor__content :deep(.ProseMirror blockquote) {
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--ctp-surface0) 35%, transparent);
   margin: 1.2em 0;
-  padding: 0.55em 0.9em;
+  padding: 0.1em 0 0.1em 0.95em;
+  border-left: 2px solid var(--ctp-surface2);
   color: var(--ctp-subtext1);
   font-style: italic;
 }
