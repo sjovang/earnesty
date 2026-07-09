@@ -16,8 +16,6 @@ const props = defineProps<{
   canEditMetadata?: boolean
   canPublish?: boolean
   isDraft?: boolean
-  proofreadingLabel?: string
-  proofreadingStyle?: 'off' | 'active'
 }>()
 
 const statusLabel = computed(() => {
@@ -128,12 +126,6 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
             {{ statusLabel.text }}
           </span>
         </Transition>
-        <span
-          v-if="proofreadingLabel"
-          :class="['menubar__proofing', `menubar__proofing--${proofreadingStyle ?? 'active'}`]"
-        >
-          {{ proofreadingLabel }}
-        </span>
       </div>
 
       <!-- Center: actions with separators (desktop only) -->
@@ -620,27 +612,6 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
 .menubar__save--saving { color: var(--ctp-subtext0); }
 .menubar__save--saved  { color: var(--ctp-green); }
 .menubar__save--error  { color: var(--ctp-red); }
-
-.menubar__proofing {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--step--2);
-  border: 1px solid var(--ctp-surface1);
-  border-radius: 999px;
-  padding: 0.08rem 0.48rem;
-  line-height: 1.3;
-}
-
-.menubar__proofing--active {
-  color: var(--ctp-teal);
-  border-color: color-mix(in srgb, var(--ctp-teal) 32%, var(--ctp-surface1));
-  background: color-mix(in srgb, var(--ctp-teal) 10%, transparent);
-}
-
-.menubar__proofing--off {
-  color: var(--ctp-subtext0);
-  border-color: var(--ctp-surface1);
-}
 
 @keyframes spin { to { transform: rotate(360deg); } }
 .menubar__save-spinner { animation: spin 1s linear infinite; transform-origin: center; }

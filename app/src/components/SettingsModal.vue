@@ -10,10 +10,12 @@ import {
   type ProofreadingMode,
   type AutocorrectSetting,
 } from '../stores/settings'
+import { useAuthStore } from '../stores/auth'
 
 defineEmits<{ close: [] }>()
 
 const store = useSettingsStore()
+const auth = useAuthStore()
 
 const themes: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Light' },
@@ -66,6 +68,10 @@ const editorLanguages: { value: string; label: string }[] = [
   { value: 'pt', label: 'Portuguese' },
   { value: 'nl', label: 'Dutch' },
 ]
+
+function isProofreadingModeDisabled(mode: ProofreadingMode): boolean {
+  return mode === 'advanced' && !auth.isAuthenticated
+}
 </script>
 
 <template>
@@ -74,170 +80,187 @@ const editorLanguages: { value: string; label: string }[] = [
     @close="$emit('close')"
   >
     <div class="settings">
-      <div class="settings__row">
-        <span class="settings__label">Theme</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Theme"
-        >
-          <button
-            v-for="t in themes"
-            :key="t.value"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.theme === t.value }]"
-            @click="store.setTheme(t.value)"
-          >
-            {{ t.label }}
-          </button>
-        </div>
-      </div>
+      <section class="settings__section">
+        <h3 class="settings__section-title">
+          UI and theme
+        </h3>
 
-      <div class="settings__row">
-        <span class="settings__label">Font size</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Font size"
-        >
-          <button
-            v-for="size in FONT_SIZES"
-            :key="size"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.fontSize === size }]"
-            @click="store.setFontSize(size)"
+        <div class="settings__row">
+          <span class="settings__label">Theme</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Theme"
           >
-            {{ fontSizeLabels[size] }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Font</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Font"
-        >
-          <button
-            v-for="f in fonts"
-            :key="f.value"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.font === f.value }]"
-            :style="{ fontFamily: fontFamilyFor(f.value) }"
-            @click="store.setFont(f.value)"
-          >
-            {{ f.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Width</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Content width"
-        >
-          <button
-            v-for="w in CONTENT_WIDTHS"
-            :key="w"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.contentWidth === w }]"
-            @click="store.setContentWidth(w)"
-          >
-            {{ widthLabels[w] }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Proofreading</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Proofreading mode"
-        >
-          <button
-            v-for="mode in proofreadingModes"
-            :key="mode.value"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.proofreadingMode === mode.value }]"
-            @click="store.setProofreadingMode(mode.value)"
-          >
-            {{ mode.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Spellcheck</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Spellcheck"
-        >
-          <button
-            v-for="option in onOffOptions"
-            :key="`spell-${option.label}`"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.spellcheck === option.value }]"
-            @click="store.setSpellcheck(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Autocorrect</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Autocorrect"
-        >
-          <button
-            v-for="option in autocorrectOptions"
-            :key="`auto-${option.value}`"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.autocorrect === option.value }]"
-            @click="store.setAutocorrect(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Suggestions</span>
-        <div
-          class="settings__choices"
-          role="group"
-          aria-label="Writing suggestions"
-        >
-          <button
-            v-for="option in onOffOptions"
-            :key="`suggest-${option.label}`"
-            :class="['settings__btn', { 'settings__btn--active': store.settings.writingSuggestions === option.value }]"
-            @click="store.setWritingSuggestions(option.value)"
-          >
-            {{ option.label }}
-          </button>
-        </div>
-      </div>
-
-      <div class="settings__row">
-        <span class="settings__label">Language</span>
-        <label class="settings__select-wrap">
-          <span class="visually-hidden">Editor language</span>
-          <select
-            class="settings__select"
-            :value="store.settings.editorLanguage"
-            @change="store.setEditorLanguage(($event.target as HTMLSelectElement).value)"
-          >
-            <option
-              v-for="language in editorLanguages"
-              :key="language.value"
-              :value="language.value"
+            <button
+              v-for="t in themes"
+              :key="t.value"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.theme === t.value }]"
+              @click="store.setTheme(t.value)"
             >
-              {{ language.label }}
-            </option>
-          </select>
-        </label>
-      </div>
+              {{ t.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Font size</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Font size"
+          >
+            <button
+              v-for="size in FONT_SIZES"
+              :key="size"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.fontSize === size }]"
+              @click="store.setFontSize(size)"
+            >
+              {{ fontSizeLabels[size] }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Font</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Font"
+          >
+            <button
+              v-for="f in fonts"
+              :key="f.value"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.font === f.value }]"
+              :style="{ fontFamily: fontFamilyFor(f.value) }"
+              @click="store.setFont(f.value)"
+            >
+              {{ f.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Width</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Content width"
+          >
+            <button
+              v-for="w in CONTENT_WIDTHS"
+              :key="w"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.contentWidth === w }]"
+              @click="store.setContentWidth(w)"
+            >
+              {{ widthLabels[w] }}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings__section">
+        <h3 class="settings__section-title">
+          Spellcheck and grammar
+        </h3>
+
+        <div class="settings__row">
+          <span class="settings__label">Proofreading</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Proofreading mode"
+          >
+            <button
+              v-for="mode in proofreadingModes"
+              :key="mode.value"
+              :class="[
+                'settings__btn',
+                { 'settings__btn--active': store.settings.proofreadingMode === mode.value },
+                { 'settings__btn--disabled': isProofreadingModeDisabled(mode.value) },
+              ]"
+              :disabled="isProofreadingModeDisabled(mode.value)"
+              @click="store.setProofreadingMode(mode.value)"
+            >
+              {{ mode.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Spellcheck</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Spellcheck"
+          >
+            <button
+              v-for="option in onOffOptions"
+              :key="`spell-${option.label}`"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.spellcheck === option.value }]"
+              @click="store.setSpellcheck(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Autocorrect</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Autocorrect"
+          >
+            <button
+              v-for="option in autocorrectOptions"
+              :key="`auto-${option.value}`"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.autocorrect === option.value }]"
+              @click="store.setAutocorrect(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Suggestions</span>
+          <div
+            class="settings__choices"
+            role="group"
+            aria-label="Writing suggestions"
+          >
+            <button
+              v-for="option in onOffOptions"
+              :key="`suggest-${option.label}`"
+              :class="['settings__btn', { 'settings__btn--active': store.settings.writingSuggestions === option.value }]"
+              @click="store.setWritingSuggestions(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+        </div>
+
+        <div class="settings__row">
+          <span class="settings__label">Language</span>
+          <label class="settings__select-wrap">
+            <span class="visually-hidden">Editor language</span>
+            <select
+              class="settings__select"
+              :value="store.settings.editorLanguage"
+              @change="store.setEditorLanguage(($event.target as HTMLSelectElement).value)"
+            >
+              <option
+                v-for="language in editorLanguages"
+                :key="language.value"
+                :value="language.value"
+              >
+                {{ language.label }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </section>
     </div>
   </BaseModal>
 </template>
@@ -257,7 +280,27 @@ const editorLanguages: { value: string; label: string }[] = [
 .settings {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.9rem;
+}
+
+.settings__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.65rem 0.7rem 0.8rem;
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ctp-mantle) 45%, transparent);
+}
+
+.settings__section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ctp-subtext0);
 }
 
 .settings__row {
@@ -315,6 +358,16 @@ const editorLanguages: { value: string; label: string }[] = [
 .settings__btn--active:hover {
   background: var(--ctp-mauve);
   color: var(--ctp-base);
+}
+
+.settings__btn--disabled,
+.settings__btn--disabled:hover,
+.settings__btn--disabled.settings__btn--active,
+.settings__btn--disabled.settings__btn--active:hover {
+  background: color-mix(in srgb, var(--ctp-surface0) 65%, transparent);
+  color: var(--ctp-overlay0);
+  cursor: not-allowed;
+  font-weight: 500;
 }
 
 .settings__select-wrap {
