@@ -439,12 +439,14 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   left: 0;
   right: 0;
   z-index: 100;
-  opacity: 0.72;
-  transition: opacity 0.2s ease;
+  transform: translateY(calc(-100% + 0.375rem));
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .menubar:hover,
 .menubar:focus-within {
+  transform: translateY(0);
   opacity: 1;
 }
 
@@ -712,6 +714,7 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
     top: var(--space-xs);
     left: var(--space-xs);
     right: var(--space-xs);
+    transform: none;
     opacity: 0.85;
   }
 
