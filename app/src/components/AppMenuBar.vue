@@ -444,6 +444,15 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
+.menubar::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 0.875rem;
+}
+
 .menubar:hover,
 .menubar:focus-within {
   transform: translateY(0);
@@ -716,6 +725,10 @@ function mobileEmit(event: 'new' | 'open' | 'metadata' | 'publish' | 'help' | 's
     right: var(--space-xs);
     transform: none;
     opacity: 0.85;
+  }
+
+  .menubar::after {
+    display: none;
   }
 
   .menubar__inner {
