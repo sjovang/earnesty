@@ -116,6 +116,7 @@ export const useEditorStore = defineStore('editor', () => {
 
   /** Registered by HomeView to flush pending autosave before publish. */
   const flushSave = shallowRef<(() => Promise<void>) | null>(null)
+  const discardPendingSave = shallowRef<(() => void) | null>(null)
 
   function openDocument(doc: ContentDocument, html?: string) {
     activeDocument.value = doc
@@ -129,6 +130,8 @@ export const useEditorStore = defineStore('editor', () => {
     currentContent.value = ''
     pendingHtml.value = null
     meta.value = defaultMeta()
+    saveStatus.value = 'idle'
+    publishStatus.value = 'idle'
     localStorage.removeItem(SESSION_KEY)
     localStorage.removeItem(CONTENT_KEY)
   }
@@ -223,6 +226,7 @@ export const useEditorStore = defineStore('editor', () => {
     publishStatus,
     meta,
     flushSave,
+    discardPendingSave,
     openDocument,
     clearDocument,
     resetToPlaceholder,

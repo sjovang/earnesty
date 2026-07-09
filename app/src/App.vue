@@ -57,6 +57,10 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
+function baseDocumentId(id: string): string {
+  return id.startsWith(draftPrefix) ? id.slice(draftPrefix.length) : id
+}
+
 const canPublish = computed(() =>
   auth.isAuthenticated
   && !!editorStore.activeDocument
@@ -178,6 +182,18 @@ async function doPublish() {
   }
 }
 
+function onDocumentDeleted(doc: ContentDocument) {
+  if (editorStore.activeDocument && baseDocumentId(editorStore.activeDocument._id) === baseDocumentId(doc._id)) {
+    editorStore.discardPendingSave?.()
+    editorStore.resetToPlaceholder()
+    showPublishModal.value = false
+    showMetadataModal.value = false
+    publishError.value = ''
+    metadataError.value = ''
+  }
+  trackEvent('document_deleted', { documentId: doc._id })
+}
+
 onMounted(async () => {
   await auth.initialize()
 })
@@ -206,6 +222,7 @@ onMounted(async () => {
   <RouterView />
   <OpenDocumentModal
     v-if="showOpen"
+    @delete="onDocumentDeleted"
     @close="showOpen = false"
     @select="onDocumentSelected"
   />

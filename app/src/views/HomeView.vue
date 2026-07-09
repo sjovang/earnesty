@@ -73,6 +73,11 @@ editorStore.flushSave = async () => {
   if (latestJson) await doAutosave()
   if (currentSavePromise) await currentSavePromise
 }
+editorStore.discardPendingSave = () => {
+  if (saveTimer) clearTimeout(saveTimer)
+  saveTimer = null
+  latestJson = null
+}
 
 // ── Image picker ───────────────────────────────────────────────────────────────
 const showImagePicker = ref(false)
@@ -466,6 +471,7 @@ onBeforeUnmount(() => {
   tiptap.value?.destroy()
   if (saveTimer) clearTimeout(saveTimer)
   editorStore.flushSave = null
+  editorStore.discardPendingSave = null
 })
 
 // ── Load document from store ──────────────────────────────────────────────────
