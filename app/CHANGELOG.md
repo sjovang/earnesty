@@ -1,5 +1,28 @@
 # Changelog
 
+## [2.1.0](https://github.com/sjovang/earnesty/compare/earnesty-v2.0.0...earnesty-v2.1.0) (2026-07-09)
+
+
+### Features
+
+* add hybrid proofreading controls with opt-in advanced mode ([#191](https://github.com/sjovang/earnesty/issues/191)) ([e6a2e2a](https://github.com/sjovang/earnesty/commit/e6a2e2aa1b397e1c5772e8c59fffa797a614b236))
+* make theme and font runtime-configurable ([#195](https://github.com/sjovang/earnesty/issues/195)) ([09b7c76](https://github.com/sjovang/earnesty/commit/09b7c760249735760fc446ce477d96ab2c5b017a))
+
+
+### Bug Fixes
+
+* accessibility and UX consistency pass for focused writer ([#187](https://github.com/sjovang/earnesty/issues/187)) ([f3cdce8](https://github.com/sjovang/earnesty/commit/f3cdce8d5eb58381b55254cedec4d951e2f275d0)), closes [#183](https://github.com/sjovang/earnesty/issues/183)
+* display Entra ID instead of Aad in account modal ([#194](https://github.com/sjovang/earnesty/issues/194)) ([fd46406](https://github.com/sjovang/earnesty/commit/fd464065f5495fa07ce9ac176c839e49dd303feb))
+* Improve markdown link rendering and hover URL editing ([#193](https://github.com/sjovang/earnesty/issues/193)) ([a4365dd](https://github.com/sjovang/earnesty/commit/a4365dda1e20394c2de64657f19d65d4fe22a7b0))
+* improve menubar reveal hit area ([#205](https://github.com/sjovang/earnesty/issues/205)) ([87ae974](https://github.com/sjovang/earnesty/commit/87ae974a01172bede7c9b9461289eec684151a93))
+* link bubble menu hover detection ([#196](https://github.com/sjovang/earnesty/issues/196)) ([fdc4cc9](https://github.com/sjovang/earnesty/commit/fdc4cc979f335c2eb438e0e6ef3f542458b80f2c))
+* make delete action unpublish published documents ([#206](https://github.com/sjovang/earnesty/issues/206)) ([7180b69](https://github.com/sjovang/earnesty/commit/7180b69c076e806fe4d59b7dcb01a0f205126487))
+* make unpublish action yellow in document modal ([#207](https://github.com/sjovang/earnesty/issues/207)) ([fcb4d62](https://github.com/sjovang/earnesty/commit/fcb4d62bc0184a7c95c0c3408c1b3f038c204e7f))
+* polish markdown syntax helper formatting in help modal ([#203](https://github.com/sjovang/earnesty/issues/203)) ([17624dc](https://github.com/sjovang/earnesty/commit/17624dc36067854636d122453cf8da0da2f97f73))
+* restore menu bar auto-hide on mouseover ([#201](https://github.com/sjovang/earnesty/issues/201)) ([f2a5491](https://github.com/sjovang/earnesty/commit/f2a549172a368af073bcbace384e922a1674f386))
+* show markdown syntax help inline in help modal ([#202](https://github.com/sjovang/earnesty/issues/202)) ([bb5aeae](https://github.com/sjovang/earnesty/commit/bb5aeaeea5c18b2e2db3adc242e2a0ea8fd9c42c))
+* widen menubar hover activation zone ([#204](https://github.com/sjovang/earnesty/issues/204)) ([55719e2](https://github.com/sjovang/earnesty/commit/55719e2b53138d8fa59e86891d63db867dd61baf))
+
 ## [2.0.0](https://github.com/sjovang/earnesty/compare/frontend-v1.5.0...frontend-v2.0.0) (2026-07-09)
 
 
