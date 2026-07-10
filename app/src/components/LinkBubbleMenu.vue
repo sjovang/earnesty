@@ -9,6 +9,9 @@ const editing = ref(false)
 const urlInput = ref<HTMLInputElement | null>(null)
 const draftUrl = ref('')
 
+/** Saved selection range captured just before focus moves to the URL input. */
+const savedSelection = ref<{ from: number; to: number } | null>(null)
+
 const linkActive = computed(() => props.editor.isActive('link'))
 const currentUrl = computed(() => props.editor.getAttributes('link').href ?? '')
 const hasTextSelection = computed(() => {
@@ -18,7 +21,10 @@ const hasTextSelection = computed(() => {
 })
 
 function shouldShow() {
-  return linkActive.value || hasTextSelection.value
+  // Keep the bubble visible while the user is typing a URL, even if the
+  // editor selection has been lost (e.g. on mobile when the virtual keyboard
+  // appears after focusing the URL input).
+  return editing.value || linkActive.value || hasTextSelection.value
 }
 
 function truncate(url: string, max = 42) {
@@ -26,6 +32,11 @@ function truncate(url: string, max = 42) {
 }
 
 async function startEdit() {
+  // Save the current selection before focus leaves the editor so that
+  // applyUrl() can restore it and apply the link to the correct range.
+  const { from, to } = props.editor.state.selection
+  savedSelection.value = { from, to }
+
   draftUrl.value = currentUrl.value || 'https://'
   editing.value = true
   await nextTick()
@@ -41,12 +52,25 @@ function applyUrl() {
   if (linkActive.value) {
     chain.extendMarkRange('link').setLink({ href: url }).run()
   } else {
-    chain.setLink({ href: url }).run()
+    // Restore the saved selection so that setLink operates on the originally
+    // selected text even if the browser cleared the editor selection while
+    // the URL input had focus.
+    if (savedSelection.value) {
+      chain
+        .setTextSelection({ from: savedSelection.value.from, to: savedSelection.value.to })
+        .setLink({ href: url })
+        .run()
+    } else {
+      chain.setLink({ href: url }).run()
+    }
   }
+
+  savedSelection.value = null
   editing.value = false
 }
 
 function cancelEdit() {
+  savedSelection.value = null
   editing.value = false
   props.editor.commands.focus()
 }
@@ -61,6 +85,7 @@ function openInTab() {
 }
 
 function onBubbleHide() {
+  savedSelection.value = null
   editing.value = false
 }
 </script>
@@ -69,7 +94,7 @@ function onBubbleHide() {
   <BubbleMenu
     :editor="editor"
     :should-show="shouldShow"
-    :tippy-options="{ placement: 'bottom-start', offset: [0, 8], onHide: onBubbleHide }"
+    :options="{ placement: 'bottom-start', offset: 8, onHide: onBubbleHide }"
     class="link-bubble"
   >
     <!-- View mode: show URL + actions -->
