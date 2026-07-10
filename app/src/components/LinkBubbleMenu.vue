@@ -9,10 +9,16 @@ const editing = ref(false)
 const urlInput = ref<HTMLInputElement | null>(null)
 const draftUrl = ref('')
 
+const linkActive = computed(() => props.editor.isActive('link'))
 const currentUrl = computed(() => props.editor.getAttributes('link').href ?? '')
+const hasTextSelection = computed(() => {
+  const { selection, doc } = props.editor.state
+  if (selection.empty) return false
+  return doc.textBetween(selection.from, selection.to, '', '').trim().length > 0
+})
 
 function shouldShow() {
-  return props.editor.isActive('link')
+  return linkActive.value || hasTextSelection.value
 }
 
 function truncate(url: string, max = 42) {
@@ -20,7 +26,7 @@ function truncate(url: string, max = 42) {
 }
 
 async function startEdit() {
-  draftUrl.value = currentUrl.value
+  draftUrl.value = currentUrl.value || 'https://'
   editing.value = true
   await nextTick()
   urlInput.value?.focus()
@@ -29,8 +35,13 @@ async function startEdit() {
 
 function applyUrl() {
   const url = draftUrl.value.trim()
-  if (url) {
-    props.editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  if (!url) return
+
+  const chain = props.editor.chain().focus()
+  if (linkActive.value) {
+    chain.extendMarkRange('link').setLink({ href: url }).run()
+  } else {
+    chain.setLink({ href: url }).run()
   }
   editing.value = false
 }
@@ -63,14 +74,72 @@ function onBubbleHide() {
   >
     <!-- View mode: show URL + actions -->
     <template v-if="!editing">
-      <span
-        class="link-bubble__url"
-        :title="currentUrl"
-      >{{ truncate(currentUrl) }}</span>
-      <div class="link-bubble__sep" />
+      <template v-if="linkActive">
+        <span
+          class="link-bubble__url"
+          :title="currentUrl"
+        >{{ truncate(currentUrl) }}</span>
+        <div class="link-bubble__sep" />
+        <button
+          class="link-bubble__btn"
+          title="Edit link"
+          @click="startEdit"
+        >
+          <svg
+            viewBox="0 0 12 12"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z" />
+          </svg>
+        </button>
+        <button
+          class="link-bubble__btn"
+          title="Remove link"
+          @click="unlink"
+        >
+          <svg
+            viewBox="0 0 12 12"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M4.5 7.5l3-3M2 10l1.5-1.5M8.5 3.5L10 2M5 4.5l-1.5 1A2.12 2.12 0 006.5 8.5l1-1.5M7 7.5l1.5-1A2.12 2.12 0 005.5 3.5L4.5 5" />
+          </svg>
+        </button>
+        <button
+          class="link-bubble__btn"
+          title="Open in new tab"
+          @click="openInTab"
+        >
+          <svg
+            viewBox="0 0 12 12"
+            width="12"
+            height="12"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M5 2H2v8h8V7M7 2h3v3M10 2L6 6" />
+          </svg>
+        </button>
+      </template>
+
       <button
-        class="link-bubble__btn"
-        title="Edit link"
+        v-else
+        class="link-bubble__btn link-bubble__btn--add"
+        title="Add link"
         @click="startEdit"
       >
         <svg
@@ -83,44 +152,9 @@ function onBubbleHide() {
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <path d="M8 2l2 2-5.5 5.5H2.5V8L8 2z" />
+          <path d="M4.8 7.2l2.4-2.4M3.5 8.5L2 10M8.5 3.5L10 2M5.2 4.8l-1.6 1.1A2.1 2.1 0 006.5 8.8l1.1-1.6M6.8 7.2l1.6-1.1A2.1 2.1 0 005.5 3.2L4.4 4.8" />
         </svg>
-      </button>
-      <button
-        class="link-bubble__btn"
-        title="Remove link"
-        @click="unlink"
-      >
-        <svg
-          viewBox="0 0 12 12"
-          width="12"
-          height="12"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M4.5 7.5l3-3M2 10l1.5-1.5M8.5 3.5L10 2M5 4.5l-1.5 1A2.12 2.12 0 006.5 8.5l1-1.5M7 7.5l1.5-1A2.12 2.12 0 005.5 3.5L4.5 5" />
-        </svg>
-      </button>
-      <button
-        class="link-bubble__btn"
-        title="Open in new tab"
-        @click="openInTab"
-      >
-        <svg
-          viewBox="0 0 12 12"
-          width="12"
-          height="12"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.4"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M5 2H2v8h8V7M7 2h3v3M10 2L6 6" />
-        </svg>
+        <span>Add link</span>
       </button>
     </template>
 
@@ -230,6 +264,12 @@ function onBubbleHide() {
 
 .link-bubble__btn--confirm:hover {
   color: var(--ctp-green);
+}
+
+.link-bubble__btn--add {
+  width: auto;
+  gap: 6px;
+  padding: 0 8px;
 }
 
 .link-bubble__input {

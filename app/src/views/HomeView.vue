@@ -267,6 +267,10 @@ function toElement(target: EventTarget | null): Element | null {
   return null
 }
 
+function isLinkBubbleTarget(element: Element | null): boolean {
+  return !!element?.closest('.link-bubble')
+}
+
 function setHoverLinkSelection(target: EventTarget | null): boolean {
   const editor = tiptap.value
   const element = toElement(target)
@@ -300,14 +304,15 @@ function clearHoverLinkSelection() {
   const editor = tiptap.value
   if (editor && selectionBeforeHover) {
     const { from, to } = selectionBeforeHover
-    try {
+    const maxPos = editor.state.doc.content.size
+    const safeFrom = Math.max(0, Math.min(from, maxPos))
+    const safeTo = Math.max(0, Math.min(to, maxPos))
+    if (safeFrom <= safeTo) {
       editor.view.dispatch(
         editor.state.tr
-          .setSelection(TextSelection.create(editor.state.doc, from, to))
+          .setSelection(TextSelection.create(editor.state.doc, safeFrom, safeTo))
           .setMeta('addToHistory', false),
       )
-    } catch {
-      // Position may be out of range if the document changed while hovering; ignore.
     }
   }
   hoveredLinkRange = null
@@ -434,12 +439,16 @@ const tiptap = useEditor({
     },
     handleDOMEvents: {
       mouseover(_view, event) {
-        setHoverLinkSelection(event.target)
+        const element = toElement(event.target)
+        if (isLinkBubbleTarget(element)) return false
+        if (!setHoverLinkSelection(event.target)) {
+          clearHoverLinkSelection()
+        }
         return false
       },
       mouseout(_view, event) {
         const relatedElement = toElement(event.relatedTarget)
-        if (!relatedElement || !relatedElement.closest('.ProseMirror a')) {
+        if (!relatedElement || (!relatedElement.closest('.ProseMirror a') && !isLinkBubbleTarget(relatedElement))) {
           clearHoverLinkSelection()
         }
         return false
