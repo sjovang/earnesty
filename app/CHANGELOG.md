@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.1.1](https://github.com/sjovang/earnesty/compare/earnesty-v2.1.0...earnesty-v2.1.1) (2026-07-10)
+
+
+### Bug Fixes
+
+* Edit existing links via a hover cogwheel menu ([#213](https://github.com/sjovang/earnesty/issues/213)) ([a3e9385](https://github.com/sjovang/earnesty/commit/a3e9385fccdbb4952d7ea03e49b8c0c5cea75130))
+* reset editor state for unauthenticated sessions ([#209](https://github.com/sjovang/earnesty/issues/209)) ([4f9bd83](https://github.com/sjovang/earnesty/commit/4f9bd8383d8dce5c40dde54906fb77e86925d883))
+* restore cursor position after link hover dismisses bubble menu ([#208](https://github.com/sjovang/earnesty/issues/208)) ([a599fcc](https://github.com/sjovang/earnesty/commit/a599fcc26b2c7f887ce8eb8fc00acb9877785c06))
+* restore link tooltip editing and add selection link creation ([#211](https://github.com/sjovang/earnesty/issues/211)) ([83ced24](https://github.com/sjovang/earnesty/commit/83ced24ef33d595844ea79b168a65a2f6cf23fa1))
+
 ## [2.1.0](https://github.com/sjovang/earnesty/compare/earnesty-v2.0.0...earnesty-v2.1.0) (2026-07-09)
 
 
