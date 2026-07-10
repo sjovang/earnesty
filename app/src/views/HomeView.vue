@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, computed, onBeforeUnmount, onMounted } from 'vue'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
-import { TextSelection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
-import { getMarkRange } from '@tiptap/core'
 import { createLowlight, common } from 'lowlight'
 import { useSettingsStore, fontFamilyFor } from '../stores/settings'
 import { useEditorStore, CONTENT_KEY } from '../stores/editor'
@@ -110,10 +108,11 @@ function onBlockInserterOpen(e: Event) {
 }
 
 // ── Block settings popover ─────────────────────────────────────────────────────
-const blockSettings = ref<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number } | null>(null)
+type BlockSettingsNodeType = 'image' | 'codeBlock' | 'link'
+const blockSettings = ref<{ nodeType: BlockSettingsNodeType; pos: number; x: number; y: number } | null>(null)
 
 function onBlockSettingsOpen(e: Event) {
-  const { nodeType, pos, x, y } = (e as CustomEvent<{ nodeType: 'image' | 'codeBlock'; pos: number; x: number; y: number }>).detail
+  const { nodeType, pos, x, y } = (e as CustomEvent<{ nodeType: BlockSettingsNodeType; pos: number; x: number; y: number }>).detail
   blockSettings.value = { nodeType, pos, x, y }
 }
 
@@ -258,67 +257,6 @@ function getCaretTop(): number | null {
   return rect.top
 }
 
-let hoveredLinkRange: { from: number; to: number } | null = null
-let selectionBeforeHover: { from: number; to: number } | null = null
-
-function toElement(target: EventTarget | null): Element | null {
-  if (target instanceof Element) return target
-  if (target instanceof Node) return target.parentElement
-  return null
-}
-
-function isLinkBubbleTarget(element: Element | null): boolean {
-  return !!element?.closest('.link-bubble')
-}
-
-function setHoverLinkSelection(target: EventTarget | null): boolean {
-  const editor = tiptap.value
-  const element = toElement(target)
-  if (!editor || !element) return false
-  const anchor = element.closest('.ProseMirror a')
-  if (!(anchor instanceof HTMLAnchorElement)) return false
-
-  const pos = editor.view.posAtDOM(anchor, 0)
-  const linkMark = editor.state.schema.marks.link
-  if (!linkMark) return false
-  const range = getMarkRange(editor.state.doc.resolve(pos), linkMark)
-  if (!range) return false
-  if (hoveredLinkRange && hoveredLinkRange.from === range.from && hoveredLinkRange.to === range.to) return true
-
-  // Save original cursor position on first hover entry so we can restore it on leave.
-  if (!hoveredLinkRange) {
-    const sel = editor.state.selection
-    selectionBeforeHover = { from: sel.from, to: sel.to }
-  }
-
-  hoveredLinkRange = { from: range.from, to: range.to }
-  editor.view.dispatch(
-    editor.state.tr
-      .setSelection(TextSelection.create(editor.state.doc, range.from, range.to))
-      .setMeta('addToHistory', false),
-  )
-  return true
-}
-
-function clearHoverLinkSelection() {
-  const editor = tiptap.value
-  if (editor && selectionBeforeHover) {
-    const { from, to } = selectionBeforeHover
-    const maxPos = editor.state.doc.content.size
-    const safeFrom = Math.max(0, Math.min(from, maxPos))
-    const safeTo = Math.max(0, Math.min(to, maxPos))
-    if (safeFrom <= safeTo) {
-      editor.view.dispatch(
-        editor.state.tr
-          .setSelection(TextSelection.create(editor.state.doc, safeFrom, safeTo))
-          .setMeta('addToHistory', false),
-      )
-    }
-  }
-  hoveredLinkRange = null
-  selectionBeforeHover = null
-}
-
 function scrollToCaret() {
   if (!isLongContent.value && !keyboardVisible.value) return
   const caretTop = getCaretTop()
@@ -436,23 +374,6 @@ const tiptap = useEditor({
       tr.addMark(matchStart, matchStart + linkText.length, linkMark)
       view.dispatch(tr)
       return true
-    },
-    handleDOMEvents: {
-      mouseover(_view, event) {
-        const element = toElement(event.target)
-        if (isLinkBubbleTarget(element)) return false
-        if (!setHoverLinkSelection(event.target)) {
-          clearHoverLinkSelection()
-        }
-        return false
-      },
-      mouseout(_view, event) {
-        const relatedElement = toElement(event.relatedTarget)
-        if (!relatedElement || (!relatedElement.closest('.ProseMirror a') && !isLinkBubbleTarget(relatedElement))) {
-          clearHoverLinkSelection()
-        }
-        return false
-      },
     },
   },
   onUpdate({ editor }) {
