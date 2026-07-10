@@ -31,23 +31,62 @@ export const BlockSettings = Extension.create({
           let hoverCog = false
           let currentPos = -1
           let currentType = ''
+          let hideTimer: ReturnType<typeof setTimeout> | null = null
 
           function positionCog(el: Element) {
-            const rect = el.getBoundingClientRect()
-            btn.style.top = `${rect.top + 6}px`
-            btn.style.left = `${rect.right - 32}px`
+            if (currentType === 'link') {
+              // Links are inline, so place the cog just after the link's last
+              // line rather than overlapping the link text.
+              const rects = el.getClientRects()
+              const r = rects[rects.length - 1] ?? el.getBoundingClientRect()
+              let left = r.right + 4
+              if (left + 26 > window.innerWidth - 4) left = r.right - 26
+              btn.style.top = `${r.top + (r.height - 26) / 2}px`
+              btn.style.left = `${left}px`
+            } else {
+              const rect = el.getBoundingClientRect()
+              btn.style.top = `${rect.top + 6}px`
+              btn.style.left = `${rect.right - 32}px`
+            }
             btn.style.display = 'flex'
           }
 
-          function hide() {
-            if (hoverCog) return
+          function cancelHide() {
+            if (hideTimer) {
+              clearTimeout(hideTimer)
+              hideTimer = null
+            }
+          }
+
+          function doHide() {
             btn.style.display = 'none'
             hoverBlock = null
             currentPos = -1
             currentType = ''
           }
 
-          function getPosFromElement(el: Element): number {
+          // Delay hiding so the cursor can travel from the block/link to the cog
+          // without the button disappearing mid-move.
+          function scheduleHide() {
+            cancelHide()
+            hideTimer = setTimeout(() => {
+              hideTimer = null
+              if (!hoverCog) doHide()
+            }, 120)
+          }
+
+          function getPosFromElement(el: Element, type: string): number {
+            if (type === 'link') {
+              // Links are inline marks: sample the centre of the link's first
+              // line and use the precise text position (not the parent node).
+              const rects = el.getClientRects()
+              const r = rects[0] ?? el.getBoundingClientRect()
+              const result = editorView.posAtCoords({
+                left: r.left + r.width / 2,
+                top: r.top + r.height / 2,
+              })
+              return result ? result.pos : -1
+            }
             // Use posAtCoords with the top-left of the element's bounding rect
             const rect = el.getBoundingClientRect()
             const result = editorView.posAtCoords({ left: rect.left + 1, top: rect.top + 1 })
@@ -63,6 +102,7 @@ export const BlockSettings = Extension.create({
             // (must be inside the editor)
             const imgEl = target.closest('img')
             const preEl = target.closest('pre')
+            const linkEl = target.closest('a')
 
             let blockEl: Element | null = null
             let nodeType = ''
@@ -73,17 +113,22 @@ export const BlockSettings = Extension.create({
             } else if (preEl && editorView.dom.contains(preEl)) {
               blockEl = preEl
               nodeType = 'codeBlock'
+            } else if (linkEl && editorView.dom.contains(linkEl)) {
+              blockEl = linkEl
+              nodeType = 'link'
             }
 
             if (!blockEl) {
-              hide()
+              scheduleHide()
               return
             }
+
+            cancelHide()
 
             if (blockEl !== hoverBlock) {
               hoverBlock = blockEl
               currentType = nodeType
-              currentPos = getPosFromElement(blockEl)
+              currentPos = getPosFromElement(blockEl, nodeType)
               positionCog(blockEl)
             }
           }
@@ -93,7 +138,7 @@ export const BlockSettings = Extension.create({
             const related = e.relatedTarget as Element | null
             if (related && (related === btn || btn.contains(related))) return
             hoverBlock = null
-            setTimeout(() => { if (!hoverCog) hide() }, 80)
+            scheduleHide()
           }
 
           const onScroll = () => {
@@ -103,10 +148,13 @@ export const BlockSettings = Extension.create({
             }
           }
 
-          btn.addEventListener('mouseenter', () => { hoverCog = true })
+          btn.addEventListener('mouseenter', () => {
+            hoverCog = true
+            cancelHide()
+          })
           btn.addEventListener('mouseleave', () => {
             hoverCog = false
-            if (!hoverBlock) hide()
+            scheduleHide()
           })
 
           btn.addEventListener('click', (e) => {
@@ -131,6 +179,7 @@ export const BlockSettings = Extension.create({
 
           return {
             destroy() {
+              cancelHide()
               editorView.dom.removeEventListener('mousemove', onMousemove)
               editorView.dom.removeEventListener('mouseleave', onMouseleave)
               window.removeEventListener('scroll', onScroll)

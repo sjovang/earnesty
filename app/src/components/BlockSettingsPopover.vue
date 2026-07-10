@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import type { Editor } from '@tiptap/core'
 import { LANGUAGES } from '../constants/languages'
+import { resolveLinkAt } from './linkSettings'
 
 const props = defineProps<{
-  nodeType: 'image' | 'codeBlock'
+  nodeType: 'image' | 'codeBlock' | 'link'
   pos: number
   x: number
   y: number
@@ -13,15 +14,30 @@ const props = defineProps<{
 
 const emit = defineEmits<{ close: [] }>()
 
+const ariaLabel = computed(() => {
+  if (props.nodeType === 'image') return 'Image settings'
+  if (props.nodeType === 'link') return 'Link settings'
+  return 'Code block settings'
+})
+
 const popover = ref<HTMLElement | null>(null)
 const language = ref('')
 const altText = ref('')
+const url = ref('')
+let linkRange: { from: number; to: number } | null = null
 
 // Load current node attributes whenever the popover opens
 watch(
   () => [props.pos, props.nodeType] as const,
   ([pos, nodeType]) => {
     if (pos < 0) return
+    if (nodeType === 'link') {
+      const link = resolveLinkAt(props.editor, pos)
+      if (!link) return
+      linkRange = { from: link.from, to: link.to }
+      url.value = link.href
+      return
+    }
     const node = props.editor.state.doc.nodeAt(pos)
     if (!node) return
     if (nodeType === 'codeBlock') {
@@ -48,13 +64,41 @@ function apply() {
       .updateAttributes('image', { alt: altText.value.trim() || null })
       .focus()
       .run()
+  } else if (props.nodeType === 'link') {
+    const href = url.value.trim()
+    if (!href || !linkRange) {
+      emit('close')
+      return
+    }
+    props.editor
+      .chain()
+      .setTextSelection(linkRange)
+      .extendMarkRange('link')
+      .setLink({ href })
+      .focus()
+      .run()
   }
+  emit('close')
+}
+
+function removeLink() {
+  if (!linkRange) {
+    emit('close')
+    return
+  }
+  props.editor
+    .chain()
+    .setTextSelection(linkRange)
+    .extendMarkRange('link')
+    .unsetLink()
+    .focus()
+    .run()
   emit('close')
 }
 
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
-  if (e.key === 'Enter' && props.nodeType === 'image') {
+  if (e.key === 'Enter' && (props.nodeType === 'image' || props.nodeType === 'link')) {
     e.preventDefault()
     apply()
   }
@@ -95,7 +139,7 @@ onUnmounted(() => {
       ref="popover"
       class="block-settings-popover"
       role="dialog"
-      :aria-label="nodeType === 'image' ? 'Image settings' : 'Code block settings'"
+      :aria-label="ariaLabel"
       :style="{ left: adjustedX + 'px', top: y + 'px' }"
     >
       <!-- Code block: language selector -->
@@ -145,6 +189,57 @@ onUnmounted(() => {
               stroke-linejoin="round"
             >
               <path d="M2 6l3 3 5-5" />
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <!-- Link: URL input -->
+      <template v-else-if="nodeType === 'link'">
+        <label class="bsp__label">Link URL</label>
+        <div class="bsp__row">
+          <input
+            v-model="url"
+            type="url"
+            class="bsp__input"
+            placeholder="https://…"
+            autofocus
+            spellcheck="false"
+          >
+          <button
+            class="bsp__apply"
+            title="Apply"
+            @click="apply"
+          >
+            <svg
+              viewBox="0 0 12 12"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M2 6l3 3 5-5" />
+            </svg>
+          </button>
+          <button
+            class="bsp__apply bsp__apply--danger"
+            title="Remove link"
+            @click="removeLink"
+          >
+            <svg
+              viewBox="0 0 12 12"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M4.5 7.5l3-3M2 10l1.5-1.5M8.5 3.5L10 2M5 4.5l-1.5 1A2.12 2.12 0 006.5 8.5l1-1.5M7 7.5l1.5-1A2.12 2.12 0 005.5 3.5L4.5 5" />
             </svg>
           </button>
         </div>
@@ -243,6 +338,10 @@ onUnmounted(() => {
 .bsp__apply:hover {
   background: var(--ctp-surface1);
   color: var(--ctp-green);
+}
+
+.bsp__apply--danger:hover {
+  color: var(--ctp-red);
 }
 
 @keyframes pop-in {
