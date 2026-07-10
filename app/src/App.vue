@@ -222,6 +222,9 @@ async function onDocumentUnpublished(doc: ContentDocument) {
 
 onMounted(async () => {
   await auth.initialize()
+  if (!auth.isAuthenticated) {
+    editorStore.resetToPlaceholder()
+  }
 })
 </script>
 
