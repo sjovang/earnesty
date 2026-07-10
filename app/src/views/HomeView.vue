@@ -304,7 +304,6 @@ function clearHoverLinkSelection() {
   const editor = tiptap.value
   if (editor && selectionBeforeHover) {
     const { from, to } = selectionBeforeHover
-<<<<<<< HEAD
     const maxPos = editor.state.doc.content.size
     const safeFrom = Math.max(0, Math.min(from, maxPos))
     const safeTo = Math.max(0, Math.min(to, maxPos))
@@ -314,16 +313,6 @@ function clearHoverLinkSelection() {
           .setSelection(TextSelection.create(editor.state.doc, safeFrom, safeTo))
           .setMeta('addToHistory', false),
       )
-=======
-    try {
-      editor.view.dispatch(
-        editor.state.tr
-          .setSelection(TextSelection.create(editor.state.doc, from, to))
-          .setMeta('addToHistory', false),
-      )
-    } catch {
-      // Position may be out of range if the document changed while hovering; ignore.
->>>>>>> origin/main
     }
   }
   hoveredLinkRange = null
