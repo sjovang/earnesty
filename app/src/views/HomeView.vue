@@ -259,6 +259,7 @@ function getCaretTop(): number | null {
 }
 
 let hoveredLinkRange: { from: number; to: number } | null = null
+let selectionBeforeHover: { from: number; to: number } | null = null
 
 function toElement(target: EventTarget | null): Element | null {
   if (target instanceof Element) return target
@@ -280,6 +281,12 @@ function setHoverLinkSelection(target: EventTarget | null): boolean {
   if (!range) return false
   if (hoveredLinkRange && hoveredLinkRange.from === range.from && hoveredLinkRange.to === range.to) return true
 
+  // Save original cursor position on first hover entry so we can restore it on leave.
+  if (!hoveredLinkRange) {
+    const sel = editor.state.selection
+    selectionBeforeHover = { from: sel.from, to: sel.to }
+  }
+
   hoveredLinkRange = { from: range.from, to: range.to }
   editor.view.dispatch(
     editor.state.tr
@@ -290,7 +297,21 @@ function setHoverLinkSelection(target: EventTarget | null): boolean {
 }
 
 function clearHoverLinkSelection() {
+  const editor = tiptap.value
+  if (editor && selectionBeforeHover) {
+    const { from, to } = selectionBeforeHover
+    try {
+      editor.view.dispatch(
+        editor.state.tr
+          .setSelection(TextSelection.create(editor.state.doc, from, to))
+          .setMeta('addToHistory', false),
+      )
+    } catch {
+      // Position may be out of range if the document changed while hovering; ignore.
+    }
+  }
   hoveredLinkRange = null
+  selectionBeforeHover = null
 }
 
 function scrollToCaret() {
