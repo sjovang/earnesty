@@ -97,21 +97,34 @@ a:hover {
   text-decoration: underline;
 }
 
-/* ── Block settings cogwheel (appended to body by BlockSettings extension) ── */
+/* ── Block settings trigger (appended to body by BlockSettings extension) ── */
 .block-settings-cog {
   align-items: center;
   background: color-mix(in srgb, var(--ctp-mantle) 85%, transparent);
   border: 1px solid var(--ctp-surface1);
-  border-radius: 5px;
+  border-radius: 6px;
   color: var(--ctp-overlay1);
   cursor: pointer;
   display: none; /* JS shows this via display: flex */
-  height: 26px;
-  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  gap: 0.28rem;
+  justify-content: flex-start;
+  min-height: 30px;
+  min-width: 86px;
+  padding: 0 0.55rem;
   position: fixed;
   transition: background 0.12s ease, color 0.12s ease;
-  width: 26px;
+  white-space: nowrap;
   z-index: 150;
+}
+
+.block-settings-cog__icon {
+  flex: 0 0 auto;
+}
+
+.block-settings-cog__label {
+  line-height: 1;
 }
 
 .block-settings-cog:hover {

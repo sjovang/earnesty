@@ -5,12 +5,24 @@ export const BLOCK_SETTINGS_EVENT = 'block-settings:open'
 
 const pluginKey = new PluginKey('block-settings')
 
-const COG_SVG = `<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+type BlockSettingsNodeType = 'image' | 'codeBlock' | 'link'
+
+const COG_SVG = `<svg class="block-settings-cog__icon" viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
   <circle cx="8" cy="8" r="2.2"/>
   <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1.06 1.06M11.54 11.54l1.06 1.06M3.4 12.6l1.06-1.06M11.54 4.46l1.06-1.06"/>
 </svg>`
 
-/** Renders a floating cogwheel button over image and code block nodes on hover. */
+const BLOCK_SETTINGS_LABELS: Record<BlockSettingsNodeType, string> = {
+  link: 'Edit link',
+  codeBlock: 'Edit code',
+  image: 'Edit image',
+}
+
+export function getBlockSettingsButtonLabel(nodeType: BlockSettingsNodeType): string {
+  return BLOCK_SETTINGS_LABELS[nodeType]
+}
+
+/** Renders a floating settings button over links, images, and code blocks on hover. */
 export const BlockSettings = Extension.create({
   name: 'blockSettings',
 
@@ -20,35 +32,50 @@ export const BlockSettings = Extension.create({
         key: pluginKey,
         view(editorView) {
           const btn = document.createElement('button')
+          const label = document.createElement('span')
+          label.className = 'block-settings-cog__label'
           btn.innerHTML = COG_SVG
+          btn.appendChild(label)
           btn.className = 'block-settings-cog'
-          btn.setAttribute('aria-label', 'Block settings')
           btn.setAttribute('tabindex', '-1')
+          btn.type = 'button'
           btn.style.display = 'none'
           document.body.appendChild(btn)
 
           let hoverBlock: Element | null = null
           let hoverCog = false
           let currentPos = -1
-          let currentType = ''
+          let currentType: BlockSettingsNodeType | null = null
           let hideTimer: ReturnType<typeof setTimeout> | null = null
 
-          function positionCog(el: Element) {
+          function updateButtonLabel(nodeType: BlockSettingsNodeType) {
+            const buttonLabel = getBlockSettingsButtonLabel(nodeType)
+            label.textContent = buttonLabel
+            btn.setAttribute('aria-label', buttonLabel)
+            btn.title = buttonLabel
+          }
+
+          function positionButton(el: Element) {
+            btn.style.display = 'inline-flex'
+            const btnRect = btn.getBoundingClientRect()
+            const btnWidth = btnRect.width || 92
+            const btnHeight = btnRect.height || 30
+
             if (currentType === 'link') {
-              // Links are inline, so place the cog just after the link's last
-              // line rather than overlapping the link text.
+              // Links are inline; place the button just after the link.
               const rects = el.getClientRects()
               const r = rects[rects.length - 1] ?? el.getBoundingClientRect()
-              let left = r.right + 4
-              if (left + 26 > window.innerWidth - 4) left = r.right - 26
-              btn.style.top = `${r.top + (r.height - 26) / 2}px`
+              let left = r.right + 6
+              if (left + btnWidth > window.innerWidth - 6) {
+                left = Math.max(6, r.left - btnWidth - 6)
+              }
+              btn.style.top = `${r.top + (r.height - btnHeight) / 2}px`
               btn.style.left = `${left}px`
             } else {
               const rect = el.getBoundingClientRect()
               btn.style.top = `${rect.top + 6}px`
-              btn.style.left = `${rect.right - 32}px`
+              btn.style.left = `${rect.right - btnWidth - 6}px`
             }
-            btn.style.display = 'flex'
           }
 
           function cancelHide() {
@@ -62,7 +89,7 @@ export const BlockSettings = Extension.create({
             btn.style.display = 'none'
             hoverBlock = null
             currentPos = -1
-            currentType = ''
+            currentType = null
           }
 
           // Delay hiding so the cursor can travel from the block/link to the cog
@@ -75,7 +102,7 @@ export const BlockSettings = Extension.create({
             }, 120)
           }
 
-          function getPosFromElement(el: Element, type: string): number {
+          function getPosFromElement(el: Element, type: BlockSettingsNodeType): number {
             if (type === 'link') {
               // Links are inline marks: sample the centre of the link's first
               // line and use the precise text position (not the parent node).
@@ -105,7 +132,7 @@ export const BlockSettings = Extension.create({
             const linkEl = target.closest('a')
 
             let blockEl: Element | null = null
-            let nodeType = ''
+            let nodeType: BlockSettingsNodeType | null = null
 
             if (imgEl && editorView.dom.contains(imgEl)) {
               blockEl = imgEl
@@ -118,7 +145,7 @@ export const BlockSettings = Extension.create({
               nodeType = 'link'
             }
 
-            if (!blockEl) {
+            if (!blockEl || !nodeType) {
               scheduleHide()
               return
             }
@@ -128,8 +155,9 @@ export const BlockSettings = Extension.create({
             if (blockEl !== hoverBlock) {
               hoverBlock = blockEl
               currentType = nodeType
+              updateButtonLabel(nodeType)
               currentPos = getPosFromElement(blockEl, nodeType)
-              positionCog(blockEl)
+              positionButton(blockEl)
             }
           }
 
@@ -144,7 +172,7 @@ export const BlockSettings = Extension.create({
           const onScroll = () => {
             // Reposition cog if a block is still hovered, otherwise hide
             if (hoverBlock) {
-              positionCog(hoverBlock)
+              positionButton(hoverBlock)
             }
           }
 
@@ -159,6 +187,7 @@ export const BlockSettings = Extension.create({
 
           btn.addEventListener('click', (e) => {
             e.stopPropagation()
+            if (!currentType) return
             const rect = btn.getBoundingClientRect()
             btn.dispatchEvent(
               new CustomEvent(BLOCK_SETTINGS_EVENT, {

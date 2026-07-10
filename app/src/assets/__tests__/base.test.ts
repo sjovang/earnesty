@@ -25,4 +25,11 @@ describe('base stylesheet', () => {
     expect(css).toMatch(/\[data-theme="light"]\s*\{[\s\S]*color-scheme:\s*light;/)
     expect(css).toMatch(/\[data-theme="dark"]\s*\{[\s\S]*color-scheme:\s*dark;/)
   })
+
+  it('styles block settings trigger as a text+icon control with larger hit area', () => {
+    expect(css).toMatch(/\.block-settings-cog\s*\{[\s\S]*min-width:\s*86px;/)
+    expect(css).toMatch(/\.block-settings-cog\s*\{[\s\S]*min-height:\s*30px;/)
+    expect(css).toMatch(/\.block-settings-cog\s*\{[\s\S]*gap:\s*0\.28rem;/)
+    expect(css).toMatch(/\.block-settings-cog__label\s*\{[\s\S]*line-height:\s*1;/)
+  })
 })
