@@ -1,0 +1,93 @@
+import { afterEach, describe, expect, it } from 'vitest'
+import { Editor } from '@tiptap/core'
+import StarterKit from '@tiptap/starter-kit'
+import Link from '@tiptap/extension-link'
+import { linkTypingInputRule, MARKDOWN_LINK_TYPING_RE } from '../LinkInputRule'
+
+function createEditor() {
+  return new Editor({
+    extensions: [
+      StarterKit,
+      Link.extend({
+        addInputRules() {
+          return [linkTypingInputRule(this.type)]
+        },
+      }).configure({
+        openOnClick: false,
+        autolink: true,
+        protocols: ['https', 'http', 'mailto'],
+        validate: (url) => /^https?:\/\/|^mailto:/.test(url),
+      }),
+    ],
+    content: '<p></p>',
+  })
+}
+
+/**
+ * Simulates a user typing `text` one character at a time. Tiptap's input rules are driven by
+ * ProseMirror's `handleTextInput` view prop (normally fired by real DOM input events before the
+ * browser inserts the character). For each character we call that prop directly; if no rule
+ * matches (it returns falsy) we insert the character ourselves, just like the browser would.
+ */
+function typeText(editor: Editor, text: string) {
+  const { view } = editor
+  for (const char of text) {
+    const pos = editor.state.selection.to
+    const handled = view.someProp('handleTextInput', (handler) => handler(view, pos, pos, char))
+    if (!handled) {
+      editor.commands.insertContentAt(pos, char)
+    }
+  }
+}
+
+describe('linkTypingInputRule', () => {
+  let editor: Editor
+
+  afterEach(() => {
+    editor?.destroy()
+  })
+
+  it('matches typed markdown link syntax', () => {
+    expect(MARKDOWN_LINK_TYPING_RE.test('[background story](https://example.com)')).toBe(true)
+    expect(MARKDOWN_LINK_TYPING_RE.test('[background story](https://example.com) more text')).toBe(false)
+  })
+
+  it('converts markdown link syntax into a link mark while typing', () => {
+    editor = createEditor()
+    typeText(editor, 'for context, read the background at [background story](https://example.com)')
+
+    const html = editor.getHTML()
+    expect(html).toContain('<a')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('background story')
+    expect(html).not.toContain('[background story]')
+    expect(html).not.toContain('(https://example.com)')
+  })
+
+  it('does not leave the link mark active for subsequently typed text', () => {
+    editor = createEditor()
+    typeText(editor, '[background story](https://example.com) and more')
+
+    const html = editor.getHTML()
+    const linkMatch = html.match(/<a[^>]*>([^<]*)<\/a>/)
+    expect(linkMatch?.[1]).toBe('background story')
+    expect(html).toContain('background story</a> and more')
+  })
+
+  it('supports mailto links typed inline', () => {
+    editor = createEditor()
+    typeText(editor, 'contact [me](mailto:me@example.com) today')
+
+    const html = editor.getHTML()
+    expect(html).toContain('href="mailto:me@example.com"')
+    expect(html).toContain('>me</a>')
+  })
+
+  it('ignores disallowed protocols', () => {
+    editor = createEditor()
+    typeText(editor, '[click](javascript:alert(1))')
+
+    const html = editor.getHTML()
+    expect(html).not.toContain('<a')
+  })
+})

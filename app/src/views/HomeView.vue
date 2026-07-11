@@ -19,6 +19,7 @@ import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
 import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
 import { GrammarAssist } from '../extensions/GrammarAssist'
+import { linkTypingInputRule } from '../extensions/LinkInputRule'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
@@ -274,7 +275,11 @@ const tiptap = useEditor({
     TitleDocument,
     TitleNode,
     StarterKit.configure({ document: false, codeBlock: false }),
-    Link.configure({
+    Link.extend({
+      addInputRules() {
+        return [linkTypingInputRule(this.type)]
+      },
+    }).configure({
       openOnClick: false,
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer' },
