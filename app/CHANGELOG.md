@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/sjovang/earnesty/compare/earnesty-v2.1.1...earnesty-v2.1.2) (2026-07-11)
+
+
+### Bug Fixes
+
+* restore working link editing (typed markdown links, duplicate extension, broken bubble menu) ([#215](https://github.com/sjovang/earnesty/issues/215)) ([c8e166c](https://github.com/sjovang/earnesty/commit/c8e166ca964b7a6fb1d55ccf8f6c0697287d28b0))
+
 ## [2.1.1](https://github.com/sjovang/earnesty/compare/earnesty-v2.1.0...earnesty-v2.1.1) (2026-07-10)
 
 
