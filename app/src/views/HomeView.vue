@@ -358,28 +358,6 @@ const tiptap = useEditor({
       handleImageFile(file)
       return true
     },
-    handleTextInput(view, from, _to, text) {
-      if (text !== ')') return false
-      const editor = tiptap.value
-      if (!editor) return false
-
-      const $from = view.state.doc.resolve(from)
-      const parentText = $from.parent.textBetween(0, $from.parentOffset, '\0', '\0')
-      const candidate = `${parentText}${text}`
-      const match = /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)$/.exec(candidate)
-      if (!match) return false
-
-      const linkText = match[1]
-      const href = match[2]
-      const linkMarkType = view.state.schema.marks.link
-      if (!linkText || !href || !linkMarkType) return false
-      const matchStart = from - (match[0].length - text.length)
-      const linkMark = linkMarkType.create({ href })
-      const tr = view.state.tr.insertText(linkText, matchStart, from + text.length)
-      tr.addMark(matchStart, matchStart + linkText.length, linkMark)
-      view.dispatch(tr)
-      return true
-    },
   },
   onUpdate({ editor }) {
     if (isIntro.value) isIntro.value = false

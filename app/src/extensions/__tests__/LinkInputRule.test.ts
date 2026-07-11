@@ -7,7 +7,7 @@ import { linkTypingInputRule, MARKDOWN_LINK_TYPING_RE } from '../LinkInputRule'
 function createEditor() {
   return new Editor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       Link.extend({
         addInputRules() {
           return [linkTypingInputRule(this.type)]
@@ -89,5 +89,26 @@ describe('linkTypingInputRule', () => {
 
     const html = editor.getHTML()
     expect(html).not.toContain('<a')
+  })
+
+  it('preserves the following whitespace when wrapping a word mid-sentence', () => {
+    editor = createEditor()
+    editor.commands.setContent('<p>quick brown fox</p>')
+
+    // Place the cursor right before "brown" and type the opening bracket.
+    const wordStart = 1 + 'quick '.length
+    const wordEnd = wordStart + 'brown'.length
+    editor.commands.setTextSelection(wordStart)
+    typeText(editor, '[')
+
+    // Place the cursor right after "brown" (shifted by the bracket we just inserted)
+    // and type the closing bracket + markdown URL syntax.
+    editor.commands.setTextSelection(wordEnd + 1)
+    typeText(editor, '](https://example.com)')
+
+    const html = editor.getHTML()
+    expect(html).toContain('<a')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('>brown</a> fox')
   })
 })
