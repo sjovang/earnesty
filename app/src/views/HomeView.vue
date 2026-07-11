@@ -19,7 +19,11 @@ import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
 import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
 import { GrammarAssist } from '../extensions/GrammarAssist'
-import { linkSelectionWrapPlugin, linkTypingInputRule } from '../extensions/LinkInputRule'
+import {
+  linkSelectionWrapPlugin,
+  linkTypingConversionPlugin,
+  linkTypingInputRule,
+} from '../extensions/LinkInputRule'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
@@ -280,7 +284,7 @@ const tiptap = useEditor({
         return [linkTypingInputRule(this.type)]
       },
       addProseMirrorPlugins() {
-        return [linkSelectionWrapPlugin()]
+        return [linkSelectionWrapPlugin(), linkTypingConversionPlugin(this.type)]
       },
     }).configure({
       openOnClick: false,

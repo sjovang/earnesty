@@ -2,7 +2,12 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
-import { linkSelectionWrapPlugin, linkTypingInputRule, MARKDOWN_LINK_TYPING_RE } from '../LinkInputRule'
+import {
+  linkSelectionWrapPlugin,
+  linkTypingConversionPlugin,
+  linkTypingInputRule,
+  MARKDOWN_LINK_TYPING_RE,
+} from '../LinkInputRule'
 
 function createEditor() {
   return new Editor({
@@ -13,7 +18,7 @@ function createEditor() {
           return [linkTypingInputRule(this.type)]
         },
         addProseMirrorPlugins() {
-          return [linkSelectionWrapPlugin()]
+          return [linkSelectionWrapPlugin(), linkTypingConversionPlugin(this.type)]
         },
       }).configure({
         openOnClick: false,
@@ -146,5 +151,43 @@ describe('linkTypingInputRule', () => {
     typeText(editor, '[')
 
     expect(editor.getText()).toBe('quick [brown fox')
+  })
+
+  it('converts a completed markdown link even when the url is inserted in one bulk chunk (e.g. pasted)', () => {
+    editor = createEditor()
+    editor.commands.setContent('<p>quick brown fox</p>')
+
+    const wordStart = 1 + 'quick '.length
+    const wordEnd = wordStart + 'brown'.length
+    editor.commands.setTextSelection({ from: wordStart, to: wordEnd })
+
+    // Wrap the selection via typed "[" (real keystroke path).
+    const { view } = editor
+    view.someProp('handleTextInput', (handler) => handler(view, wordStart, wordEnd, '['))
+    expect(editor.getText()).toBe('quick [brown] fox')
+
+    // Insert the rest as a single chunk, simulating a paste or browser autocomplete — this does
+    // NOT go through handleTextInput, so linkTypingInputRule alone would never fire.
+    const pos = editor.state.selection.to
+    editor.commands.insertContentAt(pos, '(https://example.com)')
+
+    const html = editor.getHTML()
+    expect(html).toContain('<a')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('>brown</a> fox')
+  })
+
+  it('converts a pasted-in-full markdown link that replaces a selection', () => {
+    editor = createEditor()
+    editor.commands.setContent('<p>quick brown fox</p>')
+
+    const wordStart = 1 + 'quick '.length
+    const wordEnd = wordStart + 'brown'.length
+    editor.commands.insertContentAt({ from: wordStart, to: wordEnd }, '[brown](https://example.com)')
+
+    const html = editor.getHTML()
+    expect(html).toContain('<a')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('>brown</a> fox')
   })
 })

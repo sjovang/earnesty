@@ -65,3 +65,51 @@ export function linkSelectionWrapPlugin(): Plugin {
     },
   })
 }
+
+const LINK_TYPING_CONVERSION_META = 'linkTypingConversion'
+
+/**
+ * Builds a ProseMirror plugin that acts as a safety net for converting typed markdown link
+ * syntax `[text](url)` into a real link mark, catching cases the character-driven
+ * `linkTypingInputRule` misses.
+ *
+ * `linkTypingInputRule` only runs via ProseMirror's `handleTextInput` view prop, which fires once
+ * per manually typed character. It is never consulted when text is inserted in bulk — e.g.
+ * pasting a URL into `(...)` after wrapping an existing selection in `[...]`, browser
+ * autocomplete/autofill, drag-and-drop, or any other multi-character insertion. In those cases the
+ * markdown syntax is inserted correctly but never converts, leaving raw `[text](url)` on screen.
+ *
+ * This plugin instead inspects the document after every change (regardless of how it was made) and
+ * converts a completed match right before the cursor, so the link mark is applied consistently no
+ * matter how the syntax was entered.
+ */
+export function linkTypingConversionPlugin(linkType: MarkType): Plugin {
+  return new Plugin({
+    appendTransaction(transactions, oldState, newState) {
+      if (!transactions.some((tr) => tr.docChanged)) return
+      if (transactions.some((tr) => tr.getMeta(LINK_TYPING_CONVERSION_META))) return
+
+      const { selection } = newState
+      if (!selection.empty) return
+
+      const $pos = selection.$from
+      if ($pos.parent.type.spec.code) return
+
+      const textBefore = $pos.parent.textBetween(0, $pos.parentOffset, '\0', '\0')
+      const match = MARKDOWN_LINK_TYPING_RE.exec(textBefore)
+      if (!match) return
+
+      const [full, text, href] = match
+      if (!text || !href) return
+
+      const matchStart = selection.from - full.length
+      const tr = newState.tr
+      tr.delete(matchStart, selection.from)
+      tr.insertText(text, matchStart)
+      tr.addMark(matchStart, matchStart + text.length, linkType.create({ href }))
+      tr.removeStoredMark(linkType)
+      tr.setMeta(LINK_TYPING_CONVERSION_META, true)
+      return tr
+    },
+  })
+}
