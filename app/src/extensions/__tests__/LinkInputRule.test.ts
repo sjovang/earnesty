@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
-import { linkTypingInputRule, MARKDOWN_LINK_TYPING_RE } from '../LinkInputRule'
+import { linkSelectionWrapPlugin, linkTypingInputRule, MARKDOWN_LINK_TYPING_RE } from '../LinkInputRule'
 
 function createEditor() {
   return new Editor({
@@ -11,6 +11,9 @@ function createEditor() {
       Link.extend({
         addInputRules() {
           return [linkTypingInputRule(this.type)]
+        },
+        addProseMirrorPlugins() {
+          return [linkSelectionWrapPlugin()]
         },
       }).configure({
         openOnClick: false,
@@ -110,5 +113,38 @@ describe('linkTypingInputRule', () => {
     expect(html).toContain('<a')
     expect(html).toContain('href="https://example.com"')
     expect(html).toContain('>brown</a> fox')
+  })
+
+  it('wraps a selected word in brackets instead of erasing it when typing "["', () => {
+    editor = createEditor()
+    editor.commands.setContent('<p>quick brown fox</p>')
+
+    const wordStart = 1 + 'quick '.length
+    const wordEnd = wordStart + 'brown'.length
+    editor.commands.setTextSelection({ from: wordStart, to: wordEnd })
+
+    const { view } = editor
+    const handled = view.someProp('handleTextInput', (handler) =>
+      handler(view, wordStart, wordEnd, '['),
+    )
+    expect(handled).toBe(true)
+    expect(editor.getText()).toBe('quick [brown] fox')
+
+    // Cursor should now sit right after "]", ready to type "(url)".
+    typeText(editor, '(https://example.com)')
+
+    const html = editor.getHTML()
+    expect(html).toContain('<a')
+    expect(html).toContain('href="https://example.com"')
+    expect(html).toContain('>brown</a> fox')
+  })
+
+  it('falls back to normal replacement when typing "[" with no selection', () => {
+    editor = createEditor()
+    editor.commands.setContent('<p>quick brown fox</p>')
+    editor.commands.setTextSelection(1 + 'quick '.length)
+    typeText(editor, '[')
+
+    expect(editor.getText()).toBe('quick [brown fox')
   })
 })

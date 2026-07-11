@@ -1,5 +1,7 @@
 import { InputRule } from '@tiptap/core'
 import type { MarkType } from '@tiptap/pm/model'
+import { Plugin } from '@tiptap/pm/state'
+import { TextSelection } from '@tiptap/pm/state'
 
 /**
  * Matches markdown link syntax typed inline, e.g. `[background story](https://example.com)`.
@@ -26,6 +28,40 @@ export function linkTypingInputRule(linkType: MarkType): InputRule {
       tr.insertText(text, range.from)
       tr.addMark(range.from, range.from + text.length, linkType.create({ href }))
       tr.removeStoredMark(linkType)
+    },
+  })
+}
+
+/**
+ * Builds a ProseMirror plugin that wraps a text selection in `[...]` when the user types the
+ * opening bracket, instead of deleting the selection (the default browser/ProseMirror behavior
+ * for typing over a selection). This lets a user select an existing word/phrase and start typing
+ * markdown link syntax around it (`[`, then `](url)`) without losing the selected text — mirroring
+ * how selecting text and typing `*`/`**` wraps it in italics/bold instead of replacing it.
+ *
+ * After wrapping, the cursor is placed right after the closing `]`, ready for the user to type
+ * `(url)`, which `linkTypingInputRule` then converts into a real link mark.
+ */
+export function linkSelectionWrapPlugin(): Plugin {
+  return new Plugin({
+    props: {
+      handleTextInput(view, from, to, text) {
+        if (text !== '[' || from === to) return false
+
+        const { state } = view
+        const { $from, $to } = state.selection
+        if (!$from.sameParent($to)) return false
+
+        const selectedText = state.doc.textBetween(from, to, '\0', '\0')
+        if (!selectedText) return false
+
+        const tr = state.tr
+        tr.insertText(']', to)
+        tr.insertText('[', from)
+        tr.setSelection(TextSelection.create(tr.doc, to + 2))
+        view.dispatch(tr.scrollIntoView())
+        return true
+      },
     },
   })
 }
