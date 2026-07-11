@@ -274,7 +274,7 @@ const tiptap = useEditor({
   extensions: [
     TitleDocument,
     TitleNode,
-    StarterKit.configure({ document: false, codeBlock: false }),
+    StarterKit.configure({ document: false, codeBlock: false, link: false }),
     Link.extend({
       addInputRules() {
         return [linkTypingInputRule(this.type)]
