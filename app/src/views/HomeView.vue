@@ -19,6 +19,11 @@ import { TitleDocument } from '../extensions/TitleDocument'
 import { BlockInserter, BLOCK_INSERTER_EVENT } from '../extensions/BlockInserter'
 import { BlockSettings, BLOCK_SETTINGS_EVENT } from '../extensions/BlockSettings'
 import { GrammarAssist } from '../extensions/GrammarAssist'
+import {
+  linkSelectionWrapPlugin,
+  linkTypingConversionPlugin,
+  linkTypingInputRule,
+} from '../extensions/LinkInputRule'
 import AppLogo from '../components/AppLogo.vue'
 import ImagePickerModal from '../components/ImagePickerModal.vue'
 import ImageBubbleMenu from '../components/ImageBubbleMenu.vue'
@@ -273,8 +278,15 @@ const tiptap = useEditor({
   extensions: [
     TitleDocument,
     TitleNode,
-    StarterKit.configure({ document: false, codeBlock: false }),
-    Link.configure({
+    StarterKit.configure({ document: false, codeBlock: false, link: false }),
+    Link.extend({
+      addInputRules() {
+        return [linkTypingInputRule(this.type)]
+      },
+      addProseMirrorPlugins() {
+        return [linkSelectionWrapPlugin(), linkTypingConversionPlugin(this.type)]
+      },
+    }).configure({
       openOnClick: false,
       autolink: true,
       HTMLAttributes: { rel: 'noopener noreferrer' },
@@ -351,28 +363,6 @@ const tiptap = useEditor({
       if (!file) return false
       event.preventDefault()
       handleImageFile(file)
-      return true
-    },
-    handleTextInput(view, from, _to, text) {
-      if (text !== ')') return false
-      const editor = tiptap.value
-      if (!editor) return false
-
-      const $from = view.state.doc.resolve(from)
-      const parentText = $from.parent.textBetween(0, $from.parentOffset, '\0', '\0')
-      const candidate = `${parentText}${text}`
-      const match = /\[([^\]]+)\]\(((?:https?:\/\/|mailto:)[^\s)]+)\)$/.exec(candidate)
-      if (!match) return false
-
-      const linkText = match[1]
-      const href = match[2]
-      const linkMarkType = view.state.schema.marks.link
-      if (!linkText || !href || !linkMarkType) return false
-      const matchStart = from - (match[0].length - text.length)
-      const linkMark = linkMarkType.create({ href })
-      const tr = view.state.tr.insertText(linkText, matchStart, from + text.length)
-      tr.addMark(matchStart, matchStart + linkText.length, linkMark)
-      view.dispatch(tr)
       return true
     },
   },
